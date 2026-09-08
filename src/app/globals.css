@@ -23,6 +23,83 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: filter 0.3s ease, background-color 0.3s ease;
+}
+
+/* --- REAL DARK MODE PALETTE --- */
+html.dark-mode {
+  background: #020617; /* slate-950 */
+}
+
+.dark-mode body {
+  background: #020617;
+  color: #f8fafc;
+}
+
+/* Backgrounds */
+.dark-mode .bg-white { background-color: #0f172a !important; } /* slate-900 */
+.dark-mode .bg-slate-50 { background-color: #1e293b !important; } /* slate-800 */
+.dark-mode .bg-slate-50\/50 { background-color: #1e293b !important; } 
+.dark-mode .bg-slate-100 { background-color: #334155 !important; } /* slate-700 */
+.dark-mode .bg-slate-200 { background-color: #475569 !important; } 
+.dark-mode .bg-slate-800 { background-color: #020617 !important; } 
+
+/* Status Backgrounds (Kanban Columns & Badges) */
+.dark-mode .bg-blue-50, .dark-mode .bg-blue-100 { background-color: #0c4a6e !important; } /* sky-900 */
+.dark-mode .bg-emerald-50, .dark-mode .bg-green-50, .dark-mode .bg-emerald-100, .dark-mode .bg-green-100 { background-color: #064e3b !important; } /* emerald-900 */
+.dark-mode .bg-amber-50, .dark-mode .bg-amber-100 { background-color: #78350f !important; } /* amber-900 */
+.dark-mode .bg-red-50, .dark-mode .bg-red-100 { background-color: #7f1d1d !important; } /* red-900 */
+.dark-mode .bg-orange-50, .dark-mode .bg-orange-100 { background-color: #7c2d12 !important; } /* orange-900 */
+.dark-mode .bg-yellow-50, .dark-mode .bg-yellow-100 { background-color: #713f12 !important; } /* yellow-900 */
+.dark-mode .bg-purple-50, .dark-mode .bg-purple-100 { background-color: #581c87 !important; } /* purple-900 */
+
+/* Translucent Status Backgrounds */
+.dark-mode .bg-blue-50\/50 { background-color: rgba(12, 74, 110, 0.5) !important; }
+.dark-mode .bg-emerald-50\/50 { background-color: rgba(6, 78, 59, 0.5) !important; }
+.dark-mode .bg-amber-50\/50, .dark-mode .bg-amber-50\/30 { background-color: rgba(120, 53, 15, 0.5) !important; }
+
+/* Texts */
+.dark-mode .text-slate-800 { color: #f8fafc !important; } /* slate-50 */
+.dark-mode .text-slate-700 { color: #e2e8f0 !important; } /* slate-200 */
+.dark-mode .text-slate-600 { color: #cbd5e1 !important; } /* slate-300 */
+.dark-mode .text-slate-500 { color: #94a3b8 !important; } /* slate-400 */
+.dark-mode .text-slate-400 { color: #64748b !important; } /* slate-500 */
+
+/* Status Texts */
+.dark-mode .text-blue-700, .dark-mode .text-blue-600, .dark-mode .text-blue-500 { color: #7dd3fc !important; } /* sky-300 */
+.dark-mode .text-emerald-700, .dark-mode .text-emerald-600, .dark-mode .text-green-700 { color: #6ee7b7 !important; } /* emerald-300 */
+.dark-mode .text-amber-700, .dark-mode .text-amber-600, .dark-mode .text-amber-500 { color: #fcd34d !important; } /* amber-300 */
+.dark-mode .text-red-700, .dark-mode .text-red-600, .dark-mode .text-red-500 { color: #fca5a5 !important; } /* red-300 */
+.dark-mode .text-orange-700, .dark-mode .text-orange-600 { color: #fdba74 !important; } /* orange-300 */
+.dark-mode .text-yellow-700, .dark-mode .text-yellow-600 { color: #fde047 !important; } /* yellow-300 */
+.dark-mode .text-purple-700, .dark-mode .text-purple-600 { color: #d8b4fe !important; } /* purple-300 */
+
+/* Borders */
+.dark-mode .border-slate-100 { border-color: #1e293b !important; } /* slate-800 */
+.dark-mode .border-slate-200 { border-color: #334155 !important; } /* slate-700 */
+.dark-mode .border-slate-300 { border-color: #475569 !important; } /* slate-600 */
+.dark-mode .border-transparent { border-color: transparent !important; }
+
+/* Dividers */
+.dark-mode .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b !important; }
+
+/* Specific Overrides for better contrast */
+.dark-mode .hover\:bg-slate-50:hover { background-color: #1e293b !important; }
+.dark-mode .hover\:bg-slate-100:hover { background-color: #334155 !important; }
+.dark-mode .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.5) !important; }
+
+/* Fix Quill Editor in Dark Mode */
+.dark-mode .ql-toolbar, .dark-mode .ql-container {
+  border-color: #334155 !important;
+  background-color: #0f172a !important;
+}
+.dark-mode .ql-editor { color: #f8fafc !important; }
+.dark-mode .ql-stroke { stroke: #cbd5e1 !important; }
+.dark-mode .ql-fill { fill: #cbd5e1 !important; }
+
+/* Fix Sidebar / Header Specifics if they need borders */
+.dark-mode header, .dark-mode aside {
+  border-color: #1e293b !important;
 }
 
 /* --- Estilos para Impresión de Etiquetas QR --- */

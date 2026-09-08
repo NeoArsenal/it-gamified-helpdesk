@@ -1,6 +1,6 @@
-import { Server, Wifi, Router, Activity, ShieldAlert, CheckCircle2, RotateCw, Network, X, Link } from 'lucide-react';
+import { Server, Wifi, Router, Activity, ShieldAlert, CheckCircle2, RotateCw, Network, X, Link, AlertTriangle, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getDispositivosRed, getDireccionesIP, updateDispositivoRed, asignarIP, liberarIP } from '@/services/api/api-client';
+import { getDispositivosRed, getDireccionesIP, registrarNuevaIP, updateDispositivoRed, asignarIP, liberarIP, simularCaidaRed, restaurarDispositivoRed } from '@/services/api/api-client';
 
 interface NetworkViewProps {
   userId?: string;
@@ -11,11 +11,16 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
   const [devices, setDevices] = useState<any[]>([]);
   const [ips, setIps] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'mapa' | 'libres'>('mapa');
 
   // Estados para modal de Asignar IP
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedIp, setSelectedIp] = useState<string | null>(null);
   const [selectedDispositivoId, setSelectedDispositivoId] = useState<string>('');
+
+  // Estados para modal de Registrar IP
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [newIpForm, setNewIpForm] = useState({ ip: '', sede: '', area: '', vlan: '' });
 
   const fetchData = async () => {
     try {
@@ -34,25 +39,32 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
   }, []);
 
   const handleReiniciarEquipo = async (id: string, estadoActual: string) => {
-    if (estadoActual === 'ONLINE') return; // Ya está bien
+    if (estadoActual === 'ONLINE') return;
     
     // Simular que está reiniciando
     setDevices(prev => prev.map(d => d.id === id ? { ...d, estado: 'REINICIANDO' } : d));
     
     setTimeout(async () => {
       try {
-        await updateDispositivoRed(id, { estado: 'ONLINE' });
-        // Simular dar XP por mantenimiento preventivo
+        await restaurarDispositivoRed(id, userId || '');
         if (onTicketResolved) {
-          // Engañamos al sistema llamando onTicketResolved para dar XP simulada
-          // En un sistema real tendrías un `onXpGained(50)`
+          onTicketResolved(); // Actualiza la barra lateral de XP
         }
         fetchData();
       } catch (e) {
-        alert("Error al reiniciar equipo");
+        alert("Error al restaurar equipo");
         fetchData();
       }
-    }, 2000);
+    }, 1500);
+  };
+
+  const handleSimularCaida = async () => {
+    try {
+      await simularCaidaRed();
+      fetchData();
+    } catch (e) {
+      alert("Error al simular caída");
+    }
   };
 
   const handleLiberarIp = async (ip: string) => {
@@ -84,6 +96,19 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
     }
   };
 
+  const handleRegisterIpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIpForm.ip) return;
+    try {
+      await registrarNuevaIP(newIpForm);
+      setIsRegisterModalOpen(false);
+      setNewIpForm({ ip: '', sede: '', area: '', vlan: '' });
+      fetchData();
+    } catch (err: any) {
+      alert(err.message || "Error al registrar IP");
+    }
+  };
+
   const getDeviceIcon = (type: string, isRebooting: boolean) => {
     if (isRebooting) return <RotateCw className="w-5 h-5 animate-spin text-amber-500" />;
     if (type === 'SWITCH') return <Server className="w-5 h-5" />;
@@ -102,13 +127,38 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
     return <div className="p-8 text-slate-500 animate-pulse">Cargando infraestructura de red...</div>;
   }
 
+  // Agrupación de IPs por Sede y Área
+  const groupedIps: { [sede: string]: { [area: string]: any[] } } = {};
+  ips.forEach(ip => {
+    // Para no ensuciar el mapa, solo mostramos IPs que tengan Sede (algunas viejas podrían no tener)
+    // Opcionalmente: mostramos "Sede Desconocida"
+    const sede = ip.sede || 'Sin Sede';
+    const area = ip.area || 'Sin Área';
+    
+    if (!groupedIps[sede]) groupedIps[sede] = {};
+    if (!groupedIps[sede][area]) groupedIps[sede][area] = [];
+    
+    groupedIps[sede][area].push(ip);
+  });
+
+  const ipsLibres = ips.filter(ip => ip.estado === 'LIBRE');
+
   return (
     <div className="p-8 space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <Network className="w-6 h-6 text-blue-600" /> Infraestructura de Red
-        </h1>
-        <p className="text-slate-500 text-sm mt-1">Monitoreo activo de equipos críticos y gestión de inventario IP (IPAM).</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Network className="w-6 h-6 text-blue-600" /> Infraestructura de Red
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Monitoreo activo de equipos críticos y gestión de inventario IP (IPAM).</p>
+        </div>
+        
+        <button 
+          onClick={handleSimularCaida}
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105"
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-500" /> Simular Caída Aleatoria
+        </button>
       </div>
 
       {/* Dispositivos (Tarjetas) */}
@@ -138,9 +188,9 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
                 {isOffline && !isRebooting && (
                   <button 
                     onClick={() => handleReiniciarEquipo(dev.id, dev.estado)}
-                    className="w-full py-2 bg-amber-100 hover:bg-amber-200 text-amber-700 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 active:scale-95"
+                    className="w-full py-2 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1 active:scale-95 shadow-sm"
                   >
-                    <RotateCw className="w-3 h-3" /> Reiniciar Equipo (Simulación)
+                    <RotateCw className="w-3 h-3" /> Restaurar y Ganar XP
                   </button>
                 )}
                 {!isOffline && (
@@ -155,68 +205,141 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
       </div>
 
       {/* Gestión de IPs */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-          <h3 className="font-bold text-slate-800">Gestión de IPs (IPAM Interactivo)</h3>
-          <span className="text-xs font-medium text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-md shadow-sm">
-            Total Registradas: {ips.length}
-          </span>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        {/* Header Tabs */}
+        <div className="p-0 border-b border-slate-100 bg-slate-50 flex items-end">
+          <div className="flex px-4 pt-4 gap-2">
+            <button
+              onClick={() => setActiveTab('mapa')}
+              className={`px-4 py-2 font-bold text-sm rounded-t-lg transition-colors border-b-2 ${
+                activeTab === 'mapa' ? 'text-blue-700 bg-white border-blue-600 shadow-[0_-2px_0_0_rgba(255,255,255,1)]' : 'text-slate-500 hover:bg-slate-100 border-transparent'
+              }`}
+            >
+              Mapa de Red (Sedes)
+            </button>
+            <button
+              onClick={() => setActiveTab('libres')}
+              className={`px-4 py-2 font-bold text-sm rounded-t-lg transition-colors border-b-2 flex items-center gap-2 ${
+                activeTab === 'libres' ? 'text-blue-700 bg-white border-blue-600 shadow-[0_-2px_0_0_rgba(255,255,255,1)]' : 'text-slate-500 hover:bg-slate-100 border-transparent'
+              }`}
+            >
+              IPs Disponibles
+              <span className="bg-blue-100 text-blue-700 py-0.5 px-2 rounded-full text-xs">{ipsLibres.length}</span>
+            </button>
+          </div>
+          
+          <div className="ml-auto p-4 flex items-center gap-4">
+             <button
+               onClick={() => setIsRegisterModalOpen(true)}
+               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-md text-xs shadow-sm transition-colors flex items-center gap-1"
+             >
+               <Plus className="w-4 h-4" /> Registrar Nueva IP
+             </button>
+             <span className="text-xs font-medium text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-md shadow-sm">
+                Total IPs Registradas: {ips.length}
+             </span>
+          </div>
         </div>
-        <div className="overflow-x-auto max-h-[400px]">
-          <table className="w-full text-left text-sm relative">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200 sticky top-0 z-10 shadow-sm">
-              <tr>
-                <th className="px-6 py-3 font-medium">Dirección IP</th>
-                <th className="px-6 py-3 font-medium">Dispositivo Asignado</th>
-                <th className="px-6 py-3 font-medium">VLAN</th>
-                <th className="px-6 py-3 font-medium">Estado</th>
-                <th className="px-6 py-3 font-medium text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {ips.map((ip) => (
-                <tr key={ip.ip} className="hover:bg-slate-50 transition-colors group">
-                  <td className="px-6 py-3 font-mono font-medium text-slate-700">{ip.ip}</td>
-                  <td className={`px-6 py-3 font-medium ${!ip.dispositivo ? 'text-slate-400' : 'text-slate-800'}`}>
-                    {ip.dispositivo?.nombre || '-'}
-                  </td>
-                  <td className="px-6 py-3">
-                    <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
-                      {ip.vlan || 'N/A'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-3">
-                    {ip.estado === 'LIBRE' 
-                      ? <span className="text-emerald-600 font-medium text-xs bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 flex items-center w-fit gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Libre</span>
-                      : <span className="text-slate-500 font-medium text-xs bg-slate-100 px-2 py-1 rounded-full border border-slate-200 flex items-center w-fit gap-1"><span className="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Ocupada</span>
-                    }
-                  </td>
-                  <td className="px-6 py-3 text-right">
-                    {ip.estado === 'LIBRE' ? (
-                      <button 
-                        onClick={() => handleAbrirModalAsignar(ip.ip)}
-                        className="text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors border border-blue-200 active:scale-95 flex items-center gap-1 ml-auto"
-                      >
-                        <Link className="w-3 h-3" /> Asignar
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => handleLiberarIp(ip.ip)}
-                        className="text-red-600 hover:text-red-800 font-bold text-xs bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors border border-red-200 active:scale-95 flex items-center gap-1 ml-auto"
-                      >
-                        <X className="w-3 h-3" /> Liberar
-                      </button>
-                    )}
-                  </td>
-                </tr>
+
+        {/* Tab Content */}
+        <div className="p-6 bg-white min-h-[400px]">
+          {activeTab === 'mapa' && (
+            <div className="space-y-6">
+              {Object.keys(groupedIps).map((sede) => (
+                <div key={sede} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                  <div className="bg-slate-800 text-white px-5 py-3 font-bold text-lg">
+                    {sede}
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {Object.keys(groupedIps[sede]).map((area) => (
+                      <div key={area} className="bg-white border border-slate-200 rounded-lg shadow-sm">
+                        <div className="bg-slate-100/50 px-4 py-2 border-b border-slate-100 font-bold text-slate-700 flex items-center gap-2">
+                          <Network className="w-4 h-4 text-slate-400" /> {area}
+                        </div>
+                        <div className="p-4 flex flex-wrap gap-3">
+                          {groupedIps[sede][area].map(ip => (
+                            <div 
+                              key={ip.ip} 
+                              className={`flex flex-col p-3 rounded-lg border ${ip.estado === 'LIBRE' ? 'border-emerald-200 bg-emerald-50/50' : 'border-slate-200 bg-slate-50'} shadow-sm min-w-[140px] relative group`}
+                            >
+                              <span className="font-mono font-bold text-slate-800">{ip.ip}</span>
+                              <span className="text-xs text-slate-500 mt-1 truncate max-w-[120px]" title={ip.dispositivo?.nombre || 'Libre'}>
+                                {ip.dispositivo?.nombre || <span className="text-emerald-600 font-medium flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Libre</span>}
+                              </span>
+                              
+                              {ip.estado !== 'LIBRE' && (
+                                <button 
+                                  onClick={() => handleLiberarIp(ip.ip)}
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-red-50 text-red-500 p-1 rounded-md border border-slate-200 shadow-sm"
+                                  title="Liberar IP"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              )}
+                              {ip.estado === 'LIBRE' && (
+                                <button 
+                                  onClick={() => handleAbrirModalAsignar(ip.ip)}
+                                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white hover:bg-blue-50 text-blue-500 p-1 rounded-md border border-slate-200 shadow-sm"
+                                  title="Asignar IP"
+                                >
+                                  <Link className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
-              {ips.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">No hay IPs registradas.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          )}
+
+          {activeTab === 'libres' && (
+            <div className="overflow-hidden border border-emerald-200 rounded-xl shadow-sm">
+              <table className="w-full text-left text-sm relative">
+                <thead className="bg-emerald-50 text-emerald-800 border-b border-emerald-200 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-3 font-bold">Dirección IP</th>
+                    <th className="px-6 py-3 font-bold">Sede y Área Recomendada</th>
+                    <th className="px-6 py-3 font-bold">VLAN</th>
+                    <th className="px-6 py-3 font-bold text-right">Acción Rápida</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-emerald-100 bg-white">
+                  {ipsLibres.map((ip) => (
+                    <tr key={ip.ip} className="hover:bg-emerald-50/50 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-emerald-700">{ip.ip}</td>
+                      <td className="px-6 py-4 text-slate-600 font-medium">
+                        {ip.sede} <span className="text-slate-400 mx-1">&rarr;</span> {ip.area}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-medium border border-slate-200">
+                          {ip.vlan || 'N/A'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button 
+                          onClick={() => handleAbrirModalAsignar(ip.ip)}
+                          className="text-blue-700 font-bold text-sm bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-lg transition-colors border border-blue-200 active:scale-95 flex items-center gap-2 ml-auto shadow-sm"
+                        >
+                          <Link className="w-4 h-4" /> Asignar a Equipo
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {ipsLibres.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-10 text-center text-slate-500 font-medium">
+                        No hay IPs libres disponibles en este momento.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -265,6 +388,89 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
                   className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors active:scale-95"
                 >
                   Confirmar Asignación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Registrar Nueva IP */}
+      {isRegisterModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setIsRegisterModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h2 className="text-xl font-bold text-slate-800 mb-1 flex items-center gap-2">
+              <Plus className="w-5 h-5 text-emerald-600" /> Registrar Nueva IP
+            </h2>
+            <p className="text-sm text-slate-500 mb-6">Añade una nueva dirección IP al catálogo para que pueda ser asignada a dispositivos.</p>
+
+            <form onSubmit={handleRegisterIpSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Dirección IP (Ej. 10.0.50.12)</label>
+                <input
+                  required
+                  type="text"
+                  value={newIpForm.ip}
+                  onChange={(e) => setNewIpForm({ ...newIpForm, ip: e.target.value })}
+                  placeholder="192.168.x.x o 10.x.x.x"
+                  className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Sede (Ej. Sede Sur)</label>
+                  <input
+                    type="text"
+                    value={newIpForm.sede}
+                    onChange={(e) => setNewIpForm({ ...newIpForm, sede: e.target.value })}
+                    placeholder="Sede San Isidro"
+                    className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Área (Ej. Gerencia)</label>
+                  <input
+                    type="text"
+                    value={newIpForm.area}
+                    onChange={(e) => setNewIpForm({ ...newIpForm, area: e.target.value })}
+                    placeholder="Contabilidad"
+                    className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">VLAN (Opcional)</label>
+                <input
+                  type="text"
+                  value={newIpForm.vlan}
+                  onChange={(e) => setNewIpForm({ ...newIpForm, vlan: e.target.value })}
+                  placeholder="VLAN 50"
+                  className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                />
+              </div>
+
+              <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setIsRegisterModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm transition-colors active:scale-95"
+                >
+                  Guardar IP
                 </button>
               </div>
             </form>

@@ -1,0 +1,421 @@
+import { useState, useEffect } from 'react';
+import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check } from 'lucide-react';
+import { getPerfilUsuario, actualizarPreferenciasUsuario } from '@/services/api/api-client';
+
+const TITULOS_RPG = [
+  { id: 'Técnico Novato', minLevel: 1, icon: '🔧', desc: 'Recién llegado a la mesa de ayuda.' },
+  { id: 'Guardián de Hardware', minLevel: 5, icon: '🛡️', desc: 'Reparador de pantallas rotas y teclados sucios.' },
+  { id: 'Hechicero de Redes', minLevel: 10, icon: '⚡', desc: 'Domina los routers y el Wi-Fi místico.' },
+  { id: 'Señor de los Servidores', minLevel: 15, icon: '🏰', desc: 'Guardián del Data Center y los respaldos.' },
+  { id: 'Paladín del Soporte', minLevel: 20, icon: '⚔️', desc: 'Leyenda viviente. Los usuarios no mienten en tu presencia.' },
+];
+
+export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: string, onPreferencesSaved?: () => void }) {
+  const [activeTab, setActiveTab] = useState<'perfil' | 'gamificacion' | 'sistema' | 'catalogos'>('perfil');
+  const [isSaving, setIsSaving] = useState(false);
+  const [theme, setTheme] = useState<'light'|'dark'>('light');
+  
+  // Preferencias State
+  const [tituloRPG, setTituloRPG] = useState('Técnico Novato');
+  const [musicaNivel, setMusicaNivel] = useState(true);
+  const [alertasCriticas, setAlertasCriticas] = useState(true);
+  const [avatarSeed, setAvatarSeed] = useState(userId || 'tech');
+  const [userLevel, setUserLevel] = useState(1);
+
+  // Cargar estado inicial del tema y preferencias
+  useEffect(() => {
+    if (document.documentElement.classList.contains('dark-mode')) {
+      setTheme('dark');
+    }
+    
+    // Si tenemos un userId (aunque sea el mock 'JD' o un UUID), intentar cargar sus preferencias
+    if (userId && userId.length > 5) {
+      getPerfilUsuario(userId).then(user => {
+        if (user.nivel) setUserLevel(user.nivel);
+        if (user.avatar) setAvatarSeed(user.avatar);
+        if (user.tituloRPG) setTituloRPG(user.tituloRPG);
+        if (user.preferencias) {
+          if (user.preferencias.musicaNivel !== undefined) setMusicaNivel(user.preferencias.musicaNivel);
+          if (user.preferencias.alertasCriticas !== undefined) setAlertasCriticas(user.preferencias.alertasCriticas);
+        }
+      }).catch(err => console.log('Usuario no encontrado o no tiene preferencias aún.'));
+    }
+  }, [userId]);
+
+  const toggleTheme = (newTheme: 'light' | 'dark') => {
+    setTheme(newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    // Si tenemos un userId válido (UUID), guardamos en BD
+    if (userId && userId.length > 5) {
+      try {
+        await actualizarPreferenciasUsuario(userId, {
+          avatar: avatarSeed,
+          tituloRPG,
+          preferencias: {
+            musicaNivel,
+            alertasCriticas,
+            temaOscuro: theme === 'dark'
+          }
+        });
+      } catch (error) {
+        console.error('Error al guardar preferencias', error);
+      }
+    }
+
+    setTimeout(() => {
+      setIsSaving(false);
+      if (onPreferencesSaved) onPreferencesSaved();
+      // Simulate toast notification or success
+    }, 600);
+  };
+
+  return (
+    <div className="p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-500">
+      
+      {/* Cabecera */}
+      <div className="flex justify-between items-start mb-8 shrink-0">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Settings className="w-6 h-6 text-slate-600" /> Configuración del Sistema
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">Ajusta tus preferencias personales y administra las reglas de gamificación de TI.</p>
+        </div>
+        <button 
+          onClick={handleSave}
+          disabled={isSaving}
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
+        >
+          <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} /> 
+          {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+        </button>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8">
+        
+        {/* Sidebar de Navegación */}
+        <div className="w-full md:w-64 shrink-0 space-y-2">
+          <button 
+            onClick={() => setActiveTab('perfil')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'perfil' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+          >
+            <User className="w-5 h-5" /> Perfil y Cuenta
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('gamificacion')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'gamificacion' ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+          >
+            <Gamepad2 className="w-5 h-5" /> Reglas de Gamificación
+          </button>
+
+          <button 
+            onClick={() => setActiveTab('sistema')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'sistema' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+          >
+            <Monitor className="w-5 h-5" /> Sistema y Apariencia
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('catalogos')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'catalogos' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+          >
+            <Layers className="w-5 h-5" /> Catálogos y Listas
+          </button>
+        </div>
+
+        {/* Contenido Principal */}
+        <div className="flex-1 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px]">
+          
+          {/* TAB: PERFIL */}
+          {activeTab === 'perfil' && (
+            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <User className="w-5 h-5 text-indigo-500" /> Preferencias del Técnico
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Avatar y Clase */}
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Avatar de Héroe</label>
+                    <div className="flex items-center gap-4">
+                      <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}&backgroundColor=e2e8f0`} alt="Avatar" className="w-20 h-20 rounded-2xl bg-slate-100 border-2 border-slate-200 p-2 shadow-sm" />
+                      <button 
+                        onClick={() => setAvatarSeed(Math.random().toString(36).substring(7))}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-300"
+                      >
+                        Generar Avatar Aleatorio
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-3">Título / Clase de RPG</label>
+                    <div className="space-y-2">
+                      {TITULOS_RPG.map((titulo) => {
+                        const isUnlocked = userLevel >= titulo.minLevel;
+                        const isSelected = tituloRPG === titulo.id;
+                        
+                        return (
+                          <div 
+                            key={titulo.id}
+                            onClick={() => { if (isUnlocked) setTituloRPG(titulo.id) }}
+                            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all relative overflow-hidden ${
+                              isUnlocked 
+                                ? isSelected
+                                  ? 'border-indigo-600 bg-indigo-50/50 shadow-sm cursor-default'
+                                  : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-slate-50 cursor-pointer'
+                                : 'border-slate-100 bg-slate-50 opacity-60 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center text-lg ${isUnlocked ? 'bg-white shadow-sm' : 'bg-slate-200'}`}>
+                              {isUnlocked ? titulo.icon : <Lock className="w-4 h-4 text-slate-400" />}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <h4 className={`text-sm font-bold truncate ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>
+                                {titulo.id}
+                              </h4>
+                              <p className="text-xs text-slate-500 truncate">{titulo.desc}</p>
+                            </div>
+                            
+                            <div className="shrink-0 flex flex-col items-end gap-1">
+                              {isSelected && <Check className="w-5 h-5 text-indigo-600" />}
+                              {!isUnlocked && (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200 text-slate-500">
+                                  Requiere Lvl {titulo.minLevel}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notificaciones */}
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                      <Volume2 className="w-4 h-4" /> Alertas y Sonidos
+                    </label>
+                    
+                    <div className="space-y-4">
+                      <label className="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div>
+                          <p className="font-semibold text-sm text-slate-800">Música de Subida de Nivel</p>
+                          <p className="text-xs text-slate-500">Reproducir sonido épico al ganar medallas.</p>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={musicaNivel}
+                          onChange={(e) => setMusicaNivel(e.target.checked)}
+                          className="w-5 h-5 accent-indigo-600 cursor-pointer" 
+                        />
+                      </label>
+                      
+                      <label className="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                        <div>
+                          <p className="font-semibold text-sm text-slate-800">Alertas de Tickets Críticos</p>
+                          <p className="text-xs text-slate-500">Sonido de alarma cuando ingresa una emergencia.</p>
+                        </div>
+                        <input 
+                          type="checkbox" 
+                          checked={alertasCriticas}
+                          onChange={(e) => setAlertasCriticas(e.target.checked)}
+                          className="w-5 h-5 accent-red-600 cursor-pointer" 
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: GAMIFICACIÓN */}
+          {activeTab === 'gamificacion' && (
+            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <Gamepad2 className="w-5 h-5 text-amber-500" /> Reglas y Economía de XP
+              </h2>
+
+              <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-5 mb-8">
+                <div className="flex gap-3">
+                  <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-amber-800 text-sm">Zona de Administración</h3>
+                    <p className="text-amber-700 text-xs mt-1">Los cambios aquí afectarán a todos los técnicos. Solo los administradores pueden modificar la cantidad de XP otorgada por cada acción.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Recompensas por Ticket */}
+                <div>
+                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-indigo-500"/> XP por Tickets Resueltos</h4>
+                  <div className="space-y-3">
+                    {[
+                      { prio: 'Crítica', color: 'bg-red-100 text-red-700', xp: 100 },
+                      { prio: 'Alta', color: 'bg-orange-100 text-orange-700', xp: 50 },
+                      { prio: 'Media', color: 'bg-amber-100 text-amber-700', xp: 20 },
+                      { prio: 'Baja', color: 'bg-emerald-100 text-emerald-700', xp: 10 },
+                    ].map(item => (
+                      <div key={item.prio} className="flex items-center justify-between">
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-md ${item.color}`}>Prioridad {item.prio}</span>
+                        <div className="flex items-center gap-2">
+                          <input type="number" defaultValue={item.xp} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-amber-500 outline-none" />
+                          <span className="text-xs font-bold text-slate-400">XP</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Recompensas por Otras Acciones */}
+                <div>
+                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-emerald-500"/> XP por Acciones Adicionales</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Crear Manual/Guía</p>
+                        <p className="text-[10px] text-slate-500">Aporte a la base de conocimiento.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input type="number" defaultValue={30} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <span className="text-xs font-bold text-slate-400">XP</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">Restaurar Equipo (Red)</p>
+                        <p className="text-[10px] text-slate-500">Evitar caídas de infraestructura.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input type="number" defaultValue={250} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                        <span className="text-xs font-bold text-slate-400">XP</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* TAB: SISTEMA */}
+          {activeTab === 'sistema' && (
+            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <Monitor className="w-5 h-5 text-slate-600" /> Sistema y UI
+              </h2>
+              
+              <div className="max-w-md space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <Palette className="w-4 h-4" /> Tema de la Aplicación
+                  </label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={() => toggleTheme('light')}
+                      className={`border-2 p-4 rounded-xl flex flex-col items-center justify-center gap-3 shadow-sm relative overflow-hidden group transition-all ${theme === 'light' ? 'border-indigo-600 bg-indigo-50/30' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'light' ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-100 text-slate-500'}`}>
+                        <Sun className="w-6 h-6" />
+                      </div>
+                      <span className={`text-sm font-bold ${theme === 'light' ? 'text-indigo-700' : 'text-slate-600'}`}>Claro (Por Defecto)</span>
+                      {theme === 'light' && <div className="absolute top-3 right-3 w-3 h-3 bg-indigo-600 rounded-full animate-pulse"></div>}
+                    </button>
+                    
+                    <button 
+                      onClick={() => toggleTheme('dark')}
+                      className={`border-2 p-4 rounded-xl flex flex-col items-center justify-center gap-3 shadow-sm relative overflow-hidden transition-all ${theme === 'dark' ? 'border-indigo-600 bg-slate-900' : 'border-slate-200 bg-slate-800 hover:bg-slate-900'}`}
+                    >
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${theme === 'dark' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-300'}`}>
+                        <Moon className="w-6 h-6" />
+                      </div>
+                      <span className={`text-sm font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-white'}`}>Modo Oscuro (Terminal)</span>
+                      {theme === 'dark' && <div className="absolute top-3 right-3 w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-slate-100">
+                  <label className="block text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <Bell className="w-4 h-4" /> Integraciones Externas
+                  </label>
+                  <button className="w-full bg-[#36C5F0] hover:bg-[#2EB67D] text-white font-bold py-3 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
+                     Vincular con Slack (Alertas)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: CATÁLOGOS */}
+          {activeTab === 'catalogos' && (
+            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <Layers className="w-5 h-5 text-emerald-600" /> Catálogos del Helpdesk
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Departamentos */}
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    Gestión de Departamentos
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-4">Áreas de la clínica donde pueden generarse incidencias.</p>
+                  
+                  <div className="space-y-2 mb-4">
+                    {['Urgencias', 'Quirófano', 'Recursos Humanos', 'Administración', 'Farmacia'].map(dept => (
+                      <div key={dept} className="flex items-center justify-between bg-white px-3 py-2 border border-slate-200 rounded-lg text-sm">
+                        <span className="font-medium text-slate-700">{dept}</span>
+                        <button className="text-red-500 hover:text-red-700 text-xs font-semibold">Eliminar</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button className="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-sm font-bold rounded-lg transition-colors border border-emerald-200">
+                    + Añadir Departamento
+                  </button>
+                </div>
+
+                {/* Tipos de Inventario */}
+                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
+                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <Tags className="w-4 h-4 text-slate-500" /> Categorías de Activos (Inventario)
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-4">Clasificación de equipos médicos y de TI.</p>
+                  
+                  <div className="space-y-2 mb-4">
+                    {['Desktop / Laptop', 'Impresora', 'Bomba de Infusión', 'Monitor Vital', 'Router / Switch'].map(cat => (
+                      <div key={cat} className="flex items-center justify-between bg-white px-3 py-2 border border-slate-200 rounded-lg text-sm">
+                        <span className="font-medium text-slate-700">{cat}</span>
+                        <button className="text-red-500 hover:text-red-700 text-xs font-semibold">Eliminar</button>
+                      </div>
+                    ))}
+                  </div>
+                  <button className="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-sm font-bold rounded-lg transition-colors border border-emerald-200">
+                    + Añadir Categoría
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}

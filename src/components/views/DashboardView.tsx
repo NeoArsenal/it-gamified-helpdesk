@@ -148,7 +148,11 @@ export function DashboardView() {
                       {idx + 1}
                     </div>
                     <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-sm overflow-hidden group-hover:ring-2 group-hover:ring-blue-300 transition-all">
-                      {user.avatar || user.nombre.substring(0, 2).toUpperCase()}
+                      {user.avatar && user.avatar.length > 2 ? (
+                        <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${user.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover bg-slate-100" />
+                      ) : (
+                        user.avatar || user.nombre.substring(0, 2).toUpperCase()
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-slate-800 text-sm group-hover:text-blue-700 transition-colors">{user.nombre}</h4>

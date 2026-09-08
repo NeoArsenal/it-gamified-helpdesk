@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
-import { getTicketsAnalytics } from '@/services/api/api-client';
-import { Activity, Clock, Download, Ticket, BarChart3, PieChart as PieChartIcon, Grid } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { getTicketsAnalytics, getHistorialXP } from '@/services/api/api-client';
+import { Activity, Clock, Download, Ticket, BarChart3, PieChart as PieChartIcon, Grid, Zap } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, AreaChart, Area, CartesianGrid } from 'recharts';
 // import html2canvas from 'html2canvas'; // Para exportar
 // import jsPDF from 'jspdf'; // Para exportar
 
-export function AnalyticsView() {
+export function AnalyticsView({ userId }: { userId?: string }) {
   const [data, setData] = useState<any>(null);
+  const [xpHistory, setXpHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState<'heatmap' | 'bar' | 'pie'>('heatmap');
   const reportRef = useRef<HTMLDivElement>(null);
@@ -14,8 +15,26 @@ export function AnalyticsView() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const res = await getTicketsAnalytics();
+        const [res, xpRes] = await Promise.all([
+          getTicketsAnalytics(),
+          userId ? getHistorialXP(userId) : Promise.resolve([])
+        ]);
         setData(res);
+        
+        // Transformar historial para el gráfico (invertir para orden cronológico)
+        if (xpRes && xpRes.length > 0) {
+          let acumulado = 0;
+          const chartData = xpRes.reverse().map((item: any) => {
+            acumulado += item.xpOtorgado;
+            return {
+              fecha: new Date(item.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              xp: item.xpOtorgado,
+              total: acumulado,
+              accion: item.accion
+            };
+          });
+          setXpHistory(chartData);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -259,6 +278,43 @@ export function AnalyticsView() {
             <div className="h-48 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
               <Activity className="w-10 h-10 mb-2 text-slate-300" />
               <p className="text-sm">No hay datos suficientes para graficar.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Gráfico de Crecimiento de XP (Gamificación) */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-6">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><Zap className="w-5 h-5 text-amber-500 fill-amber-500" /> Evolución de Experiencia (XP)</h3>
+              <p className="text-sm text-slate-500">Crecimiento de tu puntaje a través de tus actividades heroicas.</p>
+            </div>
+          </div>
+
+          {xpHistory.length > 0 ? (
+            <div className="h-80 w-full mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={xpHistory} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="fecha" tick={{ fontSize: 10 }} stroke="#94a3b8" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorXp)" name="XP Acumulado" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="h-48 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+              <Zap className="w-10 h-10 mb-2 text-slate-300" />
+              <p className="text-sm">Aún no tienes historial de XP.</p>
             </div>
           )}
         </div>

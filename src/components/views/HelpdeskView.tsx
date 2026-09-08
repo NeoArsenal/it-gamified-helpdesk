@@ -218,36 +218,43 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       {/* Efecto de brillo de fondo al hacer hover */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-                      <div className="flex justify-between items-start mb-2 relative z-10">
+                      <div className={`flex justify-between items-start mb-2 relative ${activeDropdown === ticket.id ? 'z-50' : 'z-10'}`}>
                         <span className={`flex items-center px-2 py-1 rounded-md text-[10px] font-bold border transform origin-left group-hover:scale-105 transition-transform duration-300 ${style.bg} ${style.color} ${style.border}`}>
                           {style.icon} {ticket.prioridad}
                         </span>
-                        <button 
-                          onClick={() => setActiveDropdown(activeDropdown === ticket.id ? null : ticket.id)}
-                          className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
                         
-                        {/* Dropdown flotante */}
-                        {activeDropdown === ticket.id && (
-                          <div className="absolute right-0 top-6 w-36 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10 animate-in fade-in slide-in-from-top-2">
-                            {ticket.estado === 'RESUELTO' && (
+                        <div className="relative">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveDropdown(activeDropdown === ticket.id ? null : ticket.id);
+                            }}
+                            className="p-1.5 bg-slate-50 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-all shadow-sm active:scale-95"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Dropdown flotante (Menú de Acciones) */}
+                          {activeDropdown === ticket.id && (
+                            <div className="absolute right-0 top-8 w-44 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/5">
+                              {ticket.estado === 'RESUELTO' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleCerrarTicket(ticket.id); }}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Archive className="w-4 h-4 text-slate-400 group-hover:text-indigo-500" /> Cerrar Ticket
+                                </button>
+                              )}
+                              {ticket.estado === 'RESUELTO' && <div className="h-px w-full bg-slate-100 my-1"></div>}
                               <button 
-                                onClick={() => handleCerrarTicket(ticket.id)}
-                                className="w-full text-left px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center gap-2 border-b border-slate-100"
+                                onClick={(e) => { e.stopPropagation(); handleEliminarTicket(ticket.id); }}
+                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2.5 transition-colors"
                               >
-                                <Archive className="w-3 h-3 text-slate-400" /> Cerrar Ticket
+                                <Trash2 className="w-4 h-4" /> Eliminar Ticket
                               </button>
-                            )}
-                            <button 
-                              onClick={() => handleEliminarTicket(ticket.id)}
-                              className="w-full text-left px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 flex items-center gap-2"
-                            >
-                              <Trash2 className="w-3 h-3" /> Eliminar
-                            </button>
-                          </div>
-                        )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       <h4 className="font-bold text-slate-800 text-sm mb-1 leading-snug relative z-10 group-hover:text-blue-700 transition-colors">{ticket.titulo}</h4>
                       <div className="flex items-center justify-between mb-3 relative z-10">
@@ -262,7 +269,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-500 overflow-hidden group-hover:ring-2 group-hover:ring-blue-100 transition-all duration-300" title={ticket.asignadoA?.nombre || 'Sin asignar'}>
                             {ticket.asignadoA?.avatar ? (
-                              <span className="text-[10px] font-bold">{ticket.asignadoA.avatar}</span>
+                              ticket.asignadoA.avatar.length > 2 ? (
+                                <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${ticket.asignadoA.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] font-bold">{ticket.asignadoA.avatar}</span>
+                              )
                             ) : (
                               <User className="w-3 h-3 group-hover:text-blue-500 transition-colors" />
                             )}
@@ -313,8 +324,16 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       <div className="text-[10px] text-slate-400">TIC-{ticket.id.substring(0, 5).toUpperCase()}</div>
                     </td>
                     <td className="px-6 py-3 text-xs text-slate-600 flex items-center gap-2">
-                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold">
-                        {ticket.asignadoA?.avatar || <User className="w-3 h-3" />}
+                      <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold overflow-hidden">
+                        {ticket.asignadoA?.avatar ? (
+                          ticket.asignadoA.avatar.length > 2 ? (
+                            <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${ticket.asignadoA.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            ticket.asignadoA.avatar
+                          )
+                        ) : (
+                          <User className="w-3 h-3" />
+                        )}
                       </div>
                       {ticket.asignadoA?.nombre || 'Desconocido'}
                     </td>

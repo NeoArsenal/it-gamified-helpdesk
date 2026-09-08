@@ -1,4 +1,102 @@
+import { toast } from 'sonner';
+
 const BASE_URL = 'http://localhost:3001/api';
+
+const originalFetch = globalThis.fetch;
+const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const headers: any = {
+    ...options?.headers,
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await originalFetch(url, { ...options, headers });
+    
+    if (!res.ok) {
+      if (res.status === 401 || res.status === 403) {
+        if (typeof window !== 'undefined') {
+           localStorage.removeItem('auth_token');
+           localStorage.removeItem('auth_user');
+           window.location.href = '/';
+        }
+      }
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.message || `Error ${res.status}`);
+    }
+    
+    return res;
+  } catch (error: any) {
+    // Mostramos un toast si hay error
+    toast.error(error.message || 'Error de conexión con el servidor');
+    throw error;
+  }
+};
+
+// --- Usuarios ---
+export const getUsuarios = async () => {
+  const res = await fetch(`${BASE_URL}/usuarios`);
+  return res.json();
+};
+
+export const crearUsuario = async (data: any) => {
+  const res = await fetch(`${BASE_URL}/usuarios`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const actualizarUsuario = async (id: string, data: any) => {
+  const res = await fetch(`${BASE_URL}/usuarios/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+};
+
+export const getUsuario = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/usuarios/${userId}`);
+  return res.json();
+};
+
+export const actualizarPreferenciasUsuario = async (userId: string, data: any) => {
+  const res = await fetch(`${BASE_URL}/usuarios/${userId}/preferencias`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Error al actualizar preferencias');
+  return res.json();
+};
+
+// --- Academia TI (Duolingo) ---
+export const getCursosAcademia = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/academia/cursos?userId=${userId}`);
+  if (!res.ok) throw new Error('Error al obtener cursos');
+  return res.json();
+};
+
+export const getNivelPreguntas = async (nivelId: string) => {
+  const res = await fetch(`${BASE_URL}/academia/niveles/${nivelId}/preguntas`);
+  if (!res.ok) throw new Error('Error al obtener preguntas del nivel');
+  return res.json();
+};
+
+export const completarNivelAcademia = async (userId: string, nivelId: string) => {
+  const res = await fetch(`${BASE_URL}/academia/completar`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, nivelId }),
+  });
+  if (!res.ok) throw new Error('Error al completar nivel');
+  return res.json();
+};
 
 // --- Gamificación ---
 export const getPerfilUsuario = async (userId: string) => {
@@ -10,6 +108,12 @@ export const getPerfilUsuario = async (userId: string) => {
 export const getLeaderboard = async () => {
   const res = await fetch(`${BASE_URL}/gamificacion/leaderboard`);
   if (!res.ok) throw new Error('Error al obtener leaderboard');
+  return res.json();
+};
+
+export const getHistorialXP = async (userId: string) => {
+  const res = await fetch(`${BASE_URL}/gamificacion/historial/${userId}`);
+  if (!res.ok) throw new Error('Error al obtener historial');
   return res.json();
 };
 
@@ -77,15 +181,22 @@ export const getStats = async () => {
   return res.json();
 };
 
+export const getAnalytics = async () => {
+  const res = await fetch(`${BASE_URL}/tickets/analytics`);
+  if (!res.ok) throw new Error('Error al obtener analytics');
+  return res.json();
+};
+
 export const getTicketsAnalytics = async () => {
   const res = await fetch(`${BASE_URL}/tickets/analytics`);
   if (!res.ok) throw new Error('Error al obtener analytics');
   return res.json();
 };
 
-// --- Guias (Base de Conocimiento) ---
-export const getGuias = async () => {
-  const res = await fetch(`${BASE_URL}/guias`);
+// --- Guías ---
+export const getGuias = async (query = '') => {
+  const url = query ? `${BASE_URL}/guias/search?q=${encodeURIComponent(query)}` : `${BASE_URL}/guias`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Error al obtener guías');
   return res.json();
 };
@@ -109,6 +220,22 @@ export const eliminarGuia = async (id: string) => {
 };
 
 // --- Red ---
+export const getDireccionesIP = async () => {
+  const res = await fetch(`${BASE_URL}/red/ips`);
+  if (!res.ok) throw new Error('Error al obtener IPs');
+  return res.json();
+};
+
+export const registrarNuevaIP = async (data: any) => {
+  const res = await fetch(`${BASE_URL}/red/ips`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Error al registrar IP');
+  return res.json();
+};
+
 export const getEstadisticasRed = async () => {
   // Simularemos unas estadísticas básicas, o podrías usar un endpoint real si existe
   return {
@@ -151,11 +278,23 @@ export const getDispositivosRed = async () => {
   return res.json();
 };
 
-export const getDireccionesIP = async () => {
-  const res = await fetch(`${BASE_URL}/red/ips`);
-  if (!res.ok) throw new Error('Error al obtener IPs');
+export const simularCaidaRed = async () => {
+  const res = await fetch(`${BASE_URL}/red/dispositivos/simular-caida`, { method: 'POST' });
+  if (!res.ok) throw new Error('Error al simular caída');
   return res.json();
-};// --- Activos / Inventario ---
+};
+
+export const restaurarDispositivoRed = async (id: string, tecnicoId: string) => {
+  const res = await fetch(`${BASE_URL}/red/dispositivos/${id}/restaurar`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tecnicoId }),
+  });
+  if (!res.ok) throw new Error('Error al restaurar dispositivo');
+  return res.json();
+};
+
+// --- Activos / Inventario ---
 export const getActivos = async () => {
   const res = await fetch(`${BASE_URL}/activos`);
   if (!res.ok) throw new Error('Error al obtener activos');
@@ -172,13 +311,29 @@ export const crearActivo = async (data: any) => {
   return res.json();
 };
 
-export const updateActivo = async (id: string, data: any) => {
+export const updateActivo = async (id: string, data: Partial<any>) => {
   const res = await fetch(`${BASE_URL}/activos/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Error al actualizar activo');
+  return res.json();
+};
+
+export const getActivo = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/activos/${id}`);
+  if (!res.ok) throw new Error('Error al obtener activo');
+  return res.json();
+};
+
+export const addIntervencion = async (id: string, descripcion: string, tecnicoId?: string) => {
+  const res = await fetch(`${BASE_URL}/activos/${id}/intervenciones`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ descripcion, tecnicoId }),
+  });
+  if (!res.ok) throw new Error('Error al añadir intervención');
   return res.json();
 };
 
