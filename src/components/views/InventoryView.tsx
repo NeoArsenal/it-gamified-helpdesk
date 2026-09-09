@@ -255,7 +255,7 @@ export function InventoryView({ userId, onActivoRescatado }: { userId?: string, 
                 <h3 className="text-2xl font-black tracking-widest uppercase">{qrModalActivo.codigo}</h3>
                 <div className="bg-white p-2">
                   <QRCodeSVG 
-                    value={`http://localhost:3000/activo/${qrModalActivo.id}`} 
+                    value={`${typeof window !== 'undefined' ? window.location.origin : ''}/activo/${qrModalActivo.id}`} 
                     size={200}
                     level="H"
                     includeMargin={true}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Cpu, Loader2 } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'sonner';
+import { loginUsuario } from '@/services/api/api-client';
 
 export const LoginView = () => {
   const [email, setEmail] = useState('');
@@ -16,17 +17,7 @@ export const LoginView = () => {
     setLoading(true);
     
     try {
-      const res = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.message || 'Error al iniciar sesión');
-      }
+      const data = await loginUsuario({ email, password });
       
       login(data.access_token, data.usuario);
       toast.success(`¡Bienvenido de vuelta, ${data.usuario.nombre.split(' ')[0]}!`);

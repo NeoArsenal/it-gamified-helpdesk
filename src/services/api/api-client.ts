@@ -1,6 +1,8 @@
 import { toast } from 'sonner';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const cleanUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
+export const BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 
 const originalFetch = globalThis.fetch;
 const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
@@ -40,6 +42,20 @@ const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
 export const getUsuarios = async () => {
   const res = await fetch(`${BASE_URL}/usuarios`);
   return res.json();
+};
+
+// --- Auth ---
+export const loginUsuario = async (credentials: any) => {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || 'Error al iniciar sesión');
+  }
+  return data;
 };
 
 export const crearUsuario = async (data: any) => {
