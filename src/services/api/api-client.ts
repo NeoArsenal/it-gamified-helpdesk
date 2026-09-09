@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 
-const BASE_URL = 'http://localhost:3001/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 const originalFetch = globalThis.fetch;
 const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
@@ -342,5 +342,20 @@ export const eliminarActivo = async (id: string) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Error al eliminar activo');
+  return res.json();
+};
+
+export const uploadFileToStorage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const res = await fetch(`${BASE_URL}/storage/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!res.ok) {
+    throw new Error('Error al subir el archivo');
+  }
   return res.json();
 };

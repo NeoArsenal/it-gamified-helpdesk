@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode } from 'lucide-react';
-import { getGuias, crearGuia, eliminarGuia } from '@/services/api/api-client';
+import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/services/api/api-client';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -94,7 +94,8 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
       if (creationMode === 'PDF' && selectedFile) {
         peso = `${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB`;
-        urlPdf = `/uploads/${selectedFile.name}`;
+        const uploadResult = await uploadFileToStorage(selectedFile);
+        urlPdf = uploadResult.url;
       } else {
         peso = 'Doc Web';
         contenidoRichText = contenidoNativo;
@@ -105,7 +106,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         urlPdf,
         contenidoRichText,
         peso,
-        autorId: userId || '4e447e7e-0824-49d1-9abd-490209ad77de', 
+        autorId: userId || undefined, // Evitar enviar un UUID hardcodeado
       });
       
       setIsModalOpen(false);
@@ -114,6 +115,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
       setContenidoNativo('');
       fetchGuides(searchQuery);
     } catch (err) {
+      console.error(err);
       alert("Error al subir guía");
     }
   };
