@@ -1,8 +1,16 @@
 import { toast } from 'sonner';
+import { io } from 'socket.io-client';
 
 const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 const cleanUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-export const BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+export const BASE_URL = cleanUrl;
+export const SOCKET_URL = rawUrl.replace(/\/api\/?$/, '');
+
+// Global socket instance
+export const socket = io(SOCKET_URL, {
+  autoConnect: false,
+  reconnection: true,
+});
 
 const originalFetch = globalThis.fetch;
 const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
@@ -375,3 +383,74 @@ export const uploadFileToStorage = async (file: File) => {
   }
   return res.json();
 };
+
+// --- Ubicaciones ---
+export const getUbicacionesSedes = async () => {
+  const res = await fetch(`${BASE_URL}/ubicaciones/sedes`);
+  if (!res.ok) throw new Error('Error al obtener sedes');
+  return res.json();
+};
+
+export const getUbicacionesDepartamentos = async (sede: string) => {
+  const res = await fetch(`${BASE_URL}/ubicaciones/departamentos?sede=${encodeURIComponent(sede)}`);
+  if (!res.ok) throw new Error('Error al obtener departamentos');
+  return res.json();
+};
+
+export const getUbicacionesAreas = async (sede: string, departamento: string) => {
+  const res = await fetch(`${BASE_URL}/ubicaciones/areas?sede=${encodeURIComponent(sede)}&departamento=${encodeURIComponent(departamento)}`);
+  if (!res.ok) throw new Error('Error al obtener areas');
+  return res.json();
+};
+
+export const getUbicaciones = async () => {
+  const res = await fetch(`${BASE_URL}/ubicaciones`);
+  if (!res.ok) throw new Error('Error al obtener ubicaciones');
+  return res.json();
+};
+
+export const crearUbicacion = async (data: any) => {
+  const res = await fetch(`${BASE_URL}/ubicaciones`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Error al crear ubicacion');
+  return res.json();
+};
+
+export const eliminarUbicacion = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/ubicaciones/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Error al eliminar ubicacion');
+  return res.json();
+};
+
+// --- Portal Configuracion ---
+export const verifyPortalPin = async (pin: string) => {
+  const res = await fetch(`${BASE_URL}/configuracion/verify-pin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin }),
+  });
+  if (!res.ok) throw new Error('Error al verificar PIN');
+  return res.json();
+};
+
+export const getPortalPin = async () => {
+  const res = await fetch(`${BASE_URL}/configuracion/portal-pin`);
+  if (!res.ok) throw new Error('Error al obtener PIN');
+  return res.json();
+};
+
+export const setPortalPin = async (pin: string) => {
+  const res = await fetch(`${BASE_URL}/configuracion/portal-pin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin }),
+  });
+  if (!res.ok) throw new Error('Error al actualizar PIN');
+  return res.json();
+};
+

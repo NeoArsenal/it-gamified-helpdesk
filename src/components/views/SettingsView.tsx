@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check } from 'lucide-react';
-import { getPerfilUsuario, actualizarPreferenciasUsuario } from '@/services/api/api-client';
+import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2 } from 'lucide-react';
+import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin } from '@/services/api/api-client';
+import { QRCodeSVG } from 'qrcode.react';
 
 const TITULOS_RPG = [
   { id: 'Técnico Novato', minLevel: 1, icon: '🔧', desc: 'Recién llegado a la mesa de ayuda.' },
@@ -11,7 +12,7 @@ const TITULOS_RPG = [
 ];
 
 export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: string, onPreferencesSaved?: () => void }) {
-  const [activeTab, setActiveTab] = useState<'perfil' | 'gamificacion' | 'sistema' | 'catalogos'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'gamificacion' | 'sistema' | 'catalogos' | 'ubicaciones' | 'portal'>('perfil');
   const [isSaving, setIsSaving] = useState(false);
   const [theme, setTheme] = useState<'light'|'dark'>('light');
   
@@ -21,6 +22,17 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [alertasCriticas, setAlertasCriticas] = useState(true);
   const [avatarSeed, setAvatarSeed] = useState(userId || 'tech');
   const [userLevel, setUserLevel] = useState(1);
+
+  // Ubicaciones State
+  const [ubicaciones, setUbicaciones] = useState<any[]>([]);
+  const [nuevaSede, setNuevaSede] = useState('');
+  const [nuevoDepto, setNuevoDepto] = useState('');
+  const [nuevaArea, setNuevaArea] = useState('');
+
+  // Portal State
+  const [portalPin, setPortalPinState] = useState('');
+  const [portalUrl, setPortalUrl] = useState('');
+
 
   // Cargar estado inicial del tema y preferencias
   useEffect(() => {
@@ -40,7 +52,47 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
         }
       }).catch(err => console.log('Usuario no encontrado o no tiene preferencias aún.'));
     }
+    
+    // Cargar ubicaciones
+    fetchUbicaciones();
+    
+    // Cargar config del portal
+    getPortalPin().then(data => setPortalPinState(data.pin)).catch(console.error);
+    if (typeof window !== 'undefined') {
+      setPortalUrl(`${window.location.origin}/portal`);
+    }
   }, [userId]);
+
+  const fetchUbicaciones = async () => {
+    try {
+      const data = await getUbicaciones();
+      setUbicaciones(data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleCrearUbicacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nuevaSede.trim() || !nuevoDepto.trim() || !nuevaArea.trim()) return;
+    try {
+      await crearUbicacion({ sede: nuevaSede, departamento: nuevoDepto, area: nuevaArea });
+      setNuevaArea(''); // Limpiar solo el área para crear más rápido
+      fetchUbicaciones();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleEliminarUbicacion = async (id: string) => {
+    if (!confirm('¿Eliminar esta ubicación?')) return;
+    try {
+      await eliminarUbicacion(id);
+      fetchUbicaciones();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const toggleTheme = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
@@ -51,7 +103,18 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     }
   };
 
-  const handleSave = async () => {
+  const handleSavePortalPin = async () => {
+    setIsSaving(true);
+    try {
+      await setPortalPin(portalPin);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const savePreferences = async () => {
     setIsSaving(true);
     
     // Si tenemos un userId válido (UUID), guardamos en BD
@@ -90,7 +153,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           <p className="text-slate-500 text-sm mt-1">Ajusta tus preferencias personales y administra las reglas de gamificación de TI.</p>
         </div>
         <button 
-          onClick={handleSave}
+          onClick={savePreferences}
           disabled={isSaving}
           className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
         >
@@ -129,6 +192,19 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'catalogos' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
           >
             <Layers className="w-5 h-5" /> Catálogos y Listas
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('ubicaciones')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'ubicaciones' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <MapPin className="w-5 h-5" /> Ubicaciones
+          </button>
+          <button 
+            onClick={() => setActiveTab('portal')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'portal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Monitor className="w-5 h-5" /> Portal Auto-Servicio
           </button>
         </div>
 
@@ -409,6 +485,168 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                   <button className="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-sm font-bold rounded-lg transition-colors border border-emerald-200">
                     + Añadir Categoría
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: UBICACIONES */}
+          {activeTab === 'ubicaciones' && (
+            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
+              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+                <MapPin className="w-5 h-5 text-purple-600" /> Sedes, Departamentos y Áreas
+              </h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Formulario Crear */}
+                <div className="lg:col-span-1 bg-slate-50 p-5 rounded-xl border border-slate-200 h-fit">
+                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <Plus className="w-4 h-4 text-purple-500" /> Nueva Ubicación
+                  </h4>
+                  <form onSubmit={handleCrearUbicacion} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Sede</label>
+                      <input 
+                        type="text" required placeholder="Ej: Tower 1"
+                        value={nuevaSede} onChange={e => setNuevaSede(e.target.value)}
+                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Departamento</label>
+                      <input 
+                        type="text" required placeholder="Ej: Piso 5"
+                        value={nuevoDepto} onChange={e => setNuevoDepto(e.target.value)}
+                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 mb-1">Área Específica</label>
+                      <input 
+                        type="text" required placeholder="Ej: Oficina 501"
+                        value={nuevaArea} onChange={e => setNuevaArea(e.target.value)}
+                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <button type="submit" className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm mt-2">
+                      Agregar Ubicación
+                    </button>
+                  </form>
+                </div>
+
+                {/* Lista Existente */}
+                <div className="lg:col-span-2">
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div className="max-h-[400px] overflow-y-auto">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200 shadow-sm">
+                          <tr>
+                            <th className="px-4 py-3 font-semibold text-xs">Sede</th>
+                            <th className="px-4 py-3 font-semibold text-xs">Departamento</th>
+                            <th className="px-4 py-3 font-semibold text-xs">Área</th>
+                            <th className="px-4 py-3 font-semibold text-xs w-20 text-center">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {ubicaciones.map(ubi => (
+                            <tr key={ubi.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-4 py-3 font-medium text-slate-700">{ubi.sede}</td>
+                              <td className="px-4 py-3 text-slate-600">{ubi.departamento}</td>
+                              <td className="px-4 py-3 text-slate-600">{ubi.area}</td>
+                              <td className="px-4 py-3 text-center">
+                                <button 
+                                  onClick={() => handleEliminarUbicacion(ubi.id)}
+                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Eliminar"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {ubicaciones.length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-sm">No hay ubicaciones registradas</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB PORTAL */}
+          {activeTab === 'portal' && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <h3 className="text-lg font-black text-slate-800 mb-1">Portal Kiosco para Usuarios</h3>
+                <p className="text-sm text-slate-500 mb-4">Configura el acceso al portal de auto-servicio sin registro.</p>
+              </div>
+              
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+                <div className="flex flex-col md:flex-row gap-8 items-center">
+                  
+                  <div className="flex-1 space-y-4">
+                    <h4 className="font-bold text-slate-700">Enlace del Portal</h4>
+                    <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden">
+                      <input 
+                        type="text" 
+                        readOnly 
+                        value={portalUrl} 
+                        className="w-full px-3 py-2 text-sm bg-slate-50 text-slate-600 outline-none"
+                      />
+                      <button 
+                        onClick={() => navigator.clipboard.writeText(portalUrl)}
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 font-bold text-sm transition-colors border-l border-slate-200"
+                      >
+                        Copiar
+                      </button>
+                    </div>
+
+                    <h4 className="font-bold text-slate-700 mt-6">PIN de Acceso</h4>
+                    <p className="text-xs text-slate-500 mb-2">Este PIN será requerido para entrar al portal desde una computadora o al escanear el QR.</p>
+                    <div className="flex items-center gap-3">
+                      <input 
+                        type="text"
+                        maxLength={4}
+                        value={portalPin}
+                        onChange={(e) => setPortalPinState(e.target.value)}
+                        className="w-24 px-4 py-2 text-center text-xl tracking-[0.5em] font-black bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <button 
+                        onClick={handleSavePortalPin}
+                        disabled={isSaving || portalPin.length < 4}
+                        className="bg-slate-800 hover:bg-slate-900 disabled:bg-slate-400 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm flex items-center gap-2"
+                      >
+                        {isSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Save className="w-4 h-4" />}
+                        Guardar PIN
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QR Code */}
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
+                    <h4 className="font-bold text-slate-700 mb-4 text-center">Código QR</h4>
+                    {portalUrl && (
+                      <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                        <QRCodeSVG value={portalUrl} size={150} level="M" />
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-400 mt-4 text-center max-w-[150px]">
+                      Imprime este código y colócalo en oficinas.
+                    </p>
+                    <a 
+                      href={portalUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
+                    >
+                      Probar Portal →
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

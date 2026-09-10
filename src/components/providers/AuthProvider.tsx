@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { socket } from '@/services/api/api-client';
 
 type User = {
   id: string;
@@ -35,6 +36,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(storedToken);
       try {
         setUser(JSON.parse(storedUser));
+        socket.auth = { token: storedToken };
+        socket.connect();
       } catch (e) {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
@@ -48,6 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(newUser);
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(newUser));
+    socket.auth = { token: newToken };
+    socket.connect();
   };
 
   const logout = () => {
@@ -55,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    socket.disconnect();
     window.location.reload();
   };
 
