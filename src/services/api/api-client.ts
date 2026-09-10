@@ -3,13 +3,17 @@ import { io } from 'socket.io-client';
 
 const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 const cleanUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
-export const BASE_URL = cleanUrl;
-export const SOCKET_URL = rawUrl.replace(/\/api\/?$/, '');
+export const BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
+export const SOCKET_URL = cleanUrl.replace(/\/api$/, '');
 
 // Global socket instance
 export const socket = io(SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
+  reconnectionAttempts: Infinity,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  transports: ['websocket', 'polling'],
 });
 
 const originalFetch = globalThis.fetch;

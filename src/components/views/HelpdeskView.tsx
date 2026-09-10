@@ -83,8 +83,17 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   useEffect(() => {
     fetchTicketsData();
 
+    // Asegurar conexión del socket en tiempo real
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (token) {
+      socket.auth = { token };
+    }
+    if (!socket.connected) {
+      socket.connect();
+    }
+
     // Configurar listeners
-    socket.on('nuevoTicket', (ticket) => {
+    const handleNuevoTicket = (ticket: any) => {
       console.log('WS Event received: nuevoTicket', ticket);
       setTickets((prev) => {
         if (prev.find(t => t.id === ticket.id)) return prev;
@@ -100,21 +109,26 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         description: ticket.titulo,
         duration: 5000,
       });
-    });
+    };
 
-    socket.on('ticketActualizado', (updatedTicket) => {
+    const handleTicketActualizado = (updatedTicket: any) => {
       console.log('WS Event received: ticketActualizado', updatedTicket);
       setTickets((prev) => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
-    });
+    };
 
-    socket.on('ticketEliminado', (id) => {
+    const handleTicketEliminado = (id: string) => {
       console.log('WS Event received: ticketEliminado', id);
       setTickets((prev) => prev.filter(t => t.id !== id));
-    });
+    };
+
+    socket.on('nuevoTicket', handleNuevoTicket);
+    socket.on('ticketActualizado', handleTicketActualizado);
+    socket.on('ticketEliminado', handleTicketEliminado);
 
     return () => {
-      socket.off('nuevoTicket');
-      socket.off('ticketActualizado');
+      socket.off('nuevoTicket', handleNuevoTicket);
+      socket.off('ticketActualizado', handleTicketActualizado);
+      socket.off('ticketEliminado', handleTicketEliminado);
     };
   }, []);
 
@@ -165,7 +179,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     if (!nuevoTitulo.trim()) return;
 
     try {
-      await crearTicket({
+      const nuevo = await crearTicket({
         titulo: nuevoTitulo,
         sede: nuevaSede,
         departamento: nuevoDepartamento,
@@ -178,7 +192,15 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       setNuevaSede('');
       setNuevoDepartamento('');
       setNuevaArea('');
-      fetchTicketsData(); // Recargar para ver el ticket nuevo
+      
+      // Actualización inmediata del estado local
+      if (nuevo && nuevo.id) {
+        setTickets((prev) => {
+          if (prev.find(t => t.id === nuevo.id)) return prev;
+          return [nuevo, ...prev];
+        });
+      }
+      fetchTicketsData(); // Sincronizar con backend
     } catch (err) {
       console.error('Error al crear', err);
       alert('Hubo un error al crear el ticket');
