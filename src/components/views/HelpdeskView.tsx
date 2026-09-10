@@ -1,4 +1,4 @@
-import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, Trash2, Archive, ChevronDown, MapPin } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, Trash2, Archive, ChevronDown, MapPin, Play, RotateCcw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getTickets, actualizarEstadoTicket, crearTicket, eliminarTicket, getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, socket } from '@/services/api/api-client';
 import { toast } from 'sonner';
@@ -11,7 +11,7 @@ interface HelpdeskViewProps {
 function CustomSelect({ value, options, onChange, placeholder }: { value: string, options: string[], onChange: (val: string) => void, placeholder: string }) {
   const [isOpen, setIsOpen] = useState(false);
   return (
-    <div className="relative">
+    <div className="relative flex-1 md:flex-none min-w-[200px]">
       <button 
         type="button" 
         onClick={() => setIsOpen(!isOpen)}
@@ -242,6 +242,27 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
   };
 
+  const handleMoverTicket = async (id: string, nuevoEstado: string, estadoActual: string) => {
+    if (!userId) return;
+    if (estadoActual === nuevoEstado) return;
+    
+    // Actualización optimista
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, estado: nuevoEstado } : t));
+    
+    try {
+      await actualizarEstadoTicket(id, nuevoEstado, userId);
+      if (nuevoEstado === 'RESUELTO' && onTicketResolved) {
+        onTicketResolved();
+      }
+    } catch (err) {
+      console.error("Error al mover ticket:", err);
+      fetchTicketsData();
+      alert("Error al mover ticket");
+    } finally {
+      setActiveDropdown(null);
+    }
+  };
+
   const toggleFilter = () => {
     const priorities = [null, 'CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
     const currentIndex = priorities.indexOf(filterPriority);
@@ -275,19 +296,19 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   }
 
   return (
-    <div className="p-8 h-full flex flex-col space-y-6 animate-in fade-in duration-500 overflow-hidden">
-      <div className="flex items-center justify-between shrink-0">
+    <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-6 animate-in fade-in duration-500 overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-center justify-between shrink-0 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Tickets de Soporte</h1>
           <p className="text-slate-500 text-sm mt-1">Arrastra las tarjetas para cambiar su estado. ¡Gana XP al resolverlos!</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
               placeholder="Buscar tickets..." 
-              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 shadow-sm"
+              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 shadow-sm"
             />
           </div>
           <button 
@@ -303,13 +324,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex gap-6 flex-1 min-h-[400px] overflow-x-auto pb-4 shrink-0">
+      <div className="flex gap-4 md:gap-6 flex-1 min-h-[400px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
         {columnas.map(col => {
           const colTickets = activeTickets.filter(t => t.estado === col.id);
           return (
             <div 
               key={col.id} 
-              className={`flex-1 min-w-[320px] rounded-2xl flex flex-col ${col.color} border border-slate-200/60 shadow-inner`}
+              className={`flex-1 min-w-[85vw] sm:min-w-[320px] snap-center rounded-2xl flex flex-col ${col.color} border border-slate-200/60 shadow-inner`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.id)}
             >
@@ -348,7 +369,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                               e.stopPropagation();
                               setActiveDropdown(activeDropdown === ticket.id ? null : ticket.id);
                             }}
-                            className="p-1.5 bg-slate-50 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-md opacity-0 group-hover:opacity-100 transition-all shadow-sm active:scale-95"
+                            className="p-1.5 bg-slate-50 hover:bg-slate-200 border border-slate-200 text-slate-600 rounded-md opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all shadow-sm active:scale-95"
                           >
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
@@ -356,6 +377,31 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                           {/* Dropdown flotante (Menú de Acciones) */}
                           {activeDropdown === ticket.id && (
                             <div className="absolute right-0 top-8 w-44 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/5">
+                              {ticket.estado === 'ABIERTO' && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'EN_PROGRESO', ticket.estado); }}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
+                                >
+                                  <Play className="w-4 h-4 text-slate-400 group-hover:text-blue-500" /> Iniciar Progreso
+                                </button>
+                              )}
+                              {ticket.estado === 'EN_PROGRESO' && (
+                                <>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'RESUELTO', ticket.estado); }}
+                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-emerald-600 flex items-center gap-2.5 transition-colors"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" /> Marcar Resuelto
+                                  </button>
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'ABIERTO', ticket.estado); }}
+                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
+                                  >
+                                    <RotateCcw className="w-4 h-4 text-slate-400 group-hover:text-slate-600" /> Devolver a Abierto
+                                  </button>
+                                </>
+                              )}
+                              {(ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') && <div className="h-px w-full bg-slate-100 my-1"></div>}
                               {ticket.estado === 'RESUELTO' && (
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleCerrarTicket(ticket.id); }}
@@ -435,9 +481,9 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             <Clock className="w-4 h-4 text-slate-500" /> Historial de Tickets Cerrados
           </h3>
         </div>
-        <div className="overflow-y-auto p-0">
+        <div className="overflow-auto p-0 w-full">
           {historyTickets.length > 0 ? (
-            <table className="w-full text-left text-sm">
+            <div className="min-w-[600px]"><table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-2.5 font-medium text-xs">Ticket</th>
@@ -486,7 +532,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           ) : (
             <div className="p-8 text-center text-slate-500 text-sm">No hay tickets en el historial.</div>
           )}
@@ -496,7 +542,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       {/* Modal Crear Ticket */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-[92vw] sm:w-full max-w-md p-5 sm:p-6 relative animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <button 
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
@@ -522,7 +568,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Sede</label>
                   <CustomSelect 
@@ -566,17 +612,17 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 </div>
               )}
 
-              <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end gap-3">
+              <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-center"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors"
+                  className="w-full sm:w-auto px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition-colors text-center"
                 >
                   Crear Ticket
                 </button>

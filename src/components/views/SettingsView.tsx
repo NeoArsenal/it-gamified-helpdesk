@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2 } from 'lucide-react';
-import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin } from '@/services/api/api-client';
+import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X } from 'lucide-react';
+import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getCatalogos, actualizarCatalogo } from '@/services/api/api-client';
 import { QRCodeSVG } from 'qrcode.react';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { toast } from 'sonner';
 
 const TITULOS_RPG = [
   { id: 'Técnico Novato', minLevel: 1, icon: '🔧', desc: 'Recién llegado a la mesa de ayuda.' },
@@ -12,6 +14,8 @@ const TITULOS_RPG = [
 ];
 
 export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: string, onPreferencesSaved?: () => void }) {
+  const { user } = useAuth();
+  const isAdmin = user?.rol === 'ADMIN';
   const [activeTab, setActiveTab] = useState<'perfil' | 'gamificacion' | 'sistema' | 'catalogos' | 'ubicaciones' | 'portal'>('perfil');
   const [isSaving, setIsSaving] = useState(false);
   const [theme, setTheme] = useState<'light'|'dark'>('light');
@@ -33,11 +37,22 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [portalPin, setPortalPinState] = useState('');
   const [portalUrl, setPortalUrl] = useState('');
 
+  // Catálogos State
+  const [departamentos, setDepartamentos] = useState<string[]>([]);
+  const [categoriasActivos, setCategoriasActivos] = useState<string[]>([]);
+  const [nuevoDeptoNombre, setNuevoDeptoNombre] = useState('');
+  const [nuevaCatNombre, setNuevaCatNombre] = useState('');
+  const [isAddingDepto, setIsAddingDepto] = useState(false);
+  const [isAddingCat, setIsAddingCat] = useState(false);
+
+
 
   // Cargar estado inicial del tema y preferencias
   useEffect(() => {
-    if (document.documentElement.classList.contains('dark-mode')) {
+    const savedTheme = localStorage.getItem('app_theme');
+    if (savedTheme === 'dark' || document.documentElement.classList.contains('dark-mode')) {
       setTheme('dark');
+      document.documentElement.classList.add('dark-mode');
     }
     
     // Si tenemos un userId (aunque sea el mock 'JD' o un UUID), intentar cargar sus preferencias
@@ -49,6 +64,17 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
         if (user.preferencias) {
           if (user.preferencias.musicaNivel !== undefined) setMusicaNivel(user.preferencias.musicaNivel);
           if (user.preferencias.alertasCriticas !== undefined) setAlertasCriticas(user.preferencias.alertasCriticas);
+          if (user.preferencias.temaOscuro !== undefined) {
+            const isDark = Boolean(user.preferencias.temaOscuro);
+            setTheme(isDark ? 'dark' : 'light');
+            if (isDark) {
+              document.documentElement.classList.add('dark-mode');
+              localStorage.setItem('app_theme', 'dark');
+            } else {
+              document.documentElement.classList.remove('dark-mode');
+              localStorage.setItem('app_theme', 'light');
+            }
+          }
         }
       }).catch(err => console.log('Usuario no encontrado o no tiene preferencias aún.'));
     }
@@ -56,12 +82,89 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     // Cargar ubicaciones
     fetchUbicaciones();
     
+    // Cargar catálogos
+    fetchCatalogos();
+
     // Cargar config del portal
     getPortalPin().then(data => setPortalPinState(data.pin)).catch(console.error);
     if (typeof window !== 'undefined') {
       setPortalUrl(`${window.location.origin}/portal`);
     }
   }, [userId]);
+
+  const fetchCatalogos = async () => {
+    try {
+      const data = await getCatalogos();
+      if (data.departamentos) setDepartamentos(data.departamentos);
+      if (data.categoriasActivos) setCategoriasActivos(data.categoriasActivos);
+    } catch (e) {
+      console.error('Error al cargar catálogos', e);
+    }
+  };
+
+  const handleAddDepartamento = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = nuevoDeptoNombre.trim();
+    if (!clean) return;
+    if (departamentos.some(d => d.toLowerCase() === clean.toLowerCase())) {
+      alert('Este departamento ya existe en la lista.');
+      return;
+    }
+    const updated = [...departamentos, clean];
+    setDepartamentos(updated);
+    setNuevoDeptoNombre('');
+    setIsAddingDepto(false);
+    try {
+      await actualizarCatalogo('departamentos', updated);
+    } catch (e) {
+      console.error(e);
+      fetchCatalogos();
+    }
+  };
+
+  const handleEliminarDepartamento = async (depto: string) => {
+    if (!confirm(`¿Eliminar el departamento "${depto}"?`)) return;
+    const updated = departamentos.filter(d => d !== depto);
+    setDepartamentos(updated);
+    try {
+      await actualizarCatalogo('departamentos', updated);
+    } catch (e) {
+      console.error(e);
+      fetchCatalogos();
+    }
+  };
+
+  const handleAddCategoria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = nuevaCatNombre.trim();
+    if (!clean) return;
+    if (categoriasActivos.some(c => c.toLowerCase() === clean.toLowerCase())) {
+      alert('Esta categoría ya existe en la lista.');
+      return;
+    }
+    const updated = [...categoriasActivos, clean];
+    setCategoriasActivos(updated);
+    setNuevaCatNombre('');
+    setIsAddingCat(false);
+    try {
+      await actualizarCatalogo('categoriasActivos', updated);
+    } catch (e) {
+      console.error(e);
+      fetchCatalogos();
+    }
+  };
+
+  const handleEliminarCategoria = async (cat: string) => {
+    if (!confirm(`¿Eliminar la categoría "${cat}"?`)) return;
+    const updated = categoriasActivos.filter(c => c !== cat);
+    setCategoriasActivos(updated);
+    try {
+      await actualizarCatalogo('categoriasActivos', updated);
+    } catch (e) {
+      console.error(e);
+      fetchCatalogos();
+    }
+  };
 
   const fetchUbicaciones = async () => {
     try {
@@ -98,8 +201,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     setTheme(newTheme);
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark-mode');
+      localStorage.setItem('app_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark-mode');
+      localStorage.setItem('app_theme', 'light');
     }
   };
 
@@ -107,8 +212,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     setIsSaving(true);
     try {
       await setPortalPin(portalPin);
+      toast.success('PIN del portal actualizado');
     } catch (e) {
       console.error(e);
+      toast.error('Error al guardar el PIN del portal');
     } finally {
       setIsSaving(false);
     }
@@ -129,23 +236,28 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             temaOscuro: theme === 'dark'
           }
         });
+        localStorage.setItem('app_theme', theme);
+        toast.success('¡Preferencias y tema guardados correctamente!');
+        if (onPreferencesSaved) onPreferencesSaved();
       } catch (error) {
         console.error('Error al guardar preferencias', error);
+        toast.error('Ocurrió un error al guardar las preferencias en el servidor.');
+      } finally {
+        setIsSaving(false);
       }
-    }
-
-    setTimeout(() => {
+    } else {
+      localStorage.setItem('app_theme', theme);
+      toast.success('Preferencias guardadas localmente.');
       setIsSaving(false);
       if (onPreferencesSaved) onPreferencesSaved();
-      // Simulate toast notification or success
-    }, 600);
+    }
   };
 
   return (
-    <div className="p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-500">
+    <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-500">
       
       {/* Cabecera */}
-      <div className="flex justify-between items-start mb-8 shrink-0">
+      <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 md:mb-8 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Settings className="w-6 h-6 text-slate-600" /> Configuración del Sistema
@@ -155,54 +267,57 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
         <button 
           onClick={savePreferences}
           disabled={isSaving}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
+          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 w-full md:w-auto rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95"
         >
           <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} /> 
           {isSaving ? 'Guardando...' : 'Guardar Cambios'}
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-8">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8">
         
         {/* Sidebar de Navegación */}
-        <div className="w-full md:w-64 shrink-0 space-y-2">
+        <div className="w-full md:w-64 shrink-0 flex flex-row md:flex-col gap-2 overflow-x-auto pb-2 snap-x hide-scrollbar">
           <button 
             onClick={() => setActiveTab('perfil')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'perfil' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+            className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'perfil' ? 'bg-indigo-50 text-indigo-700 shadow-sm border border-indigo-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
           >
             <User className="w-5 h-5" /> Perfil y Cuenta
           </button>
           
-          <button 
-            onClick={() => setActiveTab('gamificacion')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'gamificacion' ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
-          >
-            <Gamepad2 className="w-5 h-5" /> Reglas de Gamificación
-          </button>
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('gamificacion')}
+              className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'gamificacion' ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+            >
+              <Gamepad2 className="w-5 h-5" /> Reglas de Gamificación
+            </button>
+          )}
 
           <button 
             onClick={() => setActiveTab('sistema')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'sistema' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+            className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'sistema' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
           >
             <Monitor className="w-5 h-5" /> Sistema y Apariencia
           </button>
           
           <button 
             onClick={() => setActiveTab('catalogos')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'catalogos' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
+            className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${activeTab === 'catalogos' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'}`}
           >
             <Layers className="w-5 h-5" /> Catálogos y Listas
           </button>
           
           <button 
             onClick={() => setActiveTab('ubicaciones')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'ubicaciones' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'ubicaciones' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             <MapPin className="w-5 h-5" /> Ubicaciones
           </button>
+
           <button 
             onClick={() => setActiveTab('portal')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'portal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'portal' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             <Monitor className="w-5 h-5" /> Portal Auto-Servicio
           </button>
@@ -441,50 +556,153 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
           {/* TAB: CATÁLOGOS */}
           {activeTab === 'catalogos' && (
-            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-                <Layers className="w-5 h-5 text-emerald-600" /> Catálogos del Helpdesk
-              </h2>
+            <div className="p-4 md:p-8 animate-in slide-in-from-right-4 duration-300">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-100 pb-4 mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-emerald-600" /> Catálogos del Helpdesk
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">Configuración centralizada de departamentos y tipos de activos del sistema.</p>
+                </div>
+              </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                 {/* Departamentos */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    Gestión de Departamentos
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-4">Áreas de la clínica donde pueden generarse incidencias.</p>
-                  
-                  <div className="space-y-2 mb-4">
-                    {['Urgencias', 'Quirófano', 'Recursos Humanos', 'Administración', 'Farmacia'].map(dept => (
-                      <div key={dept} className="flex items-center justify-between bg-white px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                        <span className="font-medium text-slate-700">{dept}</span>
-                        <button className="text-red-500 hover:text-red-700 text-xs font-semibold">Eliminar</button>
-                      </div>
-                    ))}
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        Gestión de Departamentos
+                      </h4>
+                      <span className="text-[11px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full">
+                        {departamentos.length} registrados
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">Áreas organizacionales donde pueden generarse incidencias y tickets.</p>
+                    
+                    <div className="space-y-2 mb-4 max-h-72 overflow-y-auto pr-1">
+                      {departamentos.map(dept => (
+                        <div key={dept} className="flex items-center justify-between bg-white px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm shadow-xs group hover:border-emerald-300 transition-all">
+                          <span className="font-semibold text-slate-700">{dept}</span>
+                          <button 
+                            onClick={() => handleEliminarDepartamento(dept)}
+                            className="text-slate-400 hover:text-red-600 p-1 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar departamento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {departamentos.length === 0 && (
+                        <div className="text-center py-6 text-xs text-slate-400">
+                          No hay departamentos registrados.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button className="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-sm font-bold rounded-lg transition-colors border border-emerald-200">
-                    + Añadir Departamento
-                  </button>
+
+                  {isAddingDepto ? (
+                    <form onSubmit={handleAddDepartamento} className="flex gap-2 pt-2 border-t border-slate-200">
+                      <input 
+                        type="text"
+                        autoFocus
+                        placeholder="Nombre del departamento..."
+                        value={nuevoDeptoNombre}
+                        onChange={e => setNuevoDeptoNombre(e.target.value)}
+                        className="flex-1 px-3 py-2 text-sm bg-white border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-800"
+                      />
+                      <button 
+                        type="submit"
+                        disabled={!nuevoDeptoNombre.trim()}
+                        className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-xs"
+                      >
+                        Guardar
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setIsAddingDepto(false); setNuevoDeptoNombre(''); }}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </form>
+                  ) : (
+                    <button 
+                      onClick={() => setIsAddingDepto(true)}
+                      className="w-full py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl transition-all border border-emerald-200 flex items-center justify-center gap-2 shadow-xs"
+                    >
+                      <Plus className="w-4 h-4" /> Añadir Departamento
+                    </button>
+                  )}
                 </div>
 
                 {/* Tipos de Inventario */}
-                <div className="bg-slate-50 p-5 rounded-xl border border-slate-200">
-                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
-                    <Tags className="w-4 h-4 text-slate-500" /> Categorías de Activos (Inventario)
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-4">Clasificación de equipos médicos y de TI.</p>
-                  
-                  <div className="space-y-2 mb-4">
-                    {['Desktop / Laptop', 'Impresora', 'Bomba de Infusión', 'Monitor Vital', 'Router / Switch'].map(cat => (
-                      <div key={cat} className="flex items-center justify-between bg-white px-3 py-2 border border-slate-200 rounded-lg text-sm">
-                        <span className="font-medium text-slate-700">{cat}</span>
-                        <button className="text-red-500 hover:text-red-700 text-xs font-semibold">Eliminar</button>
-                      </div>
-                    ))}
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                        <Tags className="w-4 h-4 text-slate-500" /> Categorías de Activos
+                      </h4>
+                      <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+                        {categoriasActivos.length} registradas
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-4">Clasificación de equipos tecnológicos y médicos para el módulo de Inventario.</p>
+                    
+                    <div className="space-y-2 mb-4 max-h-72 overflow-y-auto pr-1">
+                      {categoriasActivos.map(cat => (
+                        <div key={cat} className="flex items-center justify-between bg-white px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm shadow-xs group hover:border-blue-300 transition-all">
+                          <span className="font-semibold text-slate-700">{cat}</span>
+                          <button 
+                            onClick={() => handleEliminarCategoria(cat)}
+                            className="text-slate-400 hover:text-red-600 p-1 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Eliminar categoría"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      {categoriasActivos.length === 0 && (
+                        <div className="text-center py-6 text-xs text-slate-400">
+                          No hay categorías registradas.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button className="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-sm font-bold rounded-lg transition-colors border border-emerald-200">
-                    + Añadir Categoría
-                  </button>
+
+                  {isAddingCat ? (
+                    <form onSubmit={handleAddCategoria} className="flex gap-2 pt-2 border-t border-slate-200">
+                      <input 
+                        type="text"
+                        autoFocus
+                        placeholder="Nombre de la categoría..."
+                        value={nuevaCatNombre}
+                        onChange={e => setNuevaCatNombre(e.target.value)}
+                        className="flex-1 px-3 py-2 text-sm bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
+                      />
+                      <button 
+                        type="submit"
+                        disabled={!nuevaCatNombre.trim()}
+                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white px-3.5 py-2 rounded-lg text-xs font-bold transition-all shadow-xs"
+                      >
+                        Guardar
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setIsAddingCat(false); setNuevaCatNombre(''); }}
+                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </form>
+                  ) : (
+                    <button 
+                      onClick={() => setIsAddingCat(true)}
+                      className="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-bold rounded-xl transition-all border border-blue-200 flex items-center justify-center gap-2 shadow-xs"
+                    >
+                      <Plus className="w-4 h-4" /> Añadir Categoría
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -580,35 +798,36 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
           {/* TAB PORTAL */}
           {activeTab === 'portal' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="p-4 md:p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
                 <h3 className="text-lg font-black text-slate-800 mb-1">Portal Kiosco para Usuarios</h3>
                 <p className="text-sm text-slate-500 mb-4">Configura el acceso al portal de auto-servicio sin registro.</p>
               </div>
               
-              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                <div className="flex flex-col md:flex-row gap-8 items-center">
-                  
-                  <div className="flex-1 space-y-4">
-                    <h4 className="font-bold text-slate-700">Enlace del Portal</h4>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-5">
+                  <div>
+                    <h4 className="font-bold text-slate-700 mb-2">Enlace del Portal</h4>
                     <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden">
                       <input 
                         type="text" 
                         readOnly 
                         value={portalUrl} 
-                        className="w-full px-3 py-2 text-sm bg-slate-50 text-slate-600 outline-none"
+                        className="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 text-slate-600 outline-none"
                       />
                       <button 
                         onClick={() => navigator.clipboard.writeText(portalUrl)}
-                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 font-bold text-sm transition-colors border-l border-slate-200"
+                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 font-bold text-sm transition-colors border-l border-slate-200 shrink-0"
                       >
                         Copiar
                       </button>
                     </div>
+                  </div>
 
-                    <h4 className="font-bold text-slate-700 mt-6">PIN de Acceso</h4>
-                    <p className="text-xs text-slate-500 mb-2">Este PIN será requerido para entrar al portal desde una computadora o al escanear el QR.</p>
-                    <div className="flex items-center gap-3">
+                  <div>
+                    <h4 className="font-bold text-slate-700 mb-1">PIN de Acceso</h4>
+                    <p className="text-xs text-slate-500 mb-3">Este PIN será requerido para entrar al portal desde una computadora o al escanear el QR.</p>
+                    <div className="flex flex-wrap items-center gap-3">
                       <input 
                         type="text"
                         maxLength={4}
@@ -626,9 +845,9 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                       </button>
                     </div>
                   </div>
+                </div>
 
-                  {/* QR Code */}
-                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
+                <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
                     <h4 className="font-bold text-slate-700 mb-4 text-center">Código QR</h4>
                     {portalUrl && (
                       <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100">
@@ -644,11 +863,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                       rel="noreferrer"
                       className="mt-4 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
                     >
-                      Probar Portal →
+                      Probar Portal &rarr;
                     </a>
                   </div>
                 </div>
-              </div>
             </div>
           )}
 

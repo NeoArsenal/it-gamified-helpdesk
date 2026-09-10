@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Package, Wrench, Trash2, Recycle, Plus, QrCode, Printer, X } from 'lucide-react';
-import { getActivos, crearActivo, updateActivo, eliminarActivo } from '@/services/api/api-client';
+import { getActivos, crearActivo, updateActivo, eliminarActivo, getCatalogos } from '@/services/api/api-client';
 import { cn } from '@/lib/utils';
 import { QRCodeSVG } from 'qrcode.react';
 
@@ -13,6 +13,7 @@ export function InventoryView({ userId, onActivoRescatado }: { userId?: string, 
 
   // Formulario Modal
   const [nuevoCodigo, setNuevoCodigo] = useState('');
+  const [tiposDisponibles, setTiposDisponibles] = useState<string[]>(['PC', 'Laptop', 'Impresora', 'Monitor', 'Otro']);
   const [nuevoTipo, setNuevoTipo] = useState('PC');
   const [nuevoEstado, setNuevoEstado] = useState('REPARACION');
   const [nuevasObs, setNuevasObs] = useState('');
@@ -30,7 +31,14 @@ export function InventoryView({ userId, onActivoRescatado }: { userId?: string, 
 
   useEffect(() => {
     fetchActivos();
+    getCatalogos().then(data => {
+      if (data.categoriasActivos && data.categoriasActivos.length > 0) {
+        setTiposDisponibles(data.categoriasActivos);
+        setNuevoTipo(data.categoriasActivos[0]);
+      }
+    }).catch(console.error);
   }, []);
+
 
   const handleCrearActivo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,11 +204,10 @@ export function InventoryView({ userId, onActivoRescatado }: { userId?: string, 
                     value={nuevoTipo} onChange={e => setNuevoTipo(e.target.value)} 
                     className="w-full px-4 py-2.5 bg-slate-50 text-slate-900 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium appearance-none"
                   >
-                    <option value="PC">Computadora (PC)</option>
-                    <option value="Laptop">Laptop</option>
-                    <option value="Impresora">Impresora</option>
-                    <option value="Monitor">Monitor</option>
-                    <option value="Otro">Otro</option>
+                    {tiposDisponibles.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                    {!tiposDisponibles.includes('Otro') && <option value="Otro">Otro</option>}
                   </select>
                 </div>
                 <div>

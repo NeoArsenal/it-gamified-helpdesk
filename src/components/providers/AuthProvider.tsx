@@ -28,6 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize theme from localStorage
+    const savedTheme = localStorage.getItem('app_theme');
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    } else if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark-mode');
+    }
+
     // Check localStorage on load
     const storedToken = localStorage.getItem('auth_token');
     const storedUser = localStorage.getItem('auth_user');

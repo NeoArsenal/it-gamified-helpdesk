@@ -454,3 +454,21 @@ export const setPortalPin = async (pin: string) => {
   return res.json();
 };
 
+// --- Catálogos y Listas ---
+export const getCatalogos = async (): Promise<{ departamentos: string[]; categoriasActivos: string[] }> => {
+  const res = await fetch(`${BASE_URL}/configuracion/catalogos`);
+  if (!res.ok) throw new Error('Error al obtener catálogos');
+  return res.json();
+};
+
+export const actualizarCatalogo = async (tipo: 'departamentos' | 'categoriasActivos', items: string[]): Promise<string[]> => {
+  const res = await fetch(`${BASE_URL}/configuracion/catalogos/${tipo}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) throw new Error('Error al actualizar catálogo');
+  return res.json();
+};
+
+
