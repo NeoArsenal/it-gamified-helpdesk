@@ -102,6 +102,64 @@ html.dark-mode {
   border-color: #1e293b !important;
 }
 
+/* --- KANBAN BOARD DARK MODE ENHANCEMENTS --- */
+.dark-mode .kanban-col-abierto {
+  background: rgba(15, 23, 42, 0.65) !important;
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+.dark-mode .kanban-col-progreso {
+  background: rgba(12, 74, 110, 0.18) !important;
+  border-color: rgba(14, 116, 144, 0.45) !important;
+}
+.dark-mode .kanban-col-resuelto {
+  background: rgba(6, 78, 59, 0.18) !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+}
+.dark-mode .kanban-col-header {
+  background: rgba(15, 23, 42, 0.9) !important;
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+.dark-mode .kanban-empty-card {
+  background: rgba(15, 23, 42, 0.45) !important;
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}
+.dark-mode .kanban-empty-card:hover {
+  background: rgba(30, 41, 59, 0.5) !important;
+}
+.dark-mode .kanban-empty-icon-box {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(71, 85, 105, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+}
+.dark-mode .kanban-empty-pill {
+  background: rgba(30, 41, 59, 0.9) !important;
+  color: #94a3b8 !important;
+  border-color: rgba(71, 85, 105, 0.7) !important;
+}
+.dark-mode .kanban-badge-abierto {
+  background-color: rgba(120, 53, 15, 0.6) !important;
+  color: #fde68a !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+.dark-mode .kanban-badge-progreso {
+  background-color: rgba(12, 74, 110, 0.6) !important;
+  color: #bae6fd !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+}
+.dark-mode .kanban-badge-resuelto {
+  background-color: rgba(6, 78, 59, 0.6) !important;
+  color: #a7f3d0 !important;
+  border-color: rgba(52, 211, 153, 0.5) !important;
+}
+
+/* Inputs, Textareas, Selects in Dark Mode */
+.dark-mode input, .dark-mode textarea, .dark-mode select {
+  color: #f8fafc !important;
+}
+.dark-mode input::placeholder, .dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
 /* --- Estilos para Impresión de Etiquetas QR --- */
 @media print {
   body * {

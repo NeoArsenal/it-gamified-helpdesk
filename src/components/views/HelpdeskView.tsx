@@ -384,11 +384,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       id: 'ABIERTO', 
       title: 'Abiertos', 
       subtitle: 'En espera de atención',
-      bgClass: 'bg-slate-50/60',
+      bgClass: 'bg-slate-50/60 kanban-col-abierto',
       borderClass: 'border-slate-200',
       accentBar: 'bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500',
-      badgeBg: 'bg-amber-100 text-amber-800 border-amber-200/80',
-      emptyIcon: <Inbox className="w-8 h-8 text-amber-500/80" />,
+      badgeBg: 'bg-amber-100 text-amber-700 border-amber-200/80 kanban-badge-abierto',
+      emptyIcon: <Inbox className="w-8 h-8 text-amber-500/90" />,
       emptyTitle: '¡Todo al día!',
       emptyDesc: 'No hay tickets pendientes esperando atención en este momento.'
     },
@@ -396,11 +396,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       id: 'EN_PROGRESO', 
       title: 'En Progreso', 
       subtitle: 'En resolución activa',
-      bgClass: 'bg-blue-50/40',
+      bgClass: 'bg-blue-50/40 kanban-col-progreso',
       borderClass: 'border-blue-200/70',
       accentBar: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600',
-      badgeBg: 'bg-blue-100 text-blue-800 border-blue-200/80',
-      emptyIcon: <Wrench className="w-8 h-8 text-blue-500/80" />,
+      badgeBg: 'bg-blue-100 text-blue-700 border-blue-200/80 kanban-badge-progreso',
+      emptyIcon: <Wrench className="w-8 h-8 text-blue-500/90" />,
       emptyTitle: 'Listo para resolver',
       emptyDesc: 'Arrastra un ticket aquí para comenzar a trabajar en su solución.'
     },
@@ -408,11 +408,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       id: 'RESUELTO', 
       title: 'Resueltos', 
       subtitle: 'Completados recientemente',
-      bgClass: 'bg-emerald-50/40',
+      bgClass: 'bg-emerald-50/40 kanban-col-resuelto',
       borderClass: 'border-emerald-200/70',
       accentBar: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-500',
-      badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200/80',
-      emptyIcon: <CheckCircle2 className="w-8 h-8 text-emerald-500/80" />,
+      badgeBg: 'bg-emerald-100 text-emerald-700 border-emerald-200/80 kanban-badge-resuelto',
+      emptyIcon: <CheckCircle2 className="w-8 h-8 text-emerald-500/90" />,
       emptyTitle: 'Tickets resueltos',
       emptyDesc: 'Los tickets solucionados por el equipo aparecerán aquí.'
     }
@@ -492,7 +492,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               <div className={`h-1.5 w-full ${col.accentBar} shrink-0`}></div>
 
               {/* Encabezado de Columna */}
-              <div className="p-3.5 px-4 flex items-center justify-between border-b border-slate-200/70 bg-white/80 backdrop-blur-xs shrink-0">
+              <div className="p-3.5 px-4 flex items-center justify-between border-b border-slate-200/70 bg-white/80 kanban-col-header backdrop-blur-xs shrink-0">
                 <div>
                   <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.title}</h3>
                   <p className="text-[10px] text-slate-400 font-medium hidden sm:block leading-none mt-0.5">{col.subtitle}</p>
@@ -623,13 +623,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   )
                 })}
                 {colTickets.length === 0 && (
-                  <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-300/60 rounded-2xl bg-white/40 hover:bg-white/70 transition-all duration-200 group/empty">
-                    <div className="w-13 h-13 rounded-2xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center mb-2.5 group-hover/empty:scale-105 group-hover/empty:shadow-xs transition-all duration-300">
+                  <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-300/60 rounded-2xl bg-white/40 kanban-empty-card hover:bg-white/70 transition-all duration-200 group/empty">
+                    <div className="w-13 h-13 rounded-2xl bg-white kanban-empty-icon-box shadow-2xs border border-slate-200/80 flex items-center justify-center mb-2.5 group-hover/empty:scale-105 group-hover/empty:shadow-xs transition-all duration-300">
                       {col.emptyIcon}
                     </div>
                     <h4 className="text-sm font-bold text-slate-700 mb-1">{col.emptyTitle}</h4>
                     <p className="text-xs text-slate-400 max-w-[210px] leading-relaxed mb-3">{col.emptyDesc}</p>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-white/90 px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs">
+                    <span className="text-[11px] font-semibold text-slate-500 bg-white/90 kanban-empty-pill px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs">
                       Arrastra tickets aquí
                     </span>
                   </div>
