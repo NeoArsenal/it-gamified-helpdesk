@@ -2,7 +2,7 @@ import {
   Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, 
   User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, 
   Trash2, Archive, ChevronDown, MapPin, Play, RotateCcw, ChevronRight, 
-  FileText, Check, Edit3, Phone, Inbox, Trophy, Flame, Sparkles
+  FileText, Check, Edit3, Phone, Inbox, Wrench
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { 
@@ -378,13 +378,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     activeTickets = activeTickets.filter(t => t.prioridad === filterPriority);
   }
   const historyTickets = tickets.filter(t => t.estado === 'CERRADO').filter(filterTicket);
-  // Métricas rápidas del tablero
-  const totalAbiertos = activeTickets.filter(t => t.estado === 'ABIERTO').length;
-  const totalEnProgreso = activeTickets.filter(t => t.estado === 'EN_PROGRESO').length;
-  const totalResueltos = activeTickets.filter(t => t.estado === 'RESUELTO').length;
-  const totalXpDisponible = activeTickets
-    .filter(t => t.estado !== 'RESUELTO')
-    .reduce((acc, t) => acc + (Number(t.xpRecompensa) || 0), 0);
 
   const columnas = [
     { 
@@ -395,9 +388,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       borderClass: 'border-slate-200',
       accentBar: 'bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500',
       badgeBg: 'bg-amber-100 text-amber-800 border-amber-200/80',
-      iconContainer: 'bg-amber-50 text-amber-600 border-amber-200/80',
-      icon: <Inbox className="w-4 h-4" />,
-      emptyIcon: <Inbox className="w-8 h-8 text-amber-400/80" />,
+      emptyIcon: <Inbox className="w-8 h-8 text-amber-500/80" />,
       emptyTitle: '¡Todo al día!',
       emptyDesc: 'No hay tickets pendientes esperando atención en este momento.'
     },
@@ -409,9 +400,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       borderClass: 'border-blue-200/70',
       accentBar: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600',
       badgeBg: 'bg-blue-100 text-blue-800 border-blue-200/80',
-      iconContainer: 'bg-blue-50 text-blue-600 border-blue-200/80',
-      icon: <Flame className="w-4 h-4" />,
-      emptyIcon: <Flame className="w-8 h-8 text-blue-400/80" />,
+      emptyIcon: <Wrench className="w-8 h-8 text-blue-500/80" />,
       emptyTitle: 'Listo para resolver',
       emptyDesc: 'Arrastra un ticket aquí para comenzar a trabajar en su solución.'
     },
@@ -423,11 +412,9 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       borderClass: 'border-emerald-200/70',
       accentBar: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-500',
       badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200/80',
-      iconContainer: 'bg-emerald-50 text-emerald-600 border-emerald-200/80',
-      icon: <Trophy className="w-4 h-4" />,
-      emptyIcon: <Trophy className="w-8 h-8 text-emerald-400/80" />,
-      emptyTitle: 'Zona de victorias',
-      emptyDesc: 'Al marcar tickets como resueltos aparecerán aquí para sumar tu XP.'
+      emptyIcon: <CheckCircle2 className="w-8 h-8 text-emerald-500/80" />,
+      emptyTitle: 'Tickets resueltos',
+      emptyDesc: 'Los tickets solucionados por el equipo aparecerán aquí.'
     }
   ];
 
@@ -490,49 +477,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         </div>
       </div>
 
-      {/* Mini Métricas Rápidas */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3 shrink-0">
-        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0">
-            <Inbox className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Por Atender</p>
-            <p className="text-lg font-black text-slate-800 leading-tight">{totalAbiertos}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center shrink-0">
-            <Flame className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">En Curso</p>
-            <p className="text-lg font-black text-slate-800 leading-tight">{totalEnProgreso}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Resueltos</p>
-            <p className="text-lg font-black text-slate-800 leading-tight">{totalResueltos}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-purple-200 transition-colors">
-          <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/60 flex items-center justify-center shrink-0">
-            <Zap className="w-4 h-4 fill-purple-500" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">XP en Juego</p>
-            <p className="text-lg font-black text-purple-600 leading-tight">+{totalXpDisponible} XP</p>
-          </div>
-        </div>
-      </div>
-
       {/* Kanban Board */}
       <div className="flex gap-4 md:gap-6 flex-1 min-h-[420px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
         {columnas.map(col => {
@@ -549,14 +493,9 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
               {/* Encabezado de Columna */}
               <div className="p-3.5 px-4 flex items-center justify-between border-b border-slate-200/70 bg-white/80 backdrop-blur-xs shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shadow-2xs ${col.iconContainer}`}>
-                    {col.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.title}</h3>
-                    <p className="text-[10px] text-slate-400 font-medium hidden sm:block leading-none mt-0.5">{col.subtitle}</p>
-                  </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.title}</h3>
+                  <p className="text-[10px] text-slate-400 font-medium hidden sm:block leading-none mt-0.5">{col.subtitle}</p>
                 </div>
                 <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${col.badgeBg}`}>
                   {colTickets.length}
