@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { ShieldAlert, TicketIcon, X, CheckCircle2, ChevronDown, Monitor, Stethoscope, Briefcase } from 'lucide-react';
+import { ShieldAlert, TicketIcon, X, CheckCircle2, ChevronDown, Monitor, Stethoscope, Briefcase, LogOut } from 'lucide-react';
 import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin } from '@/services/api/api-client';
 
 // Componente Select personalizado simplificado para el portal
@@ -12,9 +12,9 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
         type="button" 
         onClick={() => setIsOpen(!isOpen)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
-        className="w-full flex items-center justify-between px-4 py-3 bg-white text-slate-800 border-2 border-slate-200 rounded-xl text-base hover:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold shadow-sm"
+        className="w-full flex items-center justify-between px-4 py-3 bg-white text-slate-900 border-2 border-slate-300 rounded-xl text-base hover:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold shadow-sm"
       >
-        <span className={value ? 'text-slate-900' : 'text-slate-400'}>{value || placeholder}</span>
+        <span className={value ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}>{value || placeholder}</span>
         <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`} />
       </button>
       
@@ -251,18 +251,23 @@ export default function PortalPage() {
           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
           <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-indigo-400/20 blur-xl"></div>
           
-          <div className="relative z-10 flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/10">
-              <ShieldAlert className="w-4 h-4" /> Soporte TI
+          <div className="relative z-10 flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 bg-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20 shadow-sm">
+              <ShieldAlert className="w-4 h-4 text-indigo-200" /> Soporte TI
             </div>
             <button 
               onClick={() => { localStorage.removeItem('portal_pin_verified'); setIsAuthenticated(false); }}
-              className="text-white/70 hover:text-white text-xs font-medium underline"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-indigo-700 hover:bg-indigo-50 active:scale-95 text-xs font-black shadow-md border border-white/40 transition-all cursor-pointer"
+              title="Cerrar sesión del portal"
             >
-              Salir
+              <LogOut className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Salir</span>
             </button>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black relative z-10">¿En qué te podemos ayudar hoy?</h1>
+          <h1 className="text-2xl md:text-3xl font-black relative z-10 leading-tight">¿En qué te podemos ayudar hoy?</h1>
+          <p className="text-indigo-100/90 text-xs md:text-sm mt-1 font-medium relative z-10">
+            Completa los 3 pasos a continuación para enviar tu reporte rápidamente
+          </p>
         </div>
 
         {/* Formulario */}
@@ -270,32 +275,43 @@ export default function PortalPage() {
           
           {/* Ubicación */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              1. ¿Dónde estás?
-            </h3>
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-sm shrink-0">
+                1
+              </span>
+              <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight">
+                ¿Dónde te encuentras?
+              </h2>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Sede *</label>
-                <PortalSelect value={sede} onChange={setSede} options={sedesList} placeholder="Ej. Tower 1" />
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  Sede <span className="text-red-500 font-bold">*</span>
+                </label>
+                <PortalSelect value={sede} onChange={setSede} options={sedesList} placeholder="Seleccionar sede..." />
               </div>
               
               {sede && (
                 <div className="animate-in fade-in slide-in-from-top-2">
-                  <label className="block text-xs font-bold text-slate-600 mb-1.5">Departamento *</label>
-                  <PortalSelect value={departamento} onChange={setDepartamento} options={departamentosList} placeholder="Ej. Urgencias" />
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                    Departamento <span className="text-red-500 font-bold">*</span>
+                  </label>
+                  <PortalSelect value={departamento} onChange={setDepartamento} options={departamentosList} placeholder="Seleccionar departamento..." />
                 </div>
               )}
             </div>
 
             {departamento && areasList.length > 0 && (
-              <div className="animate-in fade-in slide-in-from-top-2 pt-2">
-                <label className="block text-xs font-bold text-slate-600 mb-2">Área Específica (Opcional)</label>
+              <div className="animate-in fade-in slide-in-from-top-2 pt-1">
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Área Específica <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                </label>
                 <div className="flex flex-wrap gap-2">
                   {areasList.map(a => (
                     <button
                       key={a} type="button" onClick={() => setArea(a)}
-                      className={`px-4 py-2 text-sm font-bold rounded-xl border-2 transition-all ${area === a ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                      className={`px-3.5 py-2 text-sm font-bold rounded-xl border-2 transition-all ${area === a ? 'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-slate-200 text-slate-700 hover:border-slate-300 bg-white'}`}
                     >
                       {a}
                     </button>
@@ -309,18 +325,25 @@ export default function PortalPage() {
 
           {/* Problema */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              2. ¿Qué sucede?
-            </h3>
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-sm shrink-0">
+                2
+              </span>
+              <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight">
+                ¿Qué sucede?
+              </h2>
+            </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1.5">Descripción breve del problema *</label>
+              <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                Descripción breve del problema <span className="text-red-500 font-bold">*</span>
+              </label>
               <textarea
                 required
                 value={titulo}
                 onChange={e => setTitulo(e.target.value)}
                 rows={3}
-                placeholder="Ej. La impresora principal no enciende, hace un ruido extraño..."
-                className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none shadow-sm placeholder:text-slate-300 font-medium"
+                placeholder="Ej. La impresora principal no enciende, o la computadora no abre el sistema médico..."
+                className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none shadow-sm placeholder:text-slate-400 font-medium leading-relaxed"
               />
             </div>
           </div>
@@ -329,28 +352,37 @@ export default function PortalPage() {
 
           {/* Contacto */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-              3. ¿A quién contactamos?
-            </h3>
+            <div className="flex items-center gap-2.5">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 text-white text-sm font-black shadow-sm shrink-0">
+                3
+              </span>
+              <h2 className="text-base md:text-lg font-black text-slate-800 tracking-tight">
+                ¿A quién contactamos?
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Nombre (Opcional)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  Nombre <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                </label>
                 <input
                   type="text"
                   value={solicitanteNombre}
                   onChange={e => setSolicitanteNombre(e.target.value)}
-                  placeholder="Ej. Dra. Gómez"
-                  className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-300 font-medium"
+                  placeholder="Ej. Dra. Gómez / Lic. Pérez"
+                  className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-400 font-medium"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 mb-1.5">Extensión / Teléfono (Opcional)</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  Extensión / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                </label>
                 <input
                   type="text"
                   value={solicitanteContacto}
                   onChange={e => setSolicitanteContacto(e.target.value)}
-                  placeholder="Ej. Ext 1045"
-                  className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-300 font-medium"
+                  placeholder="Ej. Ext 1045 / 999 123 456"
+                  className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-400 font-medium"
                 />
               </div>
             </div>
