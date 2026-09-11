@@ -155,7 +155,7 @@ export default function PortalPage() {
           <div className="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
             <ShieldAlert className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">Portal de TI</h1>
+          <h1 className="text-2xl font-bold text-center text-slate-800 mb-2">Soporte TI</h1>
           <p className="text-center text-slate-500 mb-8 text-sm">Ingresa el PIN de acceso para reportar un problema.</p>
           
           <form onSubmit={handleVerifyPin}>
@@ -375,13 +375,13 @@ export default function PortalPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Extensión / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                  Anexo / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
                 </label>
                 <input
                   type="text"
                   value={solicitanteContacto}
                   onChange={e => setSolicitanteContacto(e.target.value)}
-                  placeholder="Ej. Ext 1045 / 999 123 456"
+                  placeholder="Ej. 1045 / 999 123 456"
                   className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-400 font-medium"
                 />
               </div>
