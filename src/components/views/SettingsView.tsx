@@ -762,6 +762,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                             <th className="px-4 py-3 font-semibold text-xs">Sede</th>
                             <th className="px-4 py-3 font-semibold text-xs">Departamento</th>
                             <th className="px-4 py-3 font-semibold text-xs">Área</th>
+                            <th className="px-4 py-3 font-semibold text-xs">Registrado por</th>
                             <th className="px-4 py-3 font-semibold text-xs w-20 text-center">Acciones</th>
                           </tr>
                         </thead>
@@ -771,6 +772,18 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                               <td className="px-4 py-3 font-medium text-slate-700">{ubi.sede}</td>
                               <td className="px-4 py-3 text-slate-600">{ubi.departamento}</td>
                               <td className="px-4 py-3 text-slate-600">{ubi.area}</td>
+                              <td className="px-4 py-3 text-xs text-slate-600">
+                                {ubi.creadoPor ? (
+                                  <div className="flex items-center gap-1.5 font-medium text-slate-700">
+                                    <div className="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[9px] font-bold">
+                                      {ubi.creadoPor.avatar && ubi.creadoPor.avatar.length <= 3 ? ubi.creadoPor.avatar : (ubi.creadoPor.nombre?.substring(0, 2).toUpperCase() || 'AD')}
+                                    </div>
+                                    <span className="truncate max-w-[120px]">{ubi.creadoPor.nombre}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 italic text-[11px]">Sistema</span>
+                                )}
+                              </td>
                               <td className="px-4 py-3 text-center">
                                 <button 
                                   onClick={() => handleEliminarUbicacion(ubi.id)}
@@ -784,7 +797,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                           ))}
                           {ubicaciones.length === 0 && (
                             <tr>
-                              <td colSpan={4} className="px-4 py-8 text-center text-slate-500 text-sm">No hay ubicaciones registradas</td>
+                              <td colSpan={5} className="px-4 py-8 text-center text-slate-500 text-sm">No hay ubicaciones registradas</td>
                             </tr>
                           )}
                         </tbody>

@@ -1,6 +1,15 @@
-import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, Trash2, Archive, ChevronDown, MapPin, Play, RotateCcw } from 'lucide-react';
+import { 
+  Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, 
+  User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, 
+  Trash2, Archive, ChevronDown, MapPin, Play, RotateCcw, ChevronRight, 
+  FileText, Check, Edit3, Phone
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getTickets, actualizarEstadoTicket, crearTicket, eliminarTicket, getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, socket } from '@/services/api/api-client';
+import { 
+  getTickets, actualizarEstadoTicket, actualizarTicket, crearTicket, 
+  eliminarTicket, getUbicacionesSedes, getUbicacionesDepartamentos, 
+  getUbicacionesAreas, socket 
+} from '@/services/api/api-client';
 import { toast } from 'sonner';
 
 interface HelpdeskViewProps {
@@ -54,6 +63,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   const [loading, setLoading] = useState(true);
   const [draggedTicket, setDraggedTicket] = useState<string | null>(null);
 
+  // Estados de búsqueda reactiva y filtros
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState<string | null>(null);
+
   // Estados del modal de creación
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nuevoTitulo, setNuevoTitulo] = useState('');
@@ -67,7 +80,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
   // Estados de interfaz adicionales
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [filterPriority, setFilterPriority] = useState<string | null>(null);
+
+  // Estados para Drawer Móvil de Historial y Modal de Solución/Detalle
+  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
+  const [solucionInput, setSolucionInput] = useState('');
+  const [isEditingSolucion, setIsEditingSolucion] = useState(false);
+  const [isSavingSolucion, setIsSavingSolucion] = useState(false);
 
   const fetchTicketsData = async () => {
     try {
@@ -114,11 +133,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     const handleTicketActualizado = (updatedTicket: any) => {
       console.log('WS Event received: ticketActualizado', updatedTicket);
       setTickets((prev) => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+      setSelectedTicket((prev: any) => prev?.id === updatedTicket.id ? { ...prev, ...updatedTicket } : prev);
     };
 
     const handleTicketEliminado = (id: string) => {
       console.log('WS Event received: ticketEliminado', id);
       setTickets((prev) => prev.filter(t => t.id !== id));
+      setSelectedTicket((prev: any) => prev?.id === id ? null : prev);
     };
 
     socket.on('nuevoTicket', handleNuevoTicket);
@@ -170,7 +191,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedTicket(id);
     e.dataTransfer.effectAllowed = 'move';
-    // Necesario para Firefox
     e.dataTransfer.setData('text/plain', id);
   };
 
@@ -184,8 +204,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         sede: nuevaSede,
         departamento: nuevoDepartamento,
         ubicacionEspecifica: nuevaArea,
-        // Al crear, se asigna estado ABIERTO por defecto en el backend
-        // La prioridad ahora es MEDIA por defecto
       });
       setIsModalOpen(false);
       setNuevoTitulo('');
@@ -193,14 +211,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       setNuevoDepartamento('');
       setNuevaArea('');
       
-      // Actualización inmediata del estado local
       if (nuevo && nuevo.id) {
         setTickets((prev) => {
           if (prev.find(t => t.id === nuevo.id)) return prev;
           return [nuevo, ...prev];
         });
       }
-      fetchTicketsData(); // Sincronizar con backend
+      fetchTicketsData();
     } catch (err) {
       console.error('Error al crear', err);
       alert('Hubo un error al crear el ticket');
@@ -224,15 +241,20 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
     // Actualización optimista
     setTickets(prev => prev.map(t => t.id === draggedTicket ? { ...t, estado: nuevoEstado } : t));
+    if (selectedTicket?.id === draggedTicket) {
+      setSelectedTicket((prev: any) => ({ ...prev, estado: nuevoEstado }));
+    }
     
     try {
       await actualizarEstadoTicket(draggedTicket, nuevoEstado, userId);
-      if (nuevoEstado === 'RESUELTO' && onTicketResolved) {
-        onTicketResolved();
+      if (nuevoEstado === 'RESUELTO') {
+        toast.success('¡Ticket marcado como resuelto!');
+        if (onTicketResolved) {
+          onTicketResolved();
+        }
       }
     } catch (error) {
       console.error("Error al actualizar estado:", error);
-      // Revertir en caso de error
       fetchTicketsData();
       alert("No se pudo actualizar el estado.");
     } finally {
@@ -244,7 +266,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     if (!confirm("¿Estás seguro de eliminar este ticket?")) return;
     try {
       await eliminarTicket(id);
+      if (selectedTicket?.id === id) {
+        setSelectedTicket(null);
+      }
       fetchTicketsData();
+      toast.success('Ticket eliminado');
     } catch (err) {
       alert("Error al eliminar ticket");
     } finally {
@@ -252,10 +278,14 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
   };
 
-  const handleCerrarTicket = async (id: string) => {
+  const handleCerrarTicket = async (id: string, solucion?: string) => {
     if (!userId) return;
     try {
-      await actualizarEstadoTicket(id, 'CERRADO', userId);
+      await actualizarEstadoTicket(id, 'CERRADO', userId, solucion);
+      toast.success('Ticket archivado y cerrado');
+      if (selectedTicket?.id === id) {
+        setSelectedTicket((prev: any) => ({ ...prev, estado: 'CERRADO', solucion: solucion ?? prev.solucion }));
+      }
       fetchTicketsData();
     } catch (err) {
       alert("Error al cerrar ticket");
@@ -270,11 +300,17 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     
     // Actualización optimista
     setTickets(prev => prev.map(t => t.id === id ? { ...t, estado: nuevoEstado } : t));
+    if (selectedTicket?.id === id) {
+      setSelectedTicket((prev: any) => ({ ...prev, estado: nuevoEstado }));
+    }
     
     try {
       await actualizarEstadoTicket(id, nuevoEstado, userId);
-      if (nuevoEstado === 'RESUELTO' && onTicketResolved) {
-        onTicketResolved();
+      if (nuevoEstado === 'RESUELTO') {
+        toast.success('¡Ticket marcado como resuelto!');
+        if (onTicketResolved) {
+          onTicketResolved();
+        }
       }
     } catch (err) {
       console.error("Error al mover ticket:", err);
@@ -282,6 +318,29 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       alert("Error al mover ticket");
     } finally {
       setActiveDropdown(null);
+    }
+  };
+
+  const handleAbrirDetalle = (ticket: any) => {
+    setSelectedTicket(ticket);
+    setSolucionInput(ticket.solucion || '');
+    setIsEditingSolucion(!ticket.solucion);
+  };
+
+  const handleGuardarSolucion = async () => {
+    if (!selectedTicket) return;
+    setIsSavingSolucion(true);
+    try {
+      await actualizarTicket(selectedTicket.id, { solucion: solucionInput });
+      toast.success('Solución técnica guardada con éxito');
+      setSelectedTicket((prev: any) => ({ ...prev, solucion: solucionInput }));
+      setTickets((prev) => prev.map(t => t.id === selectedTicket.id ? { ...t, solucion: solucionInput } : t));
+      setIsEditingSolucion(false);
+    } catch (err) {
+      console.error('Error al guardar solución:', err);
+      toast.error('No se pudo guardar la solución');
+    } finally {
+      setIsSavingSolucion(false);
     }
   };
 
@@ -301,11 +360,24 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
   };
 
-  let activeTickets = tickets.filter(t => t.estado !== 'CERRADO');
+  // Filtrado reactivo unificado por texto y prioridad
+  const query = searchQuery.toLowerCase().trim();
+  const filterTicket = (t: any) => {
+    if (!query) return true;
+    const matchTitle = t.titulo?.toLowerCase().includes(query);
+    const matchDept = t.departamento?.toLowerCase().includes(query);
+    const matchSede = t.sede?.toLowerCase().includes(query);
+    const matchSolicitante = t.solicitanteNombre?.toLowerCase().includes(query);
+    const matchId = t.id?.toLowerCase().includes(query);
+    const matchSolucion = t.solucion?.toLowerCase().includes(query);
+    return Boolean(matchTitle || matchDept || matchSede || matchSolicitante || matchId || matchSolucion);
+  };
+
+  let activeTickets = tickets.filter(t => t.estado !== 'CERRADO').filter(filterTicket);
   if (filterPriority) {
     activeTickets = activeTickets.filter(t => t.prioridad === filterPriority);
   }
-  const historyTickets = tickets.filter(t => t.estado === 'CERRADO');
+  const historyTickets = tickets.filter(t => t.estado === 'CERRADO').filter(filterTicket);
 
   const columnas = [
     { id: 'ABIERTO', title: 'Abiertos', color: 'bg-slate-100', dot: 'bg-slate-400' },
@@ -329,9 +401,21 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar tickets..." 
-              className="pl-9 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 shadow-sm"
+              className="pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 shadow-sm"
             />
+            {searchQuery && (
+              <button 
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
           <button 
             onClick={toggleFilter}
@@ -375,7 +459,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       key={ticket.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, ticket.id)}
-                      className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 ease-out cursor-grab active:cursor-grabbing active:scale-95 active:shadow-md group relative overflow-hidden"
+                      onClick={() => handleAbrirDetalle(ticket)}
+                      className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 ease-out cursor-pointer active:scale-95 active:shadow-md group relative overflow-hidden"
                     >
                       {/* Efecto de brillo de fondo al hacer hover */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
@@ -496,12 +581,40 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         })}
       </div>
 
-      {/* Historial Inferior */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm shrink-0 flex flex-col max-h-[300px]">
-        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+      {/* Modo Responsive: Botón para abrir el Historial de Tickets Cerrados */}
+      <div className="md:hidden shrink-0 pt-1">
+        <button 
+          type="button"
+          onClick={() => setIsHistoryDrawerOpen(true)}
+          className="w-full p-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-lg border border-slate-700/60 flex items-center justify-between group active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <div className="text-sm font-bold flex items-center gap-2">
+                Historial de Tickets Cerrados
+                <span className="bg-indigo-500 text-white text-xs font-black px-2 py-0.5 rounded-full shadow-sm">
+                  {historyTickets.length}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">Toca para abrir y consultar soluciones aplicadas</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-indigo-300 group-hover:translate-x-1 transition-transform" />
+        </button>
+      </div>
+
+      {/* Modo Desktop: Tabla de Historial Inferior */}
+      <div className="hidden md:flex flex-col bg-white rounded-xl border border-slate-200 shadow-sm shrink-0 max-h-[300px]">
+        <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
             <Clock className="w-4 h-4 text-slate-500" /> Historial de Tickets Cerrados
           </h3>
+          <span className="text-xs text-slate-500 font-medium">
+            {historyTickets.length} ticket{historyTickets.length === 1 ? '' : 's'} · Haz clic en cualquier fila para ver la solución
+          </span>
         </div>
         <div className="overflow-auto p-0 w-full">
           {historyTickets.length > 0 ? (
@@ -512,14 +625,19 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   <th className="px-6 py-2.5 font-medium text-xs">Asignado</th>
                   <th className="px-6 py-2.5 font-medium text-xs">Registrado</th>
                   <th className="px-6 py-2.5 font-medium text-xs">Resuelto</th>
+                  <th className="px-6 py-2.5 font-medium text-xs">Diagnóstico / Solución</th>
                   <th className="px-6 py-2.5 font-medium text-xs">Recompensa</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {historyTickets.map(ticket => (
-                  <tr key={ticket.id} className="hover:bg-slate-50 transition-colors">
+                  <tr 
+                    key={ticket.id} 
+                    onClick={() => handleAbrirDetalle(ticket)}
+                    className="hover:bg-blue-50/50 transition-colors cursor-pointer group"
+                  >
                     <td className="px-6 py-3">
-                      <div className="font-medium text-slate-700">{ticket.titulo}</div>
+                      <div className="font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{ticket.titulo}</div>
                       <div className="text-[10px] text-slate-400">TIC-{ticket.id.substring(0, 5).toUpperCase()}</div>
                     </td>
                     <td className="px-6 py-3 text-xs text-slate-600 flex items-center gap-2">
@@ -548,6 +666,16 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                         </>
                       ) : '-'}
                     </td>
+                    <td className="px-6 py-3 text-xs">
+                      {ticket.solucion ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 max-w-[220px] truncate" title={ticket.solucion}>
+                          <Check className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span className="truncate">{ticket.solucion}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic text-xs">Sin solución registrada</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3">
                       <span className="text-amber-500 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-100">+{ticket.xpRecompensa} XP</span>
                     </td>
@@ -556,7 +684,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               </tbody>
             </table></div>
           ) : (
-            <div className="p-8 text-center text-slate-500 text-sm">No hay tickets en el historial.</div>
+            <div className="p-8 text-center text-slate-500 text-sm">No hay tickets en el historial{searchQuery ? ' que coincidan con la búsqueda' : ''}.</div>
           )}
         </div>
       </div>
@@ -650,6 +778,310 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Drawer Móvil de Historial de Tickets Cerrados */}
+      {isHistoryDrawerOpen && (
+        <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex flex-col justify-end md:hidden animate-in fade-in duration-200">
+          <div 
+            className="fixed inset-0" 
+            onClick={() => setIsHistoryDrawerOpen(false)}
+          />
+          <div className="relative z-10 bg-white w-full rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300 border-t border-slate-200">
+            {/* Grab Handle */}
+            <div className="pt-3 pb-1 flex justify-center">
+              <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+            </div>
+
+            {/* Header del Drawer */}
+            <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-indigo-600" /> Historial de Tickets Cerrados
+                </h3>
+                <p className="text-[11px] text-slate-400">Toca un ticket para ver la solución y detalles</p>
+              </div>
+              <button 
+                onClick={() => setIsHistoryDrawerOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Lista de Tickets Cerrados en Drawer */}
+            <div className="overflow-y-auto p-4 space-y-2.5 flex-1">
+              {historyTickets.length > 0 ? (
+                historyTickets.map(ticket => {
+                  const shortId = `TIC-${ticket.id.substring(0, 5).toUpperCase()}`;
+                  return (
+                    <div
+                      key={ticket.id}
+                      onClick={() => handleAbrirDetalle(ticket)}
+                      className="p-3.5 bg-slate-50 hover:bg-indigo-50/50 active:bg-indigo-100/50 border border-slate-200 rounded-xl transition-all cursor-pointer space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                          {shortId}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {ticket.solucion ? (
+                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <Check className="w-3 h-3 text-emerald-600" /> Solución
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 italic">Sin nota</span>
+                          )}
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                            +{ticket.xpRecompensa} XP
+                          </span>
+                        </div>
+                      </div>
+
+                      <h4 className="font-bold text-slate-800 text-xs leading-snug">
+                        {ticket.titulo}
+                      </h4>
+
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                        <div className="flex items-center gap-1.5">
+                          <User className="w-3 h-3 text-indigo-400" />
+                          <span>{ticket.asignadoA?.nombre || 'Técnico'}</span>
+                        </div>
+                        <div>
+                          {ticket.resueltoEn ? new Date(ticket.resueltoEn).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '-'}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-8 text-center text-slate-400 text-xs">
+                  {searchQuery ? 'No se encontraron tickets cerrados con ese criterio.' : 'No hay tickets cerrados aún.'}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Detalle de Ticket y Solución (Pestaña Superpuesta) */}
+      {selectedTicket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-200">
+          <div 
+            className="fixed inset-0"
+            onClick={() => setSelectedTicket(null)}
+          />
+          <div className="relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header del Modal */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-slate-50/50">
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-black text-blue-700 bg-blue-100/70 border border-blue-200 px-2.5 py-0.5 rounded-md">
+                    TIC-{selectedTicket.id.substring(0, 5).toUpperCase()}
+                  </span>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border flex items-center gap-1 ${getPriorityStyle(selectedTicket.prioridad).bg} ${getPriorityStyle(selectedTicket.prioridad).color} ${getPriorityStyle(selectedTicket.prioridad).border}`}>
+                    {getPriorityStyle(selectedTicket.prioridad).icon}
+                    {selectedTicket.prioridad}
+                  </span>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border ${
+                    selectedTicket.estado === 'CERRADO' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                    selectedTicket.estado === 'RESUELTO' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                    selectedTicket.estado === 'EN_PROGRESO' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                    'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
+                    {selectedTicket.estado.replace('_', ' ')}
+                  </span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-800 leading-snug break-words">
+                  {selectedTicket.titulo}
+                </h2>
+              </div>
+              <button 
+                onClick={() => setSelectedTicket(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cuerpo del Modal */}
+            <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1">
+              {/* Metadatos en Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                  <div className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-blue-500" /> Sede y Departamento
+                  </div>
+                  <div className="font-bold text-slate-800 text-sm">
+                    {selectedTicket.sede || 'No especificada'}
+                  </div>
+                  <div className="text-slate-600 font-medium">
+                    {selectedTicket.departamento} {selectedTicket.ubicacionEspecifica ? `· ${selectedTicket.ubicacionEspecifica}` : ''}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                  <div className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-indigo-500" /> Solicitante
+                  </div>
+                  <div className="font-bold text-slate-800 text-sm">
+                    {selectedTicket.solicitanteNombre || 'Usuario no registrado'}
+                  </div>
+                  <div className="text-slate-600 font-medium flex items-center gap-1">
+                    <Phone className="w-3 h-3 text-slate-400" />
+                    {selectedTicket.solicitanteContacto || 'Sin contacto directo'}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                  <div className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <CalendarClock className="w-3.5 h-3.5 text-amber-500" /> Registro y Resolución
+                  </div>
+                  <div className="text-slate-700">
+                    <span className="font-semibold text-slate-900">Creado:</span> {selectedTicket.creadoEn ? new Date(selectedTicket.creadoEn).toLocaleString() : '-'}
+                  </div>
+                  {selectedTicket.resueltoEn && (
+                    <div className="text-emerald-700">
+                      <span className="font-semibold text-emerald-900">Resuelto:</span> {new Date(selectedTicket.resueltoEn).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                  <div className="text-slate-400 font-medium flex items-center gap-1.5">
+                    <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Técnico Asignado & XP
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold overflow-hidden">
+                        {selectedTicket.asignadoA?.avatar ? (
+                          selectedTicket.asignadoA.avatar.length > 2 ? (
+                            <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedTicket.asignadoA.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            selectedTicket.asignadoA.avatar
+                          )
+                        ) : (
+                          <User className="w-3 h-3 text-slate-500" />
+                        )}
+                      </div>
+                      <span className="font-bold text-slate-800 text-sm">
+                        {selectedTicket.asignadoA?.nombre || 'Sin asignar'}
+                      </span>
+                    </div>
+                    <span className="font-black text-amber-600 bg-amber-100/70 border border-amber-200 px-2 py-0.5 rounded-md text-xs">
+                      +{selectedTicket.xpRecompensa} XP
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECCIÓN DE SOLUCIÓN TÉCNICA */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-emerald-600" />
+                    Diagnóstico y Solución Técnica
+                  </h3>
+                  {!isEditingSolucion && selectedTicket.solucion && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSolucion(true)}
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" /> Editar
+                    </button>
+                  )}
+                </div>
+
+                {!isEditingSolucion && selectedTicket.solucion ? (
+                  <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/40 to-slate-50 border border-emerald-200/80 rounded-2xl p-4.5 space-y-2 shadow-sm">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Solución Aplicada Registrada
+                    </div>
+                    <p className="text-sm text-slate-700 font-medium whitespace-pre-wrap leading-relaxed">
+                      {selectedTicket.solucion}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <textarea 
+                      rows={4}
+                      value={solucionInput}
+                      onChange={(e) => setSolucionInput(e.target.value)}
+                      placeholder="Escribe la causa raíz del incidente y el procedimiento técnico que se ejecutó para solucionarlo (ej: Cambio de cable de red, reinicio de spooler de impresión, parche de software)..."
+                      className="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+                    />
+                    <div className="flex justify-end gap-2">
+                      {selectedTicket.solucion && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSolucionInput(selectedTicket.solucion || '');
+                            setIsEditingSolucion(false);
+                          }}
+                          className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleGuardarSolucion}
+                        disabled={isSavingSolucion || !solucionInput.trim()}
+                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow transition-all flex items-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        {isSavingSolucion ? 'Guardando...' : 'Guardar Solución'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer de Acciones del Modal */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/60 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedTicket.estado === 'ABIERTO' && (
+                  <button
+                    type="button"
+                    onClick={() => handleMoverTicket(selectedTicket.id, 'EN_PROGRESO', selectedTicket.estado)}
+                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <Play className="w-3.5 h-3.5" /> Iniciar Progreso
+                  </button>
+                )}
+                {selectedTicket.estado === 'EN_PROGRESO' && (
+                  <button
+                    type="button"
+                    onClick={() => handleMoverTicket(selectedTicket.id, 'RESUELTO', selectedTicket.estado)}
+                    className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Marcar Resuelto
+                  </button>
+                )}
+                {selectedTicket.estado === 'RESUELTO' && (
+                  <button
+                    type="button"
+                    onClick={() => handleCerrarTicket(selectedTicket.id, solucionInput || selectedTicket.solucion)}
+                    className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-1.5 transition-all active:scale-95"
+                  >
+                    <Archive className="w-3.5 h-3.5" /> Cerrar Ticket Definitivamente
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedTicket(null)}
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all"
+              >
+                Cerrar Ventana
+              </button>
+            </div>
           </div>
         </div>
       )}

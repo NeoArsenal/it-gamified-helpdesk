@@ -159,22 +159,60 @@ export default function PortalPage() {
           <p className="text-center text-slate-500 mb-8 text-sm">Ingresa el PIN de acceso para reportar un problema.</p>
           
           <form onSubmit={handleVerifyPin}>
-            <input
-              type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-              className="w-full text-center text-4xl tracking-[1em] font-bold py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all mb-4"
-              autoFocus
-            />
-            {pinError && <p className="text-red-500 text-sm text-center mb-4 font-medium animate-pulse">{pinError}</p>}
+            <div className="relative mb-6">
+              {/* 4 Cajas Visuales de Alto Contraste para el PIN */}
+              <div className="flex justify-center items-center gap-3">
+                {[0, 1, 2, 3].map((index) => {
+                  const hasChar = pin.length > index;
+                  const isCurrent = pin.length === index;
+                  return (
+                    <div
+                      key={index}
+                      className={`w-14 h-16 sm:w-16 sm:h-20 rounded-2xl border-2 flex items-center justify-center transition-all ${
+                        hasChar
+                          ? 'border-indigo-600 bg-indigo-50/60 shadow-sm scale-105'
+                          : isCurrent
+                          ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/15'
+                          : 'border-slate-200 bg-slate-50'
+                      }`}
+                    >
+                      {hasChar ? (
+                        <span className="w-4 h-4 bg-indigo-600 rounded-full shadow-xs transform scale-110 transition-transform" />
+                      ) : (
+                        <span className="w-2 h-2 bg-slate-300 rounded-full" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Input invisible que captura el teclado numérico del celular sin problemas de color de texto */}
+              <input
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                value={pin}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+                  setPin(val);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer text-transparent caret-transparent selection:bg-transparent"
+                autoFocus
+                autoComplete="off"
+              />
+            </div>
+
+            {pinError && (
+              <p className="text-red-500 text-sm text-center mb-4 font-bold animate-in fade-in">
+                {pinError}
+              </p>
+            )}
+
             <button 
               type="submit"
               disabled={pin.length < 4}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold py-4 rounded-xl transition-all shadow-md active:scale-[0.98]"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
             >
               Entrar al Portal
             </button>

@@ -184,22 +184,29 @@ export const resolverTicket = async (ticketId: string, resolutorId: string) => {
   return res.json();
 };
 
-export const actualizarEstadoTicket = async (ticketId: string, estado: string, resolutorId?: string) => {
-  const payload: any = { estado };
-  if (estado === 'RESUELTO' || estado === 'EN_PROGRESO') {
-    if (resolutorId) payload.asignadoAId = resolutorId;
-  }
-  if (estado === 'RESUELTO') {
-    payload.resueltoEn = new Date().toISOString();
-  }
-
+export const actualizarTicket = async (ticketId: string, data: any) => {
   const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Error al actualizar estado del ticket');
+  if (!res.ok) throw new Error('Error al actualizar ticket');
   return res.json();
+};
+
+export const actualizarEstadoTicket = async (ticketId: string, estado: string, resolutorId?: string, solucion?: string) => {
+  const payload: any = { estado };
+  if (estado === 'RESUELTO' || estado === 'EN_PROGRESO' || estado === 'CERRADO') {
+    if (resolutorId) payload.asignadoAId = resolutorId;
+  }
+  if (estado === 'RESUELTO' || estado === 'CERRADO') {
+    payload.resueltoEn = new Date().toISOString();
+  }
+  if (solucion !== undefined) {
+    payload.solucion = solucion;
+  }
+
+  return actualizarTicket(ticketId, payload);
 };
 
 // --- Estadísticas ---
