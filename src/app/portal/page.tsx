@@ -266,7 +266,7 @@ export default function PortalPage() {
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmitTicket} className="p-6 md:p-8 space-y-6 flex-1 overflow-y-auto">
+        <form onSubmit={handleSubmitTicket} className="p-6 md:p-8 space-y-6 flex-1 overflow-y-auto pb-32 md:pb-8">
           
           {/* Ubicación */}
           <div className="space-y-4">
@@ -356,23 +356,26 @@ export default function PortalPage() {
             </div>
           </div>
 
-          <div className="pt-6">
-            <button
-              type="submit"
-              disabled={isSubmitting || !titulo || !sede || !departamento}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-lg font-black py-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Enviando...
-                </>
-              ) : (
-                <>
-                  Enviar Reporte a Sistemas
-                </>
-              )}
-            </button>
+          {/* Botón de Enviar: Fijo en la parte inferior en modo responsive / móvil */}
+          <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] z-30 md:static md:bg-transparent md:p-0 md:border-none md:shadow-none md:pt-6">
+            <div className="max-w-lg mx-auto w-full">
+              <button
+                type="submit"
+                disabled={isSubmitting || !titulo || !sede || !departamento}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-base md:text-lg font-black py-3.5 md:py-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-5 h-5 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    Enviar Reporte a Sistemas
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
         </form>
