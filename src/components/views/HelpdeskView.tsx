@@ -2,7 +2,7 @@ import {
   Plus, Search, Filter, AlertCircle, Clock, CheckCircle2, MoreHorizontal, 
   User, ShieldAlert, Zap, GripVertical, X, CalendarClock, Ticket as TicketIcon, 
   Trash2, Archive, ChevronDown, MapPin, Play, RotateCcw, ChevronRight, 
-  FileText, Check, Edit3, Phone
+  FileText, Check, Edit3, Phone, Inbox, Trophy, Flame, Sparkles
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { 
@@ -378,11 +378,57 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     activeTickets = activeTickets.filter(t => t.prioridad === filterPriority);
   }
   const historyTickets = tickets.filter(t => t.estado === 'CERRADO').filter(filterTicket);
+  // Métricas rápidas del tablero
+  const totalAbiertos = activeTickets.filter(t => t.estado === 'ABIERTO').length;
+  const totalEnProgreso = activeTickets.filter(t => t.estado === 'EN_PROGRESO').length;
+  const totalResueltos = activeTickets.filter(t => t.estado === 'RESUELTO').length;
+  const totalXpDisponible = activeTickets
+    .filter(t => t.estado !== 'RESUELTO')
+    .reduce((acc, t) => acc + (Number(t.xpRecompensa) || 0), 0);
 
   const columnas = [
-    { id: 'ABIERTO', title: 'Abiertos', color: 'bg-slate-100', dot: 'bg-slate-400' },
-    { id: 'EN_PROGRESO', title: 'En Progreso', color: 'bg-blue-50', dot: 'bg-blue-500' },
-    { id: 'RESUELTO', title: 'Resueltos', color: 'bg-emerald-50', dot: 'bg-emerald-500' }
+    { 
+      id: 'ABIERTO', 
+      title: 'Abiertos', 
+      subtitle: 'En espera de atención',
+      bgClass: 'bg-slate-50/60',
+      borderClass: 'border-slate-200',
+      accentBar: 'bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500',
+      badgeBg: 'bg-amber-100 text-amber-800 border-amber-200/80',
+      iconContainer: 'bg-amber-50 text-amber-600 border-amber-200/80',
+      icon: <Inbox className="w-4 h-4" />,
+      emptyIcon: <Inbox className="w-8 h-8 text-amber-400/80" />,
+      emptyTitle: '¡Todo al día!',
+      emptyDesc: 'No hay tickets pendientes esperando atención en este momento.'
+    },
+    { 
+      id: 'EN_PROGRESO', 
+      title: 'En Progreso', 
+      subtitle: 'En resolución activa',
+      bgClass: 'bg-blue-50/40',
+      borderClass: 'border-blue-200/70',
+      accentBar: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600',
+      badgeBg: 'bg-blue-100 text-blue-800 border-blue-200/80',
+      iconContainer: 'bg-blue-50 text-blue-600 border-blue-200/80',
+      icon: <Flame className="w-4 h-4" />,
+      emptyIcon: <Flame className="w-8 h-8 text-blue-400/80" />,
+      emptyTitle: 'Listo para resolver',
+      emptyDesc: 'Arrastra un ticket aquí para comenzar a trabajar en su solución.'
+    },
+    { 
+      id: 'RESUELTO', 
+      title: 'Resueltos', 
+      subtitle: 'Completados recientemente',
+      bgClass: 'bg-emerald-50/40',
+      borderClass: 'border-emerald-200/70',
+      accentBar: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-500',
+      badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-200/80',
+      iconContainer: 'bg-emerald-50 text-emerald-600 border-emerald-200/80',
+      icon: <Trophy className="w-4 h-4" />,
+      emptyIcon: <Trophy className="w-8 h-8 text-emerald-400/80" />,
+      emptyTitle: 'Zona de victorias',
+      emptyDesc: 'Al marcar tickets como resueltos aparecerán aquí para sumar tu XP.'
+    }
   ];
 
   if (loading) {
@@ -390,62 +436,129 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   }
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-6 animate-in fade-in duration-500 overflow-hidden">
-      <div className="flex flex-col md:flex-row md:items-center justify-between shrink-0 gap-4">
+    <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-5 animate-in fade-in duration-500 overflow-hidden">
+      {/* Cabecera Principal */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between shrink-0 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Tickets de Soporte</h1>
-          <p className="text-slate-500 text-sm mt-1">Arrastra las tarjetas para cambiar su estado. ¡Gana XP al resolverlos!</p>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Tickets de Soporte</h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-200/70 shadow-xs">
+              <Zap className="w-3 h-3 fill-indigo-500 text-indigo-500" /> Tablero Vivo
+            </span>
+          </div>
+          <p className="text-slate-500 text-xs md:text-sm mt-1">
+            Arrastra las tarjetas para cambiar su estado. ¡Gana XP al resolver incidencias!
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+        {/* Buscador y Botones de Acción */}
+        <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar tickets..." 
-              className="pl-9 pr-8 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64 shadow-sm"
+              placeholder="Buscar por título, sede, autor..." 
+              className="pl-9.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 w-full sm:w-64 shadow-xs transition-all placeholder:text-slate-400"
             />
             {searchQuery && (
               <button 
-                type="button"
+                type="button" 
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
                 title="Limpiar búsqueda"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
+
           <button 
             onClick={toggleFilter}
-            className={`px-3 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 border ${filterPriority ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border ${filterPriority ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
           >
-            <Filter className="w-4 h-4" /> {filterPriority ? `Filtro: ${filterPriority}` : 'Filtros'}
+            <Filter className="w-4 h-4" /> {filterPriority ? `Prioridad: ${filterPriority}` : 'Filtros'}
           </button>
-          <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm shadow-blue-600/20 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:scale-95 transition-all duration-200">
-            <Plus className="w-4 h-4 transition-transform group-hover:rotate-90" /> Nuevo Ticket
+
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+          >
+            <Plus className="w-4 h-4" /> Nuevo Ticket
           </button>
         </div>
       </div>
 
+      {/* Mini Métricas Rápidas */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3 shrink-0">
+        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 flex items-center justify-center shrink-0">
+            <Inbox className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Por Atender</p>
+            <p className="text-lg font-black text-slate-800 leading-tight">{totalAbiertos}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 flex items-center justify-center shrink-0">
+            <Flame className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">En Curso</p>
+            <p className="text-lg font-black text-slate-800 leading-tight">{totalEnProgreso}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-slate-300 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">Resueltos</p>
+            <p className="text-lg font-black text-slate-800 leading-tight">{totalResueltos}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-3 md:px-4 md:py-3 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-3 hover:border-purple-200 transition-colors">
+          <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 border border-purple-200/60 flex items-center justify-center shrink-0">
+            <Zap className="w-4 h-4 fill-purple-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider truncate">XP en Juego</p>
+            <p className="text-lg font-black text-purple-600 leading-tight">+{totalXpDisponible} XP</p>
+          </div>
+        </div>
+      </div>
+
       {/* Kanban Board */}
-      <div className="flex gap-4 md:gap-6 flex-1 min-h-[400px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
+      <div className="flex gap-4 md:gap-6 flex-1 min-h-[420px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
         {columnas.map(col => {
           const colTickets = activeTickets.filter(t => t.estado === col.id);
           return (
             <div 
               key={col.id} 
-              className={`flex-1 min-w-[85vw] sm:min-w-[320px] snap-center rounded-2xl flex flex-col ${col.color} border border-slate-200/60 shadow-inner`}
+              className={`flex-1 min-w-[85vw] sm:min-w-[320px] snap-center rounded-2xl flex flex-col ${col.bgClass} border ${col.borderClass} shadow-xs overflow-hidden transition-all`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, col.id)}
             >
-              <div className="p-4 flex items-center justify-between border-b border-slate-200/50">
-                <div className="flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${col.dot}`}></span>
-                  <h3 className="font-bold text-slate-700 text-sm">{col.title}</h3>
+              {/* Acento superior de color */}
+              <div className={`h-1.5 w-full ${col.accentBar} shrink-0`}></div>
+
+              {/* Encabezado de Columna */}
+              <div className="p-3.5 px-4 flex items-center justify-between border-b border-slate-200/70 bg-white/80 backdrop-blur-xs shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shadow-2xs ${col.iconContainer}`}>
+                    {col.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.title}</h3>
+                    <p className="text-[10px] text-slate-400 font-medium hidden sm:block leading-none mt-0.5">{col.subtitle}</p>
+                  </div>
                 </div>
-                <span className="bg-white/60 text-slate-600 text-xs font-semibold px-2 py-0.5 rounded-full border border-slate-200">
+                <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${col.badgeBg}`}>
                   {colTickets.length}
                 </span>
               </div>
@@ -571,8 +684,15 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   )
                 })}
                 {colTickets.length === 0 && (
-                  <div className="h-full flex items-center justify-center p-4">
-                    <p className="text-slate-400 text-xs text-center border-2 border-dashed border-slate-300/50 rounded-xl p-4 w-full">Arrastra tickets aquí</p>
+                  <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-300/60 rounded-2xl bg-white/40 hover:bg-white/70 transition-all duration-200 group/empty">
+                    <div className="w-13 h-13 rounded-2xl bg-white shadow-2xs border border-slate-200/80 flex items-center justify-center mb-2.5 group-hover/empty:scale-105 group-hover/empty:shadow-xs transition-all duration-300">
+                      {col.emptyIcon}
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-700 mb-1">{col.emptyTitle}</h4>
+                    <p className="text-xs text-slate-400 max-w-[210px] leading-relaxed mb-3">{col.emptyDesc}</p>
+                    <span className="text-[11px] font-semibold text-slate-500 bg-white/90 px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs">
+                      Arrastra tickets aquí
+                    </span>
                   </div>
                 )}
               </div>
