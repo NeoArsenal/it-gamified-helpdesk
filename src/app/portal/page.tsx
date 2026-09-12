@@ -120,10 +120,49 @@ export default function PortalPage() {
     }
   };
 
+  const handleNombreChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Permitir letras, tildes, espacios y puntos/guiones (ej: Dra. Gómez, Lic. Pérez)
+    const sanitized = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.'-]/g, '').slice(0, 40);
+    setSolicitanteNombre(sanitized);
+  };
+
+  const handleContactoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Permitir solo números y espacios
+    const sanitized = e.target.value.replace(/[^0-9\s]/g, '');
+    const digitsOnly = sanitized.replace(/\s/g, '');
+
+    // Máximo 9 dígitos para evitar números infinitos o spam
+    if (digitsOnly.length > 9) return;
+
+    // Si escribe 9 dígitos continuos, espaciar para visualización limpia: 999 123 456
+    let displayVal = sanitized;
+    if (digitsOnly.length === 9 && !sanitized.includes(' ')) {
+      displayVal = `${digitsOnly.slice(0, 3)} ${digitsOnly.slice(3, 6)} ${digitsOnly.slice(6)}`;
+    }
+
+    setSolicitanteContacto(displayVal);
+  };
+
+  const handleContactoBlur = () => {
+    const digitsOnly = solicitanteContacto.replace(/\s/g, '');
+    if (digitsOnly.length === 9) {
+      setSolicitanteContacto(`${digitsOnly.slice(0, 3)} ${digitsOnly.slice(3, 6)} ${digitsOnly.slice(6)}`);
+    } else if (digitsOnly.length === 7) {
+      setSolicitanteContacto(`${digitsOnly.slice(0, 3)} ${digitsOnly.slice(3)}`);
+    }
+  };
+
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo || !sede || !departamento) return;
     
+    // Validación opcional de contacto: si escribió algo, debe tener al menos 3 dígitos (anexo válido)
+    const digits = solicitanteContacto.replace(/\D/g, '');
+    if (digits.length > 0 && digits.length < 3) {
+      alert('Por favor escribe un anexo válido (mínimo 3 dígitos) o celular (9 dígitos), o déjalo en blanco.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       await crearTicket({
@@ -131,8 +170,8 @@ export default function PortalPage() {
         sede,
         departamento,
         ubicacionEspecifica: area,
-        solicitanteNombre,
-        solicitanteContacto,
+        solicitanteNombre: solicitanteNombre.trim(),
+        solicitanteContacto: solicitanteContacto.trim(),
       });
       setIsSuccess(true);
       // Limpiar formulario excepto datos del solicitante
@@ -362,28 +401,60 @@ export default function PortalPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Nombre <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
-                </label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Nombre <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                  </label>
+                  <span className="text-[11px] font-medium text-slate-400">
+                    {solicitanteNombre.length}/40
+                  </span>
+                </div>
                 <input
                   type="text"
                   value={solicitanteNombre}
-                  onChange={e => setSolicitanteNombre(e.target.value)}
+                  onChange={handleNombreChange}
+                  maxLength={40}
                   placeholder="Ej. Dra. Gómez / Lic. Pérez"
                   className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-400 font-medium"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Anexo / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
-                </label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="block text-sm font-bold text-slate-700">
+                    Anexo / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+                  </label>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    {solicitanteContacto.replace(/\D/g, '').length}/9 dígitos
+                  </span>
+                </div>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
                   value={solicitanteContacto}
-                  onChange={e => setSolicitanteContacto(e.target.value)}
+                  onChange={handleContactoChange}
+                  onBlur={handleContactoBlur}
+                  maxLength={11}
                   placeholder="Ej. 1045 / 999 123 456"
                   className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all shadow-sm placeholder:text-slate-400 font-medium"
                 />
+                <div className="flex items-center justify-between mt-1 text-[11px] px-1">
+                  {(() => {
+                    const count = solicitanteContacto.replace(/\D/g, '').length;
+                    if (count === 0) {
+                      return <span className="text-slate-400 font-medium">Anexo (3-5 dígitos) o Celular (9 dígitos)</span>;
+                    }
+                    if (count >= 3 && count <= 5) {
+                      return <span className="text-indigo-600 font-bold">✓ Formato de Anexo</span>;
+                    }
+                    if (count === 9) {
+                      return <span className="text-emerald-600 font-bold">✓ Formato de Celular</span>;
+                    }
+                    if (count === 7 || count === 8) {
+                      return <span className="text-emerald-600 font-bold">✓ Teléfono Fijo</span>;
+                    }
+                    return <span className="text-amber-600 font-bold">Mínimo 3 dígitos requeridos</span>;
+                  })()}
+                </div>
               </div>
             </div>
           </div>
