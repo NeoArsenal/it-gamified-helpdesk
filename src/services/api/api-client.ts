@@ -126,6 +126,17 @@ export const actualizarUsuario = async (id: string, data: any) => {
   return res.json();
 };
 
+export const eliminarUsuario = async (id: string) => {
+  const res = await fetch(`${BASE_URL}/usuarios/${id}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al eliminar usuario');
+  }
+  return res.json();
+};
+
 export const getUsuario = async (userId: string) => {
   const res = await fetch(`${BASE_URL}/usuarios/${userId}`);
   return res.json();

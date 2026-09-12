@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, Shield, ShieldAlert, Plus, Edit, X, Save, Check } from 'lucide-react';
-import { getUsuarios, crearUsuario, actualizarUsuario } from '@/services/api/api-client';
+import { Users, Shield, ShieldAlert, Plus, Edit, X, Save, Check, Trash2, AlertTriangle } from 'lucide-react';
+import { getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario } from '@/services/api/api-client';
+import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 
 const MODULOS_DISPONIBLES = [
@@ -16,10 +17,13 @@ const MODULOS_DISPONIBLES = [
 ];
 
 export const UsersView = () => {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [nombre, setNombre] = useState('');
@@ -91,6 +95,22 @@ export const UsersView = () => {
     } catch (err: any) {
       console.error(err);
       // El toast de error ya lo maneja api-client
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      await eliminarUsuario(userToDelete.id);
+      toast.success(`Usuario ${userToDelete.nombre} eliminado correctamente`);
+      setUserToDelete(null);
+      fetchUsers();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Error al eliminar el usuario');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -171,13 +191,31 @@ export const UsersView = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button 
-                      onClick={() => openModal(user)}
-                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      title="Editar usuario"
-                    >
-                      <Edit className="w-5 h-5" />
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button 
+                        onClick={() => openModal(user)}
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        title="Editar usuario"
+                      >
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      {currentUser?.id !== user.id ? (
+                        <button 
+                          onClick={() => setUserToDelete(user)}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar usuario"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      ) : (
+                        <span 
+                          className="p-2 text-slate-300 cursor-not-allowed" 
+                          title="Tu cuenta en sesión (no puedes auto-eliminarte)"
+                        >
+                          <Trash2 className="w-5 h-5 opacity-30" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -295,6 +333,53 @@ export const UsersView = () => {
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center gap-2"
               >
                 <Save className="w-4 h-4" /> Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmación para Eliminar Usuario */}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 p-6 text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <Trash2 className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-800 mb-2">¿Eliminar Usuario?</h3>
+            <p className="text-sm text-slate-600 mb-3">
+              Estás a punto de eliminar a <span className="font-bold text-slate-900">{userToDelete.nombre}</span> ({userToDelete.email}).
+            </p>
+            <div className="text-xs text-amber-800 bg-amber-50 p-3 rounded-xl border border-amber-200 flex items-start gap-2 text-left mb-6 leading-relaxed">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>Sus tickets, guías y registros históricos se conservarán para las estadísticas, pero quedarán desvinculados de este usuario. Esta acción es permanente.</span>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setUserToDelete(null)}
+                className="flex-1 py-2.5 px-4 font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                className="flex-1 py-2.5 px-4 font-bold text-white bg-red-600 hover:bg-red-700 disabled:bg-red-400 rounded-xl transition-all shadow-md shadow-red-600/20 text-sm flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" /> Sí, Eliminar
+                  </>
+                )}
               </button>
             </div>
           </div>
