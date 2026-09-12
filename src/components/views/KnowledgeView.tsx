@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode } from 'lucide-react';
+import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode, ExternalLink } from 'lucide-react';
 import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/services/api/api-client';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
@@ -209,7 +209,19 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                 </div>
               </div>
 
-              <div className="flex gap-1">
+              <div className="flex gap-1 items-center">
+                {guide.urlPdf && (
+                  <a 
+                    href={guide.urlPdf} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    download 
+                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all active:scale-95" 
+                    title="Descargar PDF"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                )}
                 <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all active:scale-95" title="Eliminar" onClick={() => setGuideToDelete(guide.id)}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -384,60 +396,85 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         </div>
       )}
 
-      {/* Modal Visor de PDF (Simulado) */}
+      {/* Modal Visor de Documento / PDF Real */}
       {viewingGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-100 rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col relative animate-in zoom-in-95 duration-200 overflow-hidden">
-            {/* Toolbar del "PDF" */}
-            <div className="bg-slate-800 text-slate-200 px-4 py-3 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <FileText className="w-5 h-5 text-red-400" />
-                <span className="font-medium text-sm truncate max-w-md">{viewingGuide.titulo}.pdf</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in p-2 sm:p-4">
+          <div className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col relative animate-in zoom-in-95 duration-200 overflow-hidden border border-slate-700">
+            {/* Toolbar del Visor */}
+            <div className="bg-slate-800 text-slate-100 px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700">
+              <div className="flex items-center gap-3 min-w-0">
+                <FileText className="w-5 h-5 text-red-400 shrink-0" />
+                <span className="font-bold text-sm truncate">{viewingGuide.titulo}{viewingGuide.urlPdf && !viewingGuide.titulo.toLowerCase().endsWith('.pdf') ? '.pdf' : ''}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <button className="p-1.5 hover:bg-slate-700 rounded transition-colors text-slate-300" title="Descargar">
-                  <Download className="w-4 h-4" />
-                </button>
-                <div className="w-px h-5 bg-slate-600 mx-1"></div>
+              <div className="flex items-center gap-2 shrink-0">
+                {viewingGuide.urlPdf && (
+                  <>
+                    <a 
+                      href={viewingGuide.urlPdf} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
+                      title="Abrir en pestaña nueva"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span className="hidden sm:inline">Nueva pestaña</span>
+                    </a>
+                    <a 
+                      href={viewingGuide.urlPdf} 
+                      download 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold" 
+                      title="Descargar archivo"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">Descargar</span>
+                    </a>
+                  </>
+                )}
+                <div className="w-px h-5 bg-slate-700 mx-1"></div>
                 <button 
                   onClick={() => setViewingGuide(null)}
-                  className="p-1.5 hover:bg-slate-700 hover:text-white rounded transition-colors"
+                  className="p-2 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-slate-400"
+                  title="Cerrar visor"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
             </div>
 
-            {/* Contenido del "PDF" o "Documento Nativo" */}
-            <div className="flex-1 overflow-y-auto p-8 flex justify-center bg-slate-200">
-              <div className="bg-white w-full max-w-3xl min-h-full shadow-lg p-10 flex flex-col gap-6">
-                
-                {viewingGuide.contenidoRichText ? (
-                  <div className="ql-snow">
-                    <div 
-                      className="ql-editor max-w-none"
-                      style={{ padding: 0 }}
-                      dangerouslySetInnerHTML={{ __html: viewingGuide.contenidoRichText }}
-                    />
-                  </div>
-                ) : (
-                  <div className="animate-pulse flex flex-col gap-6">
-                    <div className="w-3/4 h-8 bg-slate-200 rounded-md mb-4"></div>
-                    <div className="w-full h-4 bg-slate-100 rounded-md"></div>
-                    <div className="w-full h-4 bg-slate-100 rounded-md"></div>
-                    <div className="w-5/6 h-4 bg-slate-100 rounded-md mb-8"></div>
-                    
-                    <div className="w-full h-48 bg-slate-100 rounded-md mb-8 flex items-center justify-center">
-                      <span className="text-slate-300 font-medium">Visualizador PDF (Simulado)</span>
+            {/* Contenido: PDF real embebido o Documento de texto */}
+            <div className="flex-1 w-full h-full overflow-hidden bg-slate-950 flex flex-col">
+              {viewingGuide.urlPdf ? (
+                <iframe 
+                  src={`${viewingGuide.urlPdf}#toolbar=1&navpanes=0`} 
+                  className="w-full h-full border-0 bg-white"
+                  title={viewingGuide.titulo}
+                />
+              ) : viewingGuide.contenidoRichText ? (
+                <div className="flex-1 overflow-y-auto p-6 sm:p-10 flex justify-center bg-slate-100">
+                  <div className="bg-white w-full max-w-3xl min-h-full shadow-lg p-8 sm:p-12 flex flex-col gap-6 rounded-2xl border border-slate-200">
+                    <h1 className="text-2xl sm:text-3xl font-black text-slate-800 border-b border-slate-100 pb-4">
+                      {viewingGuide.titulo}
+                    </h1>
+                    <div className="ql-snow">
+                      <div 
+                        className="ql-editor max-w-none text-slate-700"
+                        style={{ padding: 0 }}
+                        dangerouslySetInnerHTML={{ __html: viewingGuide.contenidoRichText }}
+                      />
                     </div>
-
-                    <div className="w-full h-4 bg-slate-100 rounded-md"></div>
-                    <div className="w-full h-4 bg-slate-100 rounded-md"></div>
-                    <div className="w-4/5 h-4 bg-slate-100 rounded-md"></div>
                   </div>
-                )}
-                
-              </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-900 text-slate-300">
+                  <FileText className="w-16 h-16 text-slate-600 mb-3" />
+                  <h3 className="font-bold text-slate-200 text-lg">Archivo no disponible</h3>
+                  <p className="text-slate-400 text-sm max-w-sm mt-1">
+                    Este documento no tiene un archivo PDF vinculado o fue subido como texto vacío.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
