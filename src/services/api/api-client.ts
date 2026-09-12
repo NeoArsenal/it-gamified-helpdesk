@@ -492,13 +492,31 @@ export const eliminarUbicacion = async (id: string) => {
 };
 
 // --- Portal Configuracion ---
-export const verifyPortalPin = async (pin: string) => {
-  const res = await fetch(`${BASE_URL}/configuracion/verify-pin`, {
+export const verifyPortalAccess = async ({ pin, token }: { pin?: string; token?: string }) => {
+  const res = await fetch(`${BASE_URL}/configuracion/verify-access`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pin }),
+    body: JSON.stringify({ pin, token }),
   });
-  if (!res.ok) throw new Error('Error al verificar PIN');
+  if (!res.ok) throw new Error('Error al verificar acceso');
+  return res.json();
+};
+
+export const verifyPortalPin = async (pin: string) => {
+  return verifyPortalAccess({ pin });
+};
+
+export const getPortalConfig = async (): Promise<{ pin: string; token: string }> => {
+  const res = await fetch(`${BASE_URL}/configuracion/portal-config`);
+  if (!res.ok) throw new Error('Error al obtener configuración del portal');
+  return res.json();
+};
+
+export const regeneratePortalToken = async (): Promise<{ token: string }> => {
+  const res = await fetch(`${BASE_URL}/configuracion/portal-token/regenerate`, {
+    method: 'POST',
+  });
+  if (!res.ok) throw new Error('Error al regenerar llave del portal');
   return res.json();
 };
 

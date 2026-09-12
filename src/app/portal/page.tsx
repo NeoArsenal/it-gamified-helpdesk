@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ShieldAlert, TicketIcon, X, CheckCircle2, ChevronDown, Monitor, Stethoscope, Briefcase, LogOut } from 'lucide-react';
-import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin, safeStorage } from '@/services/api/api-client';
+import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin, verifyPortalAccess, safeStorage } from '@/services/api/api-client';
 
 // Componente Select personalizado simplificado para el portal
 function PortalSelect({ value, options, onChange, placeholder }: { value: string, options: string[], onChange: (val: string) => void, placeholder: string }) {
@@ -47,6 +47,7 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
 
 export default function PortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isValidatingToken, setIsValidatingToken] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
   
@@ -67,7 +68,37 @@ export default function PortalPage() {
   const [areasList, setAreasList] = useState<string[]>([]);
 
   useEffect(() => {
-    // Check si ya ingresó el PIN previamente (guardado de forma segura con safeStorage)
+    // 1. Revisar si viene con token secreto desde el código QR (?key=... o ?token=...)
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenParam = searchParams.get('key') || searchParams.get('token') || searchParams.get('k');
+
+      if (tokenParam) {
+        setIsValidatingToken(true);
+        verifyPortalAccess({ token: tokenParam })
+          .then((res) => {
+            if (res.valid) {
+              safeStorage.setItem('portal_pin_verified', 'true');
+              setIsAuthenticated(true);
+              cargarDatosBase();
+              try {
+                window.history.replaceState({}, '', window.location.pathname);
+              } catch (e) {}
+            } else {
+              setPinError('Código QR no válido o expirado. Ingresa el PIN manual.');
+            }
+          })
+          .catch(() => {
+            setPinError('Error de conexión al verificar el código QR.');
+          })
+          .finally(() => {
+            setIsValidatingToken(false);
+          });
+        return;
+      }
+    }
+
+    // 2. Check si ya ingresó el PIN previamente (guardado de forma segura con safeStorage)
     const savedPin = safeStorage.getItem('portal_pin_verified');
     if (savedPin === 'true') {
       setIsAuthenticated(true);
@@ -186,6 +217,20 @@ export default function PortalPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isValidatingToken) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center animate-in zoom-in-95 duration-300">
+          <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <ShieldAlert className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Verificando Código QR...</h2>
+          <p className="text-slate-500 text-sm">Autenticando acceso clínico directo...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

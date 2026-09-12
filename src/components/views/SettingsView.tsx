@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X } from 'lucide-react';
-import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getCatalogos, actualizarCatalogo, safeStorage } from '@/services/api/api-client';
+import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X, Key, RotateCcw, Sparkles } from 'lucide-react';
+import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getPortalConfig, regeneratePortalToken, getCatalogos, actualizarCatalogo, safeStorage } from '@/services/api/api-client';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
@@ -35,7 +35,9 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   // Portal State
   const [portalPin, setPortalPinState] = useState('');
+  const [portalToken, setPortalToken] = useState('');
   const [portalUrl, setPortalUrl] = useState('');
+  const [isRegeneratingToken, setIsRegeneratingToken] = useState(false);
 
   // Catálogos State
   const [departamentos, setDepartamentos] = useState<string[]>([]);
@@ -85,11 +87,16 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     // Cargar catálogos
     fetchCatalogos();
 
-    // Cargar config del portal
-    getPortalPin().then(data => setPortalPinState(data.pin)).catch(console.error);
-    if (typeof window !== 'undefined') {
-      setPortalUrl(`${window.location.origin}/portal`);
-    }
+    // Cargar config del portal (PIN y Token criptográfico)
+    getPortalConfig().then(data => {
+      if (data.pin) setPortalPinState(data.pin);
+      if (data.token) {
+        setPortalToken(data.token);
+        if (typeof window !== 'undefined') {
+          setPortalUrl(`${window.location.origin}/portal?key=${data.token}`);
+        }
+      }
+    }).catch(console.error);
   }, [userId]);
 
   const fetchCatalogos = async () => {
@@ -218,6 +225,24 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
       toast.error('Error al guardar el PIN del portal');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!confirm('¿Regenerar la llave criptográfica del código QR? Los códigos QR impresos anteriormente dejarán de funcionar y deberás imprimir el nuevo código.')) return;
+    setIsRegeneratingToken(true);
+    try {
+      const res = await regeneratePortalToken();
+      setPortalToken(res.token);
+      if (typeof window !== 'undefined') {
+        setPortalUrl(`${window.location.origin}/portal?key=${res.token}`);
+      }
+      toast.success('Nueva llave criptográfica generada para el código QR');
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al regenerar la llave del portal');
+    } finally {
+      setIsRegeneratingToken(false);
     }
   };
 
@@ -820,26 +845,52 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-5">
                   <div>
-                    <h4 className="font-bold text-slate-700 mb-2">Enlace del Portal</h4>
-                    <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-bold text-slate-700">Enlace del Portal (con Llave de Acceso Criptográfica)</h4>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1">
+                        <Key className="w-3 h-3 text-emerald-600" /> Token Seguro
+                      </span>
+                    </div>
+                    <div className="flex bg-white border border-slate-200 rounded-lg overflow-hidden shadow-xs">
                       <input 
                         type="text" 
                         readOnly 
                         value={portalUrl} 
-                        className="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 text-slate-600 outline-none"
+                        className="flex-1 min-w-0 px-3 py-2 text-xs font-mono bg-slate-50 text-slate-600 outline-none"
                       />
                       <button 
-                        onClick={() => navigator.clipboard.writeText(portalUrl)}
+                        onClick={() => {
+                          navigator.clipboard.writeText(portalUrl);
+                          toast.success('Enlace copiado al portapapeles');
+                        }}
                         className="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 font-bold text-sm transition-colors border-l border-slate-200 shrink-0"
                       >
                         Copiar
                       </button>
                     </div>
+                    <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                      Este enlace incluye una clave única generada por el servidor (<span className="font-mono text-indigo-600">?key=...</span>). Quien acceda con esta URL ingresa de forma inmediata al formulario.
+                    </p>
                   </div>
 
-                  <div>
-                    <h4 className="font-bold text-slate-700 mb-1">PIN de Acceso</h4>
-                    <p className="text-xs text-slate-500 mb-3">Este PIN será requerido para entrar al portal desde una computadora o al escanear el QR.</p>
+                  <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h5 className="text-sm font-bold text-slate-700">Llave del Código QR</h5>
+                      <p className="text-xs text-slate-500">Si deseas invalidar el QR actual para que ya no funcione el enlace anterior, genera una nueva llave.</p>
+                    </div>
+                    <button
+                      onClick={handleRegenerateToken}
+                      disabled={isRegeneratingToken}
+                      className="px-3.5 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 active:scale-95 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 text-indigo-600 ${isRegeneratingToken ? 'animate-spin' : ''}`} />
+                      {isRegeneratingToken ? 'Regenerando...' : 'Regenerar Llave QR'}
+                    </button>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-200">
+                    <h4 className="font-bold text-slate-700 mb-1">PIN de Acceso Manual</h4>
+                    <p className="text-xs text-slate-500 mb-3">Este PIN de 4 dígitos solo se solicitará si alguien entra escribiendo la URL a mano sin la llave del QR.</p>
                     <div className="flex flex-wrap items-center gap-3">
                       <input 
                         type="text"
@@ -861,22 +912,25 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                 </div>
 
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center">
-                    <h4 className="font-bold text-slate-700 mb-4 text-center">Código QR</h4>
+                    <div className="flex items-center gap-1.5 mb-3 text-slate-700 font-bold text-sm">
+                      <Sparkles className="w-4 h-4 text-indigo-500" />
+                      <h4>Código QR Inteligente</h4>
+                    </div>
                     {portalUrl && (
-                      <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                        <QRCodeSVG value={portalUrl} size={150} level="M" />
+                      <div className="bg-white p-3 rounded-2xl shadow-md border-2 border-indigo-100">
+                        <QRCodeSVG value={portalUrl} size={160} level="M" />
                       </div>
                     )}
-                    <p className="text-xs text-slate-400 mt-4 text-center max-w-[150px]">
-                      Imprime este código y colócalo en oficinas.
+                    <p className="text-xs text-slate-500 mt-4 text-center max-w-[180px] leading-relaxed">
+                      Imprime este código. Al escanearlo, el personal entra directo sin pedirles PIN.
                     </p>
                     <a 
                       href={portalUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 transition-colors"
+                      className="mt-4 text-xs font-bold text-indigo-600 bg-indigo-50 px-3.5 py-2 rounded-full hover:bg-indigo-100 transition-colors flex items-center gap-1"
                     >
-                      Probar Portal &rarr;
+                      Probar Acceso con QR &rarr;
                     </a>
                   </div>
                 </div>
