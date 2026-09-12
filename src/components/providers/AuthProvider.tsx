@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { socket } from '@/services/api/api-client';
+import { socket, safeStorage } from '@/services/api/api-client';
 
 type User = {
   id: string;
@@ -28,17 +28,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize theme from localStorage
-    const savedTheme = localStorage.getItem('app_theme');
+    // Initialize theme safely
+    const savedTheme = safeStorage.getItem('app_theme');
     if (savedTheme === 'dark') {
       document.documentElement.classList.add('dark-mode');
     } else if (savedTheme === 'light') {
       document.documentElement.classList.remove('dark-mode');
     }
 
-    // Check localStorage on load
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
+    // Check safeStorage on load
+    const storedToken = safeStorage.getItem('auth_token');
+    const storedUser = safeStorage.getItem('auth_user');
     
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         socket.auth = { token: storedToken };
         socket.connect();
       } catch (e) {
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+        safeStorage.removeItem('auth_token');
+        safeStorage.removeItem('auth_user');
       }
     }
     setIsLoading(false);
@@ -57,8 +57,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
-    localStorage.setItem('auth_token', newToken);
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
+    safeStorage.setItem('auth_token', newToken);
+    safeStorage.setItem('auth_user', JSON.stringify(newUser));
     socket.auth = { token: newToken };
     socket.connect();
   };
@@ -66,8 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setToken(null);
     setUser(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    safeStorage.removeItem('auth_token');
+    safeStorage.removeItem('auth_user');
     socket.disconnect();
     window.location.reload();
   };

@@ -16,9 +16,42 @@ export const socket = io(SOCKET_URL, {
   transports: ['websocket', 'polling'],
 });
 
+// Storage seguro con fallback en memoria (compatible con Safari Privado, WebViews y bloqueadores)
+const memoryStorage: Record<string, string> = {};
+export const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (e) {
+      // Safari en modo privado o cookies bloqueadas
+    }
+    return memoryStorage[key] ?? null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (e) {
+      // Fallback a memoria
+    }
+    memoryStorage[key] = value;
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {}
+    delete memoryStorage[key];
+  }
+};
+
 const originalFetch = globalThis.fetch;
 const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  const token = safeStorage.getItem('auth_token');
   const headers: any = {
     ...options?.headers,
   };
@@ -33,9 +66,12 @@ const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
         if (typeof window !== 'undefined') {
-           localStorage.removeItem('auth_token');
-           localStorage.removeItem('auth_user');
-           window.location.href = '/';
+           safeStorage.removeItem('auth_token');
+           safeStorage.removeItem('auth_user');
+           // No redirigir forzosamente si estamos en el portal de autoservicio o activo público
+           if (window.location.pathname !== '/portal' && !window.location.pathname.startsWith('/activo')) {
+             window.location.href = '/';
+           }
         }
       }
       const errData = await res.json().catch(() => ({}));
@@ -44,8 +80,10 @@ const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
     
     return res;
   } catch (error: any) {
-    // Mostramos un toast si hay error
-    toast.error(error.message || 'Error de conexión con el servidor');
+    // Mostramos un toast si hay error, salvo en vistas de autoservicio
+    if (typeof window !== 'undefined' && window.location.pathname !== '/portal') {
+      toast.error(error.message || 'Error de conexión con el servidor');
+    }
     throw error;
   }
 };
@@ -158,8 +196,11 @@ export const crearTicket = async (ticketData: any) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ticketData),
   });
-  if (!res.ok) throw new Error('Error al crear ticket');
-  return res.json();
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al crear ticket');
+  }
+  return res.json().catch(() => ({ success: true }));
 };
 
 export const eliminarTicket = async (ticketId: string) => {

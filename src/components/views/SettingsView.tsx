@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X } from 'lucide-react';
-import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getCatalogos, actualizarCatalogo } from '@/services/api/api-client';
+import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getCatalogos, actualizarCatalogo, safeStorage } from '@/services/api/api-client';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
@@ -49,7 +49,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   // Cargar estado inicial del tema y preferencias
   useEffect(() => {
-    const savedTheme = localStorage.getItem('app_theme');
+    const savedTheme = safeStorage.getItem('app_theme');
     if (savedTheme === 'dark' || document.documentElement.classList.contains('dark-mode')) {
       setTheme('dark');
       document.documentElement.classList.add('dark-mode');
@@ -69,10 +69,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             setTheme(isDark ? 'dark' : 'light');
             if (isDark) {
               document.documentElement.classList.add('dark-mode');
-              localStorage.setItem('app_theme', 'dark');
+              safeStorage.setItem('app_theme', 'dark');
             } else {
               document.documentElement.classList.remove('dark-mode');
-              localStorage.setItem('app_theme', 'light');
+              safeStorage.setItem('app_theme', 'light');
             }
           }
         }
@@ -201,10 +201,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     setTheme(newTheme);
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark-mode');
-      localStorage.setItem('app_theme', 'dark');
+      safeStorage.setItem('app_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark-mode');
-      localStorage.setItem('app_theme', 'light');
+      safeStorage.setItem('app_theme', 'light');
     }
   };
 
@@ -236,7 +236,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             temaOscuro: theme === 'dark'
           }
         });
-        localStorage.setItem('app_theme', theme);
+        safeStorage.setItem('app_theme', theme);
         toast.success('¡Preferencias y tema guardados correctamente!');
         if (onPreferencesSaved) onPreferencesSaved();
       } catch (error) {
@@ -246,7 +246,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
         setIsSaving(false);
       }
     } else {
-      localStorage.setItem('app_theme', theme);
+      safeStorage.setItem('app_theme', theme);
       toast.success('Preferencias guardadas localmente.');
       setIsSaving(false);
       if (onPreferencesSaved) onPreferencesSaved();

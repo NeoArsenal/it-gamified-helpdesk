@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { 
   getTickets, actualizarEstadoTicket, actualizarTicket, crearTicket, 
   eliminarTicket, getUbicacionesSedes, getUbicacionesDepartamentos, 
-  getUbicacionesAreas, socket 
+  getUbicacionesAreas, socket, safeStorage 
 } from '@/services/api/api-client';
 import { toast } from 'sonner';
 
@@ -103,7 +103,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     fetchTicketsData();
 
     // Asegurar conexión del socket en tiempo real
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = safeStorage.getItem('auth_token');
     if (token) {
       socket.auth = { token };
     }

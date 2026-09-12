@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { ShieldAlert, TicketIcon, X, CheckCircle2, ChevronDown, Monitor, Stethoscope, Briefcase, LogOut } from 'lucide-react';
-import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin } from '@/services/api/api-client';
+import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin, safeStorage } from '@/services/api/api-client';
 
 // Componente Select personalizado simplificado para el portal
 function PortalSelect({ value, options, onChange, placeholder }: { value: string, options: string[], onChange: (val: string) => void, placeholder: string }) {
@@ -67,8 +67,8 @@ export default function PortalPage() {
   const [areasList, setAreasList] = useState<string[]>([]);
 
   useEffect(() => {
-    // Check si ya ingresó el PIN previamente (guardado en localStorage)
-    const savedPin = localStorage.getItem('portal_pin_verified');
+    // Check si ya ingresó el PIN previamente (guardado de forma segura con safeStorage)
+    const savedPin = safeStorage.getItem('portal_pin_verified');
     if (savedPin === 'true') {
       setIsAuthenticated(true);
       cargarDatosBase();
@@ -108,7 +108,7 @@ export default function PortalPage() {
     try {
       const res = await verifyPortalPin(pin);
       if (res.valid) {
-        localStorage.setItem('portal_pin_verified', 'true');
+        safeStorage.setItem('portal_pin_verified', 'true');
         setIsAuthenticated(true);
         cargarDatosBase();
       } else {
@@ -256,7 +256,7 @@ export default function PortalPage() {
               <ShieldAlert className="w-4 h-4 text-indigo-200" /> Soporte TI
             </div>
             <button 
-              onClick={() => { localStorage.removeItem('portal_pin_verified'); setIsAuthenticated(false); }}
+              onClick={() => { safeStorage.removeItem('portal_pin_verified'); setIsAuthenticated(false); }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-indigo-700 hover:bg-indigo-50 active:scale-95 text-xs font-black shadow-md border border-white/40 transition-all cursor-pointer"
               title="Cerrar sesión del portal"
             >
