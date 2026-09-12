@@ -1,9 +1,9 @@
-import { Search, Bell, Zap, Menu } from 'lucide-react';
+import { Bell, Zap, Menu } from 'lucide-react';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0">
-      <div className="flex items-center gap-3 md:gap-0 flex-1">
+      <div className="flex items-center gap-3 md:gap-0">
         {/* Hamburger para móviles */}
         <button 
           onClick={onMenuClick}
@@ -11,16 +11,6 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           <Menu className="w-5 h-5" />
         </button>
-
-        {/* Buscador Global */}
-        <div className="relative w-full max-w-[200px] md:max-w-md hidden sm:block">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input 
-          type="text" 
-          placeholder="Buscar tickets, equipos o guías..." 
-          className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-        />
-        </div>
       </div>
 
       {/* Acciones del Top Header */}
