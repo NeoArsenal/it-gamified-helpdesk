@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode } from 'lucide-react';
 import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/services/api/api-client';
+import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -114,9 +115,10 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
       setNuevoTitulo('');
       setContenidoNativo('');
       fetchGuides(searchQuery);
-    } catch (err) {
+      toast.success("¡Guía publicada con éxito!");
+    } catch (err: any) {
       console.error(err);
-      alert("Error al subir guía");
+      toast.error(err.message || "Error al subir la guía");
     }
   };
 

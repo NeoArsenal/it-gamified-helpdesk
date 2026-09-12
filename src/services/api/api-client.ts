@@ -431,7 +431,8 @@ export const uploadFileToStorage = async (file: File) => {
   });
   
   if (!res.ok) {
-    throw new Error('Error al subir el archivo');
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al subir el archivo');
   }
   return res.json();
 };
