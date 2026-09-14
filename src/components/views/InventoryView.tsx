@@ -431,7 +431,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Buscar por código, tipo, modelo, sede..."
-                className="w-full pl-9.5 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+                className="w-full pl-9.5 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-500"
               />
               {searchQuery && (
                 <button 
@@ -448,7 +448,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
               <select
                 value={filterSede}
                 onChange={e => setFilterSede(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
+                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
               >
                 <option value="TODAS">Todas las Sedes</option>
                 {sedesDisponibles.map(s => (
@@ -459,7 +459,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
               <select
                 value={filterEstado}
                 onChange={e => setFilterEstado(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
+                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
               >
                 <option value="TODOS">Todos los Estados</option>
                 <option value="OPERATIVO">🟢 Solo Operativos</option>
@@ -901,7 +901,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                     value={codigo}
                     onChange={e => setCodigo(e.target.value)}
                     placeholder="Ej: PC-042"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-800 placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 
@@ -912,7 +912,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                   <select
                     value={tipo}
                     onChange={e => setTipo(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
                     {tiposDisponibles.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -930,7 +930,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                   value={modelo}
                   onChange={e => setModelo(e.target.value)}
                   placeholder="Ej: HP ProDesk 400 G6, Lenovo ThinkPad L14..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
 
@@ -945,9 +945,9 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                       setSede(e.target.value);
                       setDepartamento('');
                     }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   >
-                    <option value="">Seleccionar Sede</option>
+                    <option value="" className="text-slate-500">Seleccionar Sede</option>
                     {sedesList.map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
@@ -962,9 +962,9 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                     value={departamento}
                     onChange={e => setDepartamento(e.target.value)}
                     disabled={!sede || departamentosList.length === 0}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-60"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-60"
                   >
-                    <option value="">Seleccionar Depto</option>
+                    <option value="" className="text-slate-500">Seleccionar Depto</option>
                     {departamentosList.map(d => (
                       <option key={d} value={d}>{d}</option>
                     ))}
@@ -982,7 +982,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                     value={ubicacion}
                     onChange={e => setUbicacion(e.target.value)}
                     placeholder="Ej: Oficina 501, Ventanilla 2..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 
@@ -995,7 +995,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                     value={responsable}
                     onChange={e => setResponsable(e.target.value)}
                     placeholder="Ej: Dra. Gómez, Caja 1..."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
               </div>
@@ -1017,11 +1017,11 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                       className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                         estado === opt.id
                           ? 'bg-indigo-50 border-indigo-500 text-indigo-700 font-bold ring-2 ring-indigo-500/20 shadow-2xs'
-                          : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                          : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
                       }`}
                     >
-                      <span className="text-xs">{opt.label}</span>
-                      <span className="text-[10px] text-slate-400">{opt.desc}</span>
+                      <span className="text-xs font-bold">{opt.label}</span>
+                      <span className={`text-[10px] ${estado === opt.id ? 'text-indigo-600 font-semibold' : 'text-slate-500 font-medium'}`}>{opt.desc}</span>
                     </button>
                   ))}
                 </div>
@@ -1036,7 +1036,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
                   value={observaciones}
                   onChange={e => setObservaciones(e.target.value)}
                   placeholder="Detalles de configuración, estado físico, fallas previas o componentes salvados..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-500 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
                 />
               </div>
 
