@@ -4,7 +4,7 @@ import {
   Search, Laptop, Monitor, Printer as PrinterIcon, Cpu, 
   HardDrive, Network, MapPin, User, Building2, CheckCircle2, 
   ChevronDown, Zap, ShieldCheck, Edit3, Check, Smartphone, 
-  Layers, ArrowUpRight
+  Layers, ArrowUpRight, Sparkles
 } from 'lucide-react';
 import { 
   getActivos, crearActivo, updateActivo, eliminarActivo, 
@@ -120,7 +120,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
   // Manejo Formulario
   const handleAbrirCrear = () => {
     setEditingActivo(null);
-    setCodigo(`ACT-${Math.floor(1000 + Math.random() * 9000)}`);
+    setCodigo('');
     setTipo(tiposDisponibles[0] || 'PC');
     setModelo('');
     setSede(sedesList[0] || '');
@@ -892,9 +892,19 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
               
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Código Patrimonial <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Código Patrimonial <span className="text-red-500">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setCodigo(`ACT-${Math.floor(1000 + Math.random() * 9000)}`)}
+                      className="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+                      title="Generar un código provisional al azar"
+                    >
+                      <Sparkles className="w-3 h-3" /> Auto
+                    </button>
+                  </div>
                   <input
                     type="text"
                     required
