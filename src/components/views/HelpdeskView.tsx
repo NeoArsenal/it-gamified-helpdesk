@@ -281,9 +281,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     if (!confirm("¿Estás seguro de eliminar este ticket?")) return;
     try {
       await eliminarTicket(id);
-      if (selectedTicket?.id === id) {
-        setSelectedTicket(null);
-      }
+      setSelectedTicket((prev: any) => prev?.id === id ? null : prev);
       fetchTicketsData();
       toast.success('Ticket eliminado');
     } catch (err) {
@@ -298,9 +296,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     try {
       await actualizarEstadoTicket(id, 'CERRADO', userId, solucion);
       toast.success('Ticket archivado y cerrado');
-      if (selectedTicket?.id === id) {
-        setSelectedTicket((prev: any) => ({ ...prev, estado: 'CERRADO', solucion: solucion ?? prev.solucion }));
-      }
+      setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, estado: 'CERRADO', solucion: solucion ?? prev.solucion } : prev));
       fetchTicketsData();
     } catch (err) {
       alert("Error al cerrar ticket");
@@ -315,14 +311,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     
     // Actualización optimista
     setTickets(prev => prev.map(t => t.id === id ? { ...t, estado: nuevoEstado } : t));
-    if (selectedTicket?.id === id) {
-      setSelectedTicket((prev: any) => ({ ...prev, estado: nuevoEstado }));
-    }
+    setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, estado: nuevoEstado } : prev));
     
     try {
       const res = await actualizarEstadoTicket(id, nuevoEstado, userId);
       if (res && res.id) {
         setTickets(prev => prev.map(t => t.id === id ? { ...t, ...res } : t));
+        setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, ...res } : prev));
       }
       if (nuevoEstado === 'RESUELTO') {
         toast.success('¡Ticket marcado como resuelto!');
@@ -347,12 +342,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
   const handleGuardarSolucion = async () => {
     if (!selectedTicket) return;
+    const ticketId = selectedTicket.id;
     setIsSavingSolucion(true);
     try {
-      await actualizarTicket(selectedTicket.id, { solucion: solucionInput });
+      await actualizarTicket(ticketId, { solucion: solucionInput });
       toast.success('Solución técnica guardada con éxito');
-      setSelectedTicket((prev: any) => ({ ...prev, solucion: solucionInput }));
-      setTickets((prev) => prev.map(t => t.id === selectedTicket.id ? { ...t, solucion: solucionInput } : t));
+      setSelectedTicket((prev: any) => (prev && prev.id === ticketId ? { ...prev, solucion: solucionInput } : prev));
+      setTickets((prev) => prev.map(t => t.id === ticketId ? { ...t, solucion: solucionInput } : t));
       setIsEditingSolucion(false);
     } catch (err) {
       console.error('Error al guardar solución:', err);
@@ -366,17 +362,14 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   const handleCambiarPrioridad = async (id: string, nuevaPrioridad: string) => {
     // Actualización optimista inmediata
     setTickets(prev => prev.map(t => t.id === id ? { ...t, prioridad: nuevaPrioridad } : t));
-    if (selectedTicket?.id === id) {
-      setSelectedTicket((prev: any) => ({ ...prev, prioridad: nuevaPrioridad }));
-    }
+    setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, prioridad: nuevaPrioridad } : prev));
 
     try {
       const res = await actualizarTicket(id, { prioridad: nuevaPrioridad });
       if (res && res.id) {
         setTickets(prev => prev.map(t => t.id === id ? { ...t, ...res } : t));
-        if (selectedTicket?.id === id) {
-          setSelectedTicket((prev: any) => ({ ...prev, ...res }));
-        }
+        // Solo actualizar selectedTicket si la ventana sigue abierta con este mismo ticket
+        setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, ...res } : prev));
       }
       toast.success(`Nivel de emergencia actualizado: ${nuevaPrioridad}`);
     } catch (error) {
@@ -1530,7 +1523,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             className="fixed inset-0"
             onClick={() => setSelectedTicket(null)}
           />
-          <div className="relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+          >
             {/* Header del Modal */}
             <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between gap-4 bg-slate-50/50">
               <div className="space-y-1.5 flex-1 min-w-0">
@@ -1556,8 +1552,12 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 </h2>
               </div>
               <button 
-                onClick={() => setSelectedTicket(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors shrink-0"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedTicket(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-xl transition-colors shrink-0 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1775,8 +1775,11 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
               <button
                 type="button"
-                onClick={() => setSelectedTicket(null)}
-                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedTicket(null);
+                }}
+                className="px-4 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold rounded-xl transition-all cursor-pointer"
               >
                 Cerrar Ventana
               </button>
