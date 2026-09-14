@@ -63,11 +63,14 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   const [loading, setLoading] = useState(true);
   const [draggedTicket, setDraggedTicket] = useState<string | null>(null);
 
-  // Estados de búsqueda reactiva y filtros
+  // Estados de búsqueda reactiva y filtros para el TABLERO KANBAN (exclusivo para las cajas activas)
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterPriority, setFilterPriority] = useState<string | null>(null);
+  const [filterBoardEmergency, setFilterBoardEmergency] = useState<string>('TODAS');
+  const [isBoardEmergencyOpen, setIsBoardEmergencyOpen] = useState(false);
+  const [filterBoardSede, setFilterBoardSede] = useState<string>('TODAS');
+  const [isBoardSedeOpen, setIsBoardSedeOpen] = useState(false);
   
-  // Filtro de Sedes para Historial
+  // Filtro de Sedes para Historial (independiente del tablero)
   const [filterHistorySede, setFilterHistorySede] = useState<string>('TODAS');
   const [isSedeFilterOpen, setIsSedeFilterOpen] = useState(false);
 
@@ -359,10 +362,28 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
   };
 
-  const toggleFilter = () => {
-    const priorities = [null, 'CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
-    const currentIndex = priorities.indexOf(filterPriority);
-    setFilterPriority(priorities[(currentIndex + 1) % priorities.length]);
+  // El técnico decide o reclasifica el nivel de emergencia / importancia
+  const handleCambiarPrioridad = async (id: string, nuevaPrioridad: string) => {
+    // Actualización optimista inmediata
+    setTickets(prev => prev.map(t => t.id === id ? { ...t, prioridad: nuevaPrioridad } : t));
+    if (selectedTicket?.id === id) {
+      setSelectedTicket((prev: any) => ({ ...prev, prioridad: nuevaPrioridad }));
+    }
+
+    try {
+      const res = await actualizarTicket(id, { prioridad: nuevaPrioridad });
+      if (res && res.id) {
+        setTickets(prev => prev.map(t => t.id === id ? { ...t, ...res } : t));
+        if (selectedTicket?.id === id) {
+          setSelectedTicket((prev: any) => ({ ...prev, ...res }));
+        }
+      }
+      toast.success(`Nivel de emergencia actualizado: ${nuevaPrioridad}`);
+    } catch (error) {
+      console.error('Error al cambiar prioridad:', error);
+      fetchTicketsData();
+      toast.error('No se pudo actualizar el nivel de emergencia');
+    }
   };
 
   const getPriorityStyle = (priority: string) => {
@@ -375,18 +396,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
   };
 
-  // Filtrado reactivo unificado por texto y prioridad
   const query = searchQuery.toLowerCase().trim();
-  const filterTicket = (t: any) => {
-    if (!query) return true;
-    const matchTitle = t.titulo?.toLowerCase().includes(query);
-    const matchDept = t.departamento?.toLowerCase().includes(query);
-    const matchSede = t.sede?.toLowerCase().includes(query);
-    const matchSolicitante = t.solicitanteNombre?.toLowerCase().includes(query);
-    const matchId = t.id?.toLowerCase().includes(query);
-    const matchSolucion = t.solucion?.toLowerCase().includes(query);
-    return Boolean(matchTitle || matchDept || matchSede || matchSolicitante || matchId || matchSolucion);
-  };
 
   // Lista dinámica de sedes combinando catálogo oficial de la BD y sedes existentes en tickets
   const sedesDisponibles = Array.from(
@@ -396,21 +406,65 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     ])
   ).filter(Boolean).sort();
 
-  let activeTickets = tickets.filter(t => t.estado !== 'CERRADO').filter(filterTicket);
-  if (filterPriority) {
-    activeTickets = activeTickets.filter(t => t.prioridad === filterPriority);
-  }
+  // Filtrado reactivo EXCLUSIVO para las cajas del tablero Kanban (tickets activos)
+  const filterActiveTicket = (t: any) => {
+    // 1. Búsqueda por texto (solo afecta a las cajas del tablero)
+    if (query) {
+      const matchTitle = t.titulo?.toLowerCase().includes(query);
+      const matchDept = t.departamento?.toLowerCase().includes(query);
+      const matchSede = t.sede?.toLowerCase().includes(query);
+      const matchSolicitante = t.solicitanteNombre?.toLowerCase().includes(query);
+      const matchId = t.id?.toLowerCase().includes(query);
+      if (!Boolean(matchTitle || matchDept || matchSede || matchSolicitante || matchId)) {
+        return false;
+      }
+    }
 
-  // Historial completo filtrado por texto de búsqueda
-  const allHistoryTickets = tickets.filter(t => t.estado === 'CERRADO').filter(filterTicket);
+    // 2. Filtro de Emergencia / Importancia decidido por el técnico
+    if (filterBoardEmergency !== 'TODAS') {
+      if (filterBoardEmergency === 'EMERGENCIAS') {
+        if (t.prioridad !== 'CRITICA' && t.prioridad !== 'ALTA') return false;
+      } else if (t.prioridad !== filterBoardEmergency) {
+        return false;
+      }
+    }
 
-  // Historial clasificado por Sede seleccionada
+    // 3. Filtro de Sede del Tablero
+    if (filterBoardSede !== 'TODAS') {
+      if (t.sede?.toLowerCase().trim() !== filterBoardSede.toLowerCase().trim()) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const activeTickets = tickets.filter(t => t.estado !== 'CERRADO').filter(filterActiveTicket);
+
+  // Conteos reactivos para los botones de filtro del Tablero Kanban
+  const countBoardSede = (sedeName: string) => {
+    const base = tickets.filter(t => t.estado !== 'CERRADO');
+    if (sedeName === 'TODAS') return base.length;
+    return base.filter(t => t.sede?.toLowerCase().trim() === sedeName.toLowerCase().trim()).length;
+  };
+
+  const countBoardEmergency = (prioKey: string) => {
+    const base = tickets.filter(t => t.estado !== 'CERRADO');
+    if (prioKey === 'TODAS') return base.length;
+    if (prioKey === 'EMERGENCIAS') return base.filter(t => t.prioridad === 'CRITICA' || t.prioridad === 'ALTA').length;
+    return base.filter(t => t.prioridad === prioKey).length;
+  };
+
+  // Historial completamente INDEPENDIENTE de los filtros del tablero superior
+  const allHistoryTickets = tickets.filter(t => t.estado === 'CERRADO');
+
+  // Historial clasificado por Sede seleccionada en su propia tabla
   const historyTickets = allHistoryTickets.filter(t => {
     if (filterHistorySede === 'TODAS') return true;
     return t.sede?.toLowerCase().trim() === filterHistorySede.toLowerCase().trim();
   });
 
-  // Conteo reactivo por sede para las opciones del filtro
+  // Conteo reactivo por sede para las opciones del filtro del historial
   const countPorSede = (sedeName: string) => {
     if (sedeName === 'TODAS') return allHistoryTickets.length;
     return allHistoryTickets.filter(t => t.sede?.toLowerCase().trim() === sedeName.toLowerCase().trim()).length;
@@ -498,12 +552,190 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             )}
           </div>
 
-          <button 
-            onClick={toggleFilter}
-            className={`px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border ${filterPriority ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'}`}
-          >
-            <Filter className="w-4 h-4" /> {filterPriority ? `Prioridad: ${filterPriority}` : 'Filtros'}
-          </button>
+          {/* FILTRO 1: Tipo de Emergencia / Importancia */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => {
+                setIsBoardEmergencyOpen(!isBoardEmergencyOpen);
+                setIsBoardSedeOpen(false);
+              }}
+              className={`px-3 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+                filterBoardEmergency !== 'TODAS' 
+                  ? filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
+                    ? 'bg-red-50 border-red-300 text-red-700 ring-2 ring-red-500/20 shadow-red-100'
+                    : filterBoardEmergency === 'ALTA'
+                    ? 'bg-orange-50 border-orange-300 text-orange-700 ring-2 ring-orange-500/20 shadow-orange-100'
+                    : 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Filtrar por nivel de emergencia e importancia"
+            >
+              <ShieldAlert className={`w-4 h-4 ${
+                filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS' ? 'text-red-600' :
+                filterBoardEmergency === 'ALTA' ? 'text-orange-600' :
+                filterBoardEmergency !== 'TODAS' ? 'text-blue-600' : 'text-slate-400'
+              }`} />
+              <span className="flex items-center gap-1">
+                <span className="text-slate-500 font-normal hidden xl:inline">Urgencia:</span>
+                <span>
+                  {filterBoardEmergency === 'TODAS' && 'Emergencia / Importancia'}
+                  {filterBoardEmergency === 'EMERGENCIAS' && '🚨 Emergencias / Altas'}
+                  {filterBoardEmergency === 'CRITICA' && '🚨 Crítica'}
+                  {filterBoardEmergency === 'ALTA' && '⚠️ Importante'}
+                  {filterBoardEmergency === 'MEDIA' && '⏱️ Normal'}
+                  {filterBoardEmergency === 'BAJA' && '🟢 Baja'}
+                </span>
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBoardEmergencyOpen ? 'rotate-180 text-blue-600' : ''}`} />
+            </button>
+
+            {/* Menú desplegable flotante de Emergencia */}
+            {isBoardEmergencyOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardEmergencyOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Nivel de Emergencia</span>
+                    {filterBoardEmergency !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => { setFilterBoardEmergency('TODAS'); setIsBoardEmergencyOpen(false); }}
+                        className="text-blue-600 hover:underline font-bold text-[10px] normal-case"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 space-y-0.5">
+                    {[
+                      { id: 'TODAS', label: 'Todas las prioridades', icon: <Filter className="w-3.5 h-3.5 text-slate-400" />, color: 'text-slate-700' },
+                      { id: 'EMERGENCIAS', label: '🚨 Solo Emergencias (Crítica / Alta)', icon: null, color: 'text-red-700 font-bold' },
+                      { id: 'CRITICA', label: '🚨 Crítica (Emergencia Total)', icon: null, color: 'text-red-700' },
+                      { id: 'ALTA', label: '⚠️ Alta (Muy Importante)', icon: null, color: 'text-orange-700' },
+                      { id: 'MEDIA', label: '⏱️ Media (Atención Normal)', icon: null, color: 'text-yellow-700' },
+                      { id: 'BAJA', label: '🟢 Baja (Rutinaria / Menor)', icon: null, color: 'text-green-700' },
+                    ].map(opt => {
+                      const isSelected = filterBoardEmergency === opt.id;
+                      const count = countBoardEmergency(opt.id);
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            setFilterBoardEmergency(opt.id);
+                            setIsBoardEmergencyOpen(false);
+                          }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-colors cursor-pointer ${
+                            isSelected ? 'bg-blue-50 text-blue-700 font-bold' : `${opt.color} hover:bg-slate-100 font-medium`
+                          }`}
+                        >
+                          <span className="truncate">{opt.label}</span>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            isSelected ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* FILTRO 2: Sedes (exclusivo para las cajas del tablero) */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => {
+                setIsBoardSedeOpen(!isBoardSedeOpen);
+                setIsBoardEmergencyOpen(false);
+              }}
+              className={`px-3 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+                filterBoardSede !== 'TODAS' 
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20 shadow-indigo-100'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Filtrar cajas del tablero por sede"
+            >
+              <MapPin className={`w-4 h-4 ${filterBoardSede !== 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
+              <span className="flex items-center gap-1.5">
+                <span className="text-slate-500 font-normal hidden xl:inline">Sede:</span>
+                <span className={filterBoardSede !== 'TODAS' ? 'text-indigo-700 font-black' : 'text-slate-900'}>
+                  {filterBoardSede === 'TODAS' ? 'Todas las Sedes' : filterBoardSede}
+                </span>
+              </span>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isBoardSedeOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+            </button>
+
+            {/* Menú desplegable flotante de Sedes */}
+            {isBoardSedeOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardSedeOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-slate-400" /> Sede del Tablero
+                    </span>
+                    {filterBoardSede !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => { setFilterBoardSede('TODAS'); setIsBoardSedeOpen(false); }}
+                        className="text-indigo-600 hover:underline font-bold text-[10px] normal-case"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-56 overflow-y-auto py-1 space-y-0.5 custom-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => { setFilterBoardSede('TODAS'); setIsBoardSedeOpen(false); }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                        filterBoardSede === 'TODAS' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Building2 className={`w-3.5 h-3.5 ${filterBoardSede === 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                        <span>Todas las Sedes</span>
+                      </span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                        filterBoardSede === 'TODAS' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {countBoardSede('TODAS')}
+                      </span>
+                    </button>
+                    {sedesDisponibles.map(sede => {
+                      const isSelected = filterBoardSede.toLowerCase().trim() === sede.toLowerCase().trim();
+                      const count = countBoardSede(sede);
+                      return (
+                        <button
+                          key={sede}
+                          type="button"
+                          onClick={() => { setFilterBoardSede(sede); setIsBoardSedeOpen(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                            isSelected ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <MapPin className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
+                            <span className="truncate">{sede}</span>
+                          </span>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                            isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {count}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
 
           <button 
             onClick={() => setIsModalOpen(true)} 
@@ -513,6 +745,70 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
           </button>
         </div>
       </div>
+
+      {/* Indicador de Filtros Activos exclusivos para las Cajas */}
+      {(searchQuery || filterBoardEmergency !== 'TODAS' || filterBoardSede !== 'TODAS') && (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-blue-50/70 border border-blue-200/80 rounded-xl text-xs text-slate-600 shrink-0 animate-in fade-in">
+          <span className="font-bold text-blue-900 flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-blue-600" /> Filtros aplicados a las cajas:
+          </span>
+          {filterBoardEmergency !== 'TODAS' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-blue-200 text-blue-800 font-bold shadow-2xs">
+              Urgencia: {
+                filterBoardEmergency === 'EMERGENCIAS' ? '🚨 Emergencias' :
+                filterBoardEmergency === 'CRITICA' ? '🚨 Crítica' :
+                filterBoardEmergency === 'ALTA' ? '⚠️ Alta' :
+                filterBoardEmergency === 'MEDIA' ? '⏱️ Media' : '🟢 Baja'
+              }
+              <button 
+                type="button" 
+                onClick={() => setFilterBoardEmergency('TODAS')} 
+                className="hover:text-red-500 ml-1 p-0.5 text-slate-400"
+                title="Quitar filtro de urgencia"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {filterBoardSede !== 'TODAS' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-indigo-200 text-indigo-800 font-bold shadow-2xs">
+              Sede: {filterBoardSede}
+              <button 
+                type="button" 
+                onClick={() => setFilterBoardSede('TODAS')} 
+                className="hover:text-red-500 ml-1 p-0.5 text-slate-400"
+                title="Quitar filtro de sede"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          {searchQuery && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-800 font-bold shadow-2xs">
+              Búsqueda: &quot;{searchQuery}&quot;
+              <button 
+                type="button" 
+                onClick={() => setSearchQuery('')} 
+                className="hover:text-red-500 ml-1 p-0.5 text-slate-400"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setSearchQuery('');
+              setFilterBoardEmergency('TODAS');
+              setFilterBoardSede('TODAS');
+            }}
+            className="text-blue-700 hover:text-blue-900 font-bold underline ml-auto text-xs cursor-pointer"
+          >
+            Limpiar filtros del tablero
+          </button>
+        </div>
+      )}
 
       {/* Kanban Board */}
       <div className="flex gap-4 md:gap-6 flex-1 min-h-[420px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
@@ -570,13 +866,14 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                             <MoreHorizontal className="w-4 h-4" />
                           </button>
                           
-                          {/* Dropdown flotante (Menú de Acciones) */}
+                          {/* Dropdown flotante (Menú de Acciones y Emergencia) */}
                           {activeDropdown === ticket.id && (
-                            <div className="absolute right-0 top-8 w-44 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/5">
+                            <div className="absolute right-0 top-8 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/5">
+                              {/* Opciones de Estado */}
                               {ticket.estado === 'ABIERTO' && (
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'EN_PROGRESO', ticket.estado); }}
-                                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
                                 >
                                   <Play className="w-4 h-4 text-slate-400 group-hover:text-blue-500" /> Iniciar Progreso
                                 </button>
@@ -585,31 +882,57 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                                 <>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'RESUELTO', ticket.estado); }}
-                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-emerald-600 flex items-center gap-2.5 transition-colors"
+                                    className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-emerald-600 flex items-center gap-2.5 transition-colors"
                                   >
                                     <CheckCircle2 className="w-4 h-4 text-slate-400 group-hover:text-emerald-500" /> Marcar Resuelto
                                   </button>
                                   <button 
                                     onClick={(e) => { e.stopPropagation(); handleMoverTicket(ticket.id, 'ABIERTO', ticket.estado); }}
-                                    className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
+                                    className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2.5 transition-colors"
                                   >
                                     <RotateCcw className="w-4 h-4 text-slate-400 group-hover:text-slate-600" /> Devolver a Abierto
                                   </button>
                                 </>
                               )}
-                              {(ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') && <div className="h-px w-full bg-slate-100 my-1"></div>}
                               {ticket.estado === 'RESUELTO' && (
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); handleCerrarTicket(ticket.id); }}
-                                  className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
+                                  className="w-full text-left px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-indigo-600 flex items-center gap-2.5 transition-colors"
                                 >
                                   <Archive className="w-4 h-4 text-slate-400 group-hover:text-indigo-500" /> Cerrar Ticket
                                 </button>
                               )}
-                              {ticket.estado === 'RESUELTO' && <div className="h-px w-full bg-slate-100 my-1"></div>}
+
+                              {/* Sección: Decisión Técnica de Emergencia / Importancia */}
+                              <div className="h-px w-full bg-slate-100 my-1.5" />
+                              <div className="px-3.5 py-1 text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                <ShieldAlert className="w-3 h-3 text-indigo-500" /> Nivel de Emergencia
+                              </div>
+                              {[
+                                { id: 'CRITICA', label: '🚨 Crítica', color: 'text-red-700 hover:bg-red-50' },
+                                { id: 'ALTA', label: '⚠️ Alta / Importante', color: 'text-orange-700 hover:bg-orange-50' },
+                                { id: 'MEDIA', label: '⏱️ Media / Normal', color: 'text-yellow-700 hover:bg-yellow-50' },
+                                { id: 'BAJA', label: '🟢 Baja / Rutinaria', color: 'text-green-700 hover:bg-green-50' },
+                              ].map(prio => (
+                                <button
+                                  key={prio.id}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCambiarPrioridad(ticket.id, prio.id);
+                                    setActiveDropdown(null);
+                                  }}
+                                  className={`w-full text-left px-4 py-1.5 text-xs font-semibold flex items-center justify-between transition-colors ${prio.color} ${ticket.prioridad === prio.id ? 'bg-slate-100 font-bold' : ''}`}
+                                >
+                                  <span>{prio.label}</span>
+                                  {ticket.prioridad === prio.id && <Check className="w-3.5 h-3.5 text-blue-600" />}
+                                </button>
+                              ))}
+
+                              <div className="h-px w-full bg-slate-100 my-1.5" />
                               <button 
                                 onClick={(e) => { e.stopPropagation(); handleEliminarTicket(ticket.id); }}
-                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2.5 transition-colors"
+                                className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2.5 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" /> Eliminar Ticket
                               </button>
@@ -665,10 +988,28 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       {col.emptyIcon}
                     </div>
                     <h4 className="text-sm font-bold text-slate-700 mb-1">{col.emptyTitle}</h4>
-                    <p className="text-xs text-slate-400 max-w-[210px] leading-relaxed mb-3">{col.emptyDesc}</p>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-white/90 kanban-empty-pill px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs">
-                      Arrastra tickets aquí
-                    </span>
+                    <p className="text-xs text-slate-400 max-w-[210px] leading-relaxed mb-3">
+                      {(query || filterBoardEmergency !== 'TODAS' || filterBoardSede !== 'TODAS')
+                        ? 'No hay tickets en esta columna que coincidan con los filtros del tablero.'
+                        : col.emptyDesc}
+                    </p>
+                    {(query || filterBoardEmergency !== 'TODAS' || filterBoardSede !== 'TODAS') ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setFilterBoardEmergency('TODAS');
+                          setFilterBoardSede('TODAS');
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors cursor-pointer border border-blue-200"
+                      >
+                        Restablecer filtros
+                      </button>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-slate-500 bg-white/90 kanban-empty-pill px-3 py-1 rounded-full border border-slate-200/80 shadow-2xs">
+                        Arrastra tickets aquí
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -922,8 +1263,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               <p>
                 {filterHistorySede !== 'TODAS'
                   ? `No se encontraron tickets cerrados en la sede "${filterHistorySede}".`
-                  : searchQuery
-                  ? 'No hay tickets en el historial que coincidan con la búsqueda.'
                   : 'No hay tickets cerrados en el historial.'}
               </p>
               {filterHistorySede !== 'TODAS' && (
@@ -1226,6 +1565,48 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
             {/* Cuerpo del Modal */}
             <div className="overflow-y-auto p-5 sm:p-6 space-y-6 flex-1">
+              {/* Panel de Decisión Técnica: Nivel de Emergencia / Importancia */}
+              <div className="bg-gradient-to-r from-slate-50 via-indigo-50/30 to-blue-50/40 border border-slate-200/90 rounded-2xl p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                      Decisión Técnica: Nivel de Emergencia / Importancia
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Haz clic para asignar o reclasificar la urgencia
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-0.5">
+                  {[
+                    { id: 'CRITICA', label: '🚨 Crítica', desc: 'Emergencia Total', activeClass: 'bg-red-600 text-white shadow-md shadow-red-500/30 border-red-600 ring-2 ring-red-400/50', idleClass: 'bg-white text-red-700 border-red-200 hover:bg-red-50' },
+                    { id: 'ALTA', label: '⚠️ Alta', desc: 'Muy Importante', activeClass: 'bg-orange-500 text-white shadow-md shadow-orange-500/30 border-orange-500 ring-2 ring-orange-400/50', idleClass: 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50' },
+                    { id: 'MEDIA', label: '⏱️ Media', desc: 'Atención Normal', activeClass: 'bg-yellow-500 text-white shadow-md shadow-yellow-500/30 border-yellow-500 ring-2 ring-yellow-400/50', idleClass: 'bg-white text-yellow-700 border-yellow-200 hover:bg-yellow-50' },
+                    { id: 'BAJA', label: '🟢 Baja', desc: 'Rutinaria / Menor', activeClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30 border-emerald-600 ring-2 ring-emerald-400/50', idleClass: 'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
+                  ].map(prio => {
+                    const isCurrent = selectedTicket.prioridad === prio.id;
+                    return (
+                      <button
+                        key={prio.id}
+                        type="button"
+                        onClick={() => handleCambiarPrioridad(selectedTicket.id, prio.id)}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                          isCurrent ? prio.activeClass : prio.idleClass
+                        }`}
+                      >
+                        <span className="text-xs font-bold flex items-center gap-1">
+                          {prio.label}
+                          {isCurrent && <Check className="w-3.5 h-3.5" />}
+                        </span>
+                        <span className={`text-[10px] ${isCurrent ? 'text-white/90' : 'text-slate-400'}`}>{prio.desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Metadatos en Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
