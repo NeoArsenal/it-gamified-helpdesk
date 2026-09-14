@@ -62,6 +62,7 @@ export default function PortalPage() {
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [area, setArea] = useState('');
+  const [honeypot, setHoneypot] = useState('');
 
   const [sedesList, setSedesList] = useState<string[]>([]);
   const [departamentosList, setDepartamentosList] = useState<string[]>([]);
@@ -203,6 +204,7 @@ export default function PortalPage() {
         ubicacionEspecifica: area,
         solicitanteNombre: solicitanteNombre.trim(),
         solicitanteContacto: solicitanteContacto.trim(),
+        website: honeypot,
       });
       setIsSuccess(true);
       // Limpiar formulario excepto datos del solicitante
@@ -210,9 +212,14 @@ export default function PortalPage() {
       setSede('');
       setDepartamento('');
       setArea('');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Hubo un error al enviar el reporte. Por favor intenta de nuevo.');
+      const msg = error?.message || '';
+      if (msg.includes('429') || msg.toLowerCase().includes('límite') || msg.toLowerCase().includes('espera')) {
+        alert(msg);
+      } else {
+        alert('Hubo un error al enviar el reporte. Por favor intenta de nuevo.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -357,6 +364,20 @@ export default function PortalPage() {
         {/* Formulario */}
         <form onSubmit={handleSubmitTicket} className="p-6 md:p-8 space-y-6 flex-1 overflow-y-auto pb-32 md:pb-8">
           
+          {/* Campo invisible Honeypot anti-spam (los humanos no lo ven ni lo llenan; los bots sí) */}
+          <div className="absolute opacity-0 pointer-events-none -z-50 h-0 w-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
+            <label htmlFor="website_check">Dejar este campo vacío</label>
+            <input
+              type="text"
+              id="website_check"
+              name="website"
+              value={honeypot}
+              onChange={(e) => setHoneypot(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
           {/* Ubicación */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
