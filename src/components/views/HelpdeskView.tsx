@@ -132,7 +132,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
     const handleTicketActualizado = (updatedTicket: any) => {
       console.log('WS Event received: ticketActualizado', updatedTicket);
-      setTickets((prev) => prev.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+      setTickets((prev) => prev.map(t => t.id === updatedTicket.id ? { ...t, ...updatedTicket } : t));
       setSelectedTicket((prev: any) => prev?.id === updatedTicket.id ? { ...prev, ...updatedTicket } : prev);
     };
 
@@ -246,7 +246,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
     
     try {
-      await actualizarEstadoTicket(draggedTicket, nuevoEstado, userId);
+      const res = await actualizarEstadoTicket(draggedTicket, nuevoEstado, userId);
+      if (res && res.id) {
+        setTickets(prev => prev.map(t => t.id === draggedTicket ? { ...t, ...res } : t));
+      }
       if (nuevoEstado === 'RESUELTO') {
         toast.success('¡Ticket marcado como resuelto!');
         if (onTicketResolved) {
@@ -305,7 +308,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     }
     
     try {
-      await actualizarEstadoTicket(id, nuevoEstado, userId);
+      const res = await actualizarEstadoTicket(id, nuevoEstado, userId);
+      if (res && res.id) {
+        setTickets(prev => prev.map(t => t.id === id ? { ...t, ...res } : t));
+      }
       if (nuevoEstado === 'RESUELTO') {
         toast.success('¡Ticket marcado como resuelto!');
         if (onTicketResolved) {
