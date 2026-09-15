@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Package, Wrench, Trash2, Recycle, Plus, QrCode, Printer, X, 
   Search, Laptop, Monitor, Printer as PrinterIcon, Cpu, 
@@ -38,6 +38,25 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
   const [filterSede, setFilterSede] = useState<string>('TODAS');
   const [filterEstado, setFilterEstado] = useState<string>('TODOS');
   const [filterTipo, setFilterTipo] = useState<string>('TODOS');
+
+  // Control de Dropdowns Estéticos
+  const [openSedeDropdown, setOpenSedeDropdown] = useState(false);
+  const [openEstadoDropdown, setOpenEstadoDropdown] = useState(false);
+  const sedeRef = useRef<HTMLDivElement>(null);
+  const estadoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sedeRef.current && !sedeRef.current.contains(event.target as Node)) {
+        setOpenSedeDropdown(false);
+      }
+      if (estadoRef.current && !estadoRef.current.contains(event.target as Node)) {
+        setOpenEstadoDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Estados del Formulario (Crear / Editar)
   const [codigo, setCodigo] = useState('');
@@ -420,10 +439,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
 
       {/* 2. VISTA A: Catálogo Maestro de Equipos (Limpia y Espaciosa) */}
       {activeTab === 'CATALOGO' && (
-        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col space-y-4 p-4 md:p-6 animate-in fade-in">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-visible flex flex-col space-y-4 p-4 md:p-6 animate-in fade-in">
           
           {/* Barra de Búsqueda y Filtros Integrada */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-100 pb-4 relative z-30">
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
@@ -445,28 +464,126 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
             </div>
 
             <div className="flex items-center gap-2.5 w-full sm:w-auto">
-              <select
-                value={filterSede}
-                onChange={e => setFilterSede(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
-              >
-                <option value="TODAS">Todas las Sedes</option>
-                {sedesDisponibles.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              {/* Dropdown Estético: Sede */}
+              <div ref={sedeRef} className="relative flex-1 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenSedeDropdown(prev => !prev);
+                    setOpenEstadoDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center justify-between gap-2.5 border transition-all cursor-pointer shadow-2xs",
+                    filterSede !== 'TODAS'
+                      ? "bg-indigo-50/70 border-indigo-300 text-indigo-800 hover:bg-indigo-50"
+                      : "bg-white hover:bg-slate-50 border-slate-300 text-slate-800"
+                  )}
+                >
+                  <span className="truncate">
+                    {filterSede === 'TODAS' ? 'Todas las Sedes' : filterSede}
+                  </span>
+                  <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0", openSedeDropdown && "rotate-180 text-indigo-600")} />
+                </button>
 
-              <select
-                value={filterEstado}
-                onChange={e => setFilterEstado(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs md:text-sm font-bold text-slate-800 focus:outline-none focus:border-indigo-500 cursor-pointer flex-1 sm:flex-none"
-              >
-                <option value="TODOS">Todos los Estados</option>
-                <option value="OPERATIVO">🟢 Solo Operativos</option>
-                <option value="REPARACION">🟡 En Taller</option>
-                <option value="BAJA">🔴 Chatarra / Baja</option>
-                <option value="RESCATADO">♻️ Rescatados</option>
-              </select>
+                {openSedeDropdown && (
+                  <div className="absolute right-0 sm:left-0 sm:right-auto top-full mt-1.5 min-w-[170px] w-full sm:w-max max-h-60 overflow-y-auto custom-scrollbar bg-white rounded-2xl shadow-xl border border-slate-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterSede('TODAS');
+                        setOpenSedeDropdown(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between gap-2 transition-all cursor-pointer",
+                        filterSede === 'TODAS'
+                          ? "bg-indigo-50 text-indigo-700"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                      )}
+                    >
+                      <span>Todas las Sedes</span>
+                      {filterSede === 'TODAS' && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                    </button>
+                    <div className="h-px bg-slate-100 my-1" />
+                    {sedesDisponibles.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          setFilterSede(s);
+                          setOpenSedeDropdown(false);
+                        }}
+                        className={cn(
+                          "w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 transition-all cursor-pointer",
+                          filterSede === s
+                            ? "bg-indigo-50 text-indigo-700 font-bold"
+                            : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        )}
+                      >
+                        <span className="truncate">{s}</span>
+                        {filterSede === s && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Dropdown Estético: Estado */}
+              <div ref={estadoRef} className="relative flex-1 sm:flex-none">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpenEstadoDropdown(prev => !prev);
+                    setOpenSedeDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full sm:w-auto px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center justify-between gap-2.5 border transition-all cursor-pointer shadow-2xs",
+                    filterEstado !== 'TODOS'
+                      ? "bg-indigo-50/70 border-indigo-300 text-indigo-800 hover:bg-indigo-50"
+                      : "bg-white hover:bg-slate-50 border-slate-300 text-slate-800"
+                  )}
+                >
+                  <span className="truncate">
+                    {filterEstado === 'TODOS' && 'Todos los Estados'}
+                    {filterEstado === 'OPERATIVO' && '🟢 Solo Operativos'}
+                    {filterEstado === 'REPARACION' && '🟡 En Taller'}
+                    {filterEstado === 'BAJA' && '🔴 Chatarra / Baja'}
+                    {filterEstado === 'RESCATADO' && '♻️ Rescatados'}
+                  </span>
+                  <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform duration-200 shrink-0", openEstadoDropdown && "rotate-180 text-indigo-600")} />
+                </button>
+
+                {openEstadoDropdown && (
+                  <div className="absolute right-0 top-full mt-1.5 min-w-[190px] w-full sm:w-max bg-white rounded-2xl shadow-xl border border-slate-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+                    {[
+                      { id: 'TODOS', label: 'Todos los Estados' },
+                      { id: 'OPERATIVO', label: '🟢 Solo Operativos' },
+                      { id: 'REPARACION', label: '🟡 En Taller' },
+                      { id: 'BAJA', label: '🔴 Chatarra / Baja' },
+                      { id: 'RESCATADO', label: '♻️ Rescatados' },
+                    ].map((opt, idx) => (
+                      <div key={opt.id}>
+                        {idx === 1 && <div className="h-px bg-slate-100 my-1" />}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFilterEstado(opt.id);
+                            setOpenEstadoDropdown(false);
+                          }}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between gap-2.5 transition-all cursor-pointer",
+                            filterEstado === opt.id
+                              ? "bg-indigo-50 text-indigo-700 font-bold"
+                              : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                          )}
+                        >
+                          <span className="truncate">{opt.label}</span>
+                          {filterEstado === opt.id && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
