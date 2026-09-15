@@ -268,14 +268,16 @@ export const getStats = async () => {
   return res.json();
 };
 
-export const getAnalytics = async () => {
-  const res = await fetch(`${BASE_URL}/tickets/analytics`);
+export const getAnalytics = async (sede?: string) => {
+  const query = sede && sede !== 'TODAS' ? `?sede=${encodeURIComponent(sede)}` : '';
+  const res = await fetch(`${BASE_URL}/tickets/analytics${query}`);
   if (!res.ok) throw new Error('Error al obtener analytics');
   return res.json();
 };
 
-export const getTicketsAnalytics = async () => {
-  const res = await fetch(`${BASE_URL}/tickets/analytics`);
+export const getTicketsAnalytics = async (sede?: string) => {
+  const query = sede && sede !== 'TODAS' ? `?sede=${encodeURIComponent(sede)}` : '';
+  const res = await fetch(`${BASE_URL}/tickets/analytics${query}`);
   if (!res.ok) throw new Error('Error al obtener analytics');
   return res.json();
 };
