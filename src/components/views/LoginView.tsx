@@ -72,15 +72,6 @@ export const LoginView = () => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Ingresar al Sistema'}
           </button>
         </form>
-        
-        <div className="mt-8 text-center bg-slate-50 p-4 rounded-xl border border-slate-100">
-          <p className="text-xs text-slate-500 font-medium mb-1">Cuentas de prueba:</p>
-          <div className="flex flex-wrap justify-center gap-2 text-xs font-bold">
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded">juan@clinica.com (Admin)</span>
-            <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded">carlos@clinica.com (Técnico)</span>
-          </div>
-          <p className="text-[10px] text-slate-400 mt-2 font-mono">Pass: admin123</p>
-        </div>
       </div>
     </div>
   );

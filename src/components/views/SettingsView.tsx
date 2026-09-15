@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X, Key, RotateCcw, Sparkles } from 'lucide-react';
-import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getPortalConfig, regeneratePortalToken, getCatalogos, actualizarCatalogo, safeStorage } from '@/services/api/api-client';
+import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X, Key, RotateCcw, Sparkles, Trophy, Sliders, RefreshCw, Cpu, Wifi, BookOpen, GraduationCap } from 'lucide-react';
+import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getPortalConfig, regeneratePortalToken, getCatalogos, actualizarCatalogo, safeStorage, getReglasGamificacion, guardarReglasGamificacion, ReglasGamificacion } from '@/services/api/api-client';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
@@ -47,7 +47,23 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [isAddingDepto, setIsAddingDepto] = useState(false);
   const [isAddingCat, setIsAddingCat] = useState(false);
 
-
+  // Gamificación State
+  const [reglasXP, setReglasXP] = useState({
+    ticketBaja: 50,
+    ticketMedia: 150,
+    ticketAlta: 350,
+    ticketCritica: 750,
+    activoReparado: 250,
+    activoRescatado: 600,
+    redRestaurada: 300,
+    guiaCreada: 200,
+    academiaNivel: 100,
+  });
+  const [nivelesConfig, setNivelesConfig] = useState<number[]>([
+    0, 500, 1200, 2000, 3500, 5000, 7500, 10000, 13000, 17000,
+    22000, 28000, 35000, 43000, 52000, 62000, 73000, 85000, 100000, 120000,
+  ]);
+  const [isSavingGamificacion, setIsSavingGamificacion] = useState(false);
 
   // Cargar estado inicial del tema y preferencias
   useEffect(() => {
@@ -56,6 +72,9 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
       setTheme('dark');
       document.documentElement.classList.add('dark-mode');
     }
+    
+    // Cargar reglas de gamificación
+    fetchGamificacion();
     
     // Si tenemos un userId (aunque sea el mock 'JD' o un UUID), intentar cargar sus preferencias
     if (userId && userId.length > 5) {
@@ -107,6 +126,56 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     } catch (e) {
       console.error('Error al cargar catálogos', e);
     }
+  };
+
+  const fetchGamificacion = async () => {
+    try {
+      const data = await getReglasGamificacion();
+      if (data.puntosPorArea) setReglasXP(data.puntosPorArea);
+      if (data.niveles && data.niveles.length > 0) setNivelesConfig(data.niveles);
+    } catch (e) {
+      console.log('Reglas de gamificación usando defaults locales', e);
+    }
+  };
+
+  const handleSaveGamificacion = async () => {
+    setIsSavingGamificacion(true);
+    try {
+      await guardarReglasGamificacion({
+        puntosPorArea: reglasXP,
+        niveles: nivelesConfig,
+      });
+      toast.success('¡Reglas de gamificación y niveles guardados exitosamente!');
+    } catch (e: any) {
+      toast.error(e.message || 'Error al guardar las reglas de gamificación');
+    } finally {
+      setIsSavingGamificacion(false);
+    }
+  };
+
+  const handleResetGamificacion = () => {
+    setReglasXP({
+      ticketBaja: 50,
+      ticketMedia: 150,
+      ticketAlta: 350,
+      ticketCritica: 750,
+      activoReparado: 250,
+      activoRescatado: 600,
+      redRestaurada: 300,
+      guiaCreada: 200,
+      academiaNivel: 100,
+    });
+    setNivelesConfig([
+      0, 500, 1200, 2000, 3500, 5000, 7500, 10000, 13000, 17000,
+      22000, 28000, 35000, 43000, 52000, 62000, 73000, 85000, 100000, 120000,
+    ]);
+    toast.info('Valores sugeridos cargados. Recuerda hacer clic en Guardar para aplicarlos.');
+  };
+
+  const handleNivelChange = (index: number, val: number) => {
+    const updated = [...nivelesConfig];
+    updated[index] = Math.max(0, val);
+    setNivelesConfig(updated);
   };
 
   const handleAddDepartamento = async (e: React.FormEvent) => {
@@ -247,6 +316,11 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   };
 
   const savePreferences = async () => {
+    if (activeTab === 'gamificacion') {
+      await handleSaveGamificacion();
+      return;
+    }
+
     setIsSaving(true);
     
     // Si tenemos un userId válido (UUID), guardamos en BD
@@ -461,36 +535,85 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
           {/* TAB: GAMIFICACIÓN */}
           {activeTab === 'gamificacion' && (
-            <div className="p-8 animate-in slide-in-from-right-4 duration-300">
-              <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-                <Gamepad2 className="w-5 h-5 text-amber-500" /> Reglas y Economía de XP
-              </h2>
+            <div className="p-6 md:p-8 animate-in slide-in-from-right-4 duration-300 space-y-8">
+              {/* Header de la sección */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <Gamepad2 className="w-5 h-5 text-amber-500" /> Reglas de Gamificación y Escala de Niveles
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">Define los puntos otorgados por cada área y la progresión de rangos de los técnicos.</p>
+                </div>
+                
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleResetGamificacion}
+                    className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-200"
+                    title="Restablece los valores estándar sugeridos"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-slate-500" /> Valores Sugeridos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveGamificacion}
+                    disabled={isSavingGamificacion}
+                    className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 rounded-lg shadow-sm transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Save className={`w-3.5 h-3.5 ${isSavingGamificacion ? 'animate-spin' : ''}`} />
+                    {isSavingGamificacion ? 'Guardando...' : 'Guardar Reglas'}
+                  </button>
+                </div>
+              </div>
 
-              <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-5 mb-8">
+              {/* Banner Informativo */}
+              <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-4">
                 <div className="flex gap-3">
                   <Shield className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <h3 className="font-bold text-amber-800 text-sm">Zona de Administración</h3>
-                    <p className="text-amber-700 text-xs mt-1">Los cambios aquí afectarán a todos los técnicos. Solo los administradores pueden modificar la cantidad de XP otorgada por cada acción.</p>
+                  <div className="text-xs text-amber-900 space-y-1">
+                    <p className="font-bold">Economía Dinámica de XP y Niveles de Soporte TI</p>
+                    <p className="text-amber-700 leading-relaxed">
+                      Los puntos configurados a continuación se aplican en tiempo real al resolver tickets clínicos, reparar equipos, estabilizar infraestructura y capacitarse en la Academia. Los cambios quedan registrados y sincronizados con la base de datos central.
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Recompensas por Ticket */}
-                <div>
-                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-indigo-500"/> XP por Tickets Resueltos</h4>
+              {/* Grid de 2 Columnas para Áreas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* 1. MESA DE AYUDA (TICKETS) */}
+                <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-indigo-600" /> Mesa de Ayuda (Tickets Resueltos)
+                    </h3>
+                    <span className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">Área Principal</span>
+                  </div>
+
                   <div className="space-y-3">
                     {[
-                      { prio: 'Crítica', color: 'bg-red-100 text-red-700', xp: 100 },
-                      { prio: 'Alta', color: 'bg-orange-100 text-orange-700', xp: 50 },
-                      { prio: 'Media', color: 'bg-amber-100 text-amber-700', xp: 20 },
-                      { prio: 'Baja', color: 'bg-emerald-100 text-emerald-700', xp: 10 },
+                      { key: 'ticketCritica', label: 'Prioridad Crítica', color: 'bg-red-100 text-red-700 border-red-200', desc: 'Fallas de quirófano, emergencias clínicas o caída total' },
+                      { key: 'ticketAlta', label: 'Prioridad Alta', color: 'bg-orange-100 text-orange-700 border-orange-200', desc: 'Afecta directamente la atención de pacientes (Farmacia, Admisión)' },
+                      { key: 'ticketMedia', label: 'Prioridad Media', color: 'bg-amber-100 text-amber-700 border-amber-200', desc: 'Problemas operativos estándar (impresoras, software)' },
+                      { key: 'ticketBaja', label: 'Prioridad Baja', color: 'bg-emerald-100 text-emerald-700 border-emerald-200', desc: 'Consultas menores, periféricos o solicitudes rutinarias' },
                     ].map(item => (
-                      <div key={item.prio} className="flex items-center justify-between">
-                        <span className={`px-2.5 py-1 text-xs font-bold rounded-md ${item.color}`}>Prioridad {item.prio}</span>
-                        <div className="flex items-center gap-2">
-                          <input type="number" defaultValue={item.xp} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-amber-500 outline-none" />
+                      <div key={item.key} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200/70 shadow-xs hover:border-indigo-300 transition-colors">
+                        <div className="space-y-0.5 pr-2">
+                          <span className={`inline-block px-2 py-0.5 text-[11px] font-bold rounded-md border ${item.color}`}>
+                            {item.label}
+                          </span>
+                          <p className="text-[10px] text-slate-400">{item.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <input 
+                            type="number" 
+                            min="0"
+                            step="25"
+                            value={(reglasXP as any)[item.key]} 
+                            onChange={(e) => setReglasXP({ ...reglasXP, [item.key]: Number(e.target.value) || 0 })}
+                            className="w-20 text-center font-black text-sm bg-slate-50 border-2 border-slate-200 rounded-lg py-1.5 focus:border-indigo-500 focus:bg-white outline-none transition-all" 
+                          />
                           <span className="text-xs font-bold text-slate-400">XP</span>
                         </div>
                       </div>
@@ -498,34 +621,127 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                   </div>
                 </div>
 
-                {/* Recompensas por Otras Acciones */}
-                <div>
-                  <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2"><Award className="w-4 h-4 text-emerald-500"/> XP por Acciones Adicionales</h4>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700">Crear Manual/Guía</p>
-                        <p className="text-[10px] text-slate-500">Aporte a la base de conocimiento.</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input type="number" defaultValue={30} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                        <span className="text-xs font-bold text-slate-400">XP</span>
-                      </div>
-                    </div>
+                {/* 2. OTRAS ÁREAS TÉCNICAS */}
+                <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Cpu className="w-4 h-4 text-emerald-600" /> Inventario, Redes y Formación
+                    </h3>
+                    <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Áreas Especiales</span>
+                  </div>
 
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-700">Restaurar Equipo (Red)</p>
-                        <p className="text-[10px] text-slate-500">Evitar caídas de infraestructura.</p>
+                  <div className="space-y-3">
+                    {[
+                      { key: 'activoRescatado', icon: '♻️', label: 'Rescatar Chatarra (Hardware)', desc: 'Recuperar equipo dado de baja ahorrando costos a la clínica' },
+                      { key: 'activoReparado', icon: '🛠️', label: 'Reparación Exitosa de Activo', desc: 'Diagnosticar y reparar hardware devolviéndolo a Operativo' },
+                      { key: 'redRestaurada', icon: '⚡', label: 'Restaurar Nodo / Switch (Redes)', desc: 'Reactivar switches o routers caídos en infraestructura hospitalaria' },
+                      { key: 'guiaCreada', icon: '📖', label: 'Publicar Guía / Manual Técnico', desc: 'Aporte a la Base de Conocimientos para soluciones rápidas' },
+                      { key: 'academiaNivel', icon: '🎓', label: 'Completar Nivel de Academia', desc: 'Aprobación de módulos de capacitación técnica' },
+                    ].map(item => (
+                      <div key={item.key} className="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200/70 shadow-xs hover:border-emerald-300 transition-colors">
+                        <div className="space-y-0.5 pr-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">{item.icon}</span>
+                            <span className="text-xs font-bold text-slate-800">{item.label}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 pl-5">{item.desc}</p>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <input 
+                            type="number" 
+                            min="0"
+                            step="25"
+                            value={(reglasXP as any)[item.key]} 
+                            onChange={(e) => setReglasXP({ ...reglasXP, [item.key]: Number(e.target.value) || 0 })}
+                            className="w-20 text-center font-black text-sm bg-slate-50 border-2 border-slate-200 rounded-lg py-1.5 focus:border-emerald-500 focus:bg-white outline-none transition-all" 
+                          />
+                          <span className="text-xs font-bold text-slate-400">XP</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <input type="number" defaultValue={250} className="w-20 text-center font-bold text-sm bg-slate-50 border border-slate-200 rounded-lg py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none" />
-                        <span className="text-xs font-bold text-slate-400">XP</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
+              </div>
+
+              {/* 3. PROGRESIÓN DE NIVELES (NIVEL 1 AL 20) */}
+              <div className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-500" /> Escala y Umbrales de Nivel (Nivel 1 al 20)
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Personaliza el XP acumulado requerido por cada nivel. Los títulos RPG se desbloquean según el rango alcanzado.</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                      Máximo Nivel 20: {(nivelesConfig[19] || 120000).toLocaleString()} XP
+                    </span>
+                  </div>
+                </div>
+
+                {/* Grid de Niveles */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                  {nivelesConfig.map((xpReq, idx) => {
+                    const nivelNum = idx + 1;
+                    const rpgTitle = TITULOS_RPG.slice().reverse().find(t => nivelNum >= t.minLevel);
+                    const isMilestone = [1, 5, 10, 15, 20].includes(nivelNum);
+
+                    return (
+                      <div 
+                        key={nivelNum} 
+                        className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                          isMilestone 
+                            ? 'bg-amber-50/60 border-amber-300 ring-2 ring-amber-400/20 shadow-xs' 
+                            : 'bg-white border-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-md ${
+                            isMilestone ? 'bg-amber-200 text-amber-900' : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            Lvl {nivelNum}
+                          </span>
+                          {rpgTitle && isMilestone && (
+                            <span className="text-sm" title={rpgTitle.id}>{rpgTitle.icon}</span>
+                          )}
+                        </div>
+
+                        {isMilestone && (
+                          <p className="text-[10px] font-bold text-amber-800 truncate mb-1" title={rpgTitle?.id}>
+                            {rpgTitle?.id}
+                          </p>
+                        )}
+
+                        <div className="flex items-center gap-1 mt-auto">
+                          <input 
+                            type="number" 
+                            min="0"
+                            step="250"
+                            disabled={idx === 0}
+                            value={xpReq} 
+                            onChange={(e) => handleNivelChange(idx, Number(e.target.value) || 0)}
+                            className="w-full text-center font-bold text-xs bg-slate-50 border border-slate-200 rounded py-1 focus:border-amber-500 focus:bg-white outline-none disabled:opacity-50" 
+                          />
+                          <span className="text-[10px] font-semibold text-slate-400">XP</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Botón Inferior Guardar */}
+                <div className="pt-4 flex justify-end border-t border-slate-200/60">
+                  <button
+                    type="button"
+                    onClick={handleSaveGamificacion}
+                    disabled={isSavingGamificacion}
+                    className="flex items-center gap-2 px-6 py-2.5 text-sm font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 rounded-xl shadow-md transition-all hover:scale-105 active:scale-95"
+                  >
+                    <Save className={`w-4 h-4 ${isSavingGamificacion ? 'animate-spin' : ''}`} />
+                    {isSavingGamificacion ? 'Guardando Cambios...' : 'Guardar Reglas de Gamificación'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

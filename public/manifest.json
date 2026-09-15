@@ -21,8 +21,8 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/logo-limatambo.png",
-      "sizes": "any",
+      "src": "/emblem-clean.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }

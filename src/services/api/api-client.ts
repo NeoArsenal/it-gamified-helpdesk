@@ -528,10 +528,18 @@ export const getPortalPin = async () => {
   return res.json();
 };
 
+export const getAuthHeaders = (): Record<string, string> => {
+  const token = safeStorage.getItem('auth_token');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+};
+
 export const setPortalPin = async (pin: string) => {
   const res = await fetch(`${BASE_URL}/configuracion/portal-pin`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ pin }),
   });
   if (!res.ok) throw new Error('Error al actualizar PIN');
@@ -548,10 +556,42 @@ export const getCatalogos = async (): Promise<{ departamentos: string[]; categor
 export const actualizarCatalogo = async (tipo: 'departamentos' | 'categoriasActivos', items: string[]): Promise<string[]> => {
   const res = await fetch(`${BASE_URL}/configuracion/catalogos/${tipo}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ items }),
   });
   if (!res.ok) throw new Error('Error al actualizar catálogo');
+  return res.json();
+};
+
+// --- Reglas de Gamificación y Niveles ---
+export interface ReglasGamificacion {
+  puntosPorArea: {
+    ticketBaja: number;
+    ticketMedia: number;
+    ticketAlta: number;
+    ticketCritica: number;
+    activoReparado: number;
+    activoRescatado: number;
+    redRestaurada: number;
+    guiaCreada: number;
+    academiaNivel: number;
+  };
+  niveles: number[];
+}
+
+export const getReglasGamificacion = async (): Promise<ReglasGamificacion> => {
+  const res = await fetch(`${BASE_URL}/configuracion/gamificacion`);
+  if (!res.ok) throw new Error('Error al obtener reglas de gamificación');
+  return res.json();
+};
+
+export const guardarReglasGamificacion = async (reglas: Partial<ReglasGamificacion>): Promise<ReglasGamificacion> => {
+  const res = await fetch(`${BASE_URL}/configuracion/gamificacion`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(reglas),
+  });
+  if (!res.ok) throw new Error('Error al guardar reglas de gamificación');
   return res.json();
 };
 

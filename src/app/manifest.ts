@@ -24,8 +24,8 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'maskable',
       },
       {
-        src: '/logo-limatambo.png',
-        sizes: 'any',
+        src: '/emblem-clean.png',
+        sizes: '512x512',
         type: 'image/png',
       },
     ],
