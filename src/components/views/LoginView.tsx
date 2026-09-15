@@ -35,12 +35,16 @@ export const LoginView = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative z-10 border border-slate-100">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white mb-4 shadow-lg shadow-blue-500/30">
-            <Cpu className="w-8 h-8" />
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src="/logo-limatambo.png" 
+              alt="Clínicas Limatambo - Soporte TI" 
+              className="h-20 sm:h-24 w-auto object-contain"
+            />
           </div>
-          <h1 className="text-3xl font-black text-slate-800">Sistemas Limatambo</h1>
-          <p className="text-slate-500 font-medium mt-1">Accede a la plataforma de soporte</p>
+          <p className="text-slate-500 font-medium text-sm">Accede a la plataforma de soporte</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
