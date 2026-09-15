@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { ShieldAlert, TicketIcon, X, CheckCircle2, ChevronDown, Monitor, Stethoscope, Briefcase, LogOut } from 'lucide-react';
 import { getUbicacionesSedes, getUbicacionesDepartamentos, getUbicacionesAreas, crearTicket, verifyPortalPin, verifyPortalAccess, safeStorage } from '@/services/api/api-client';
+import { LimatamboBrand } from '@/components/ui/LimatamboBrand';
 
 // Componente Select personalizado simplificado para el portal
 function PortalSelect({ value, options, onChange, placeholder }: { value: string, options: string[], onChange: (val: string) => void, placeholder: string }) {
@@ -243,15 +244,9 @@ export default function PortalPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 animate-in zoom-in-95 duration-500">
-          <div className="flex justify-center mb-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/logo-limatambo.png" 
-              alt="Clínicas Limatambo - Soporte TI" 
-              className="h-20 sm:h-24 w-auto object-contain"
-            />
+          <div className="mb-8">
+            <LimatamboBrand subtitle="Ingresa el PIN de acceso para reportar un problema." />
           </div>
-          <p className="text-center text-slate-500 mb-8 text-sm font-medium">Ingresa el PIN de acceso para reportar un problema.</p>
           
           <form onSubmit={handleVerifyPin}>
             <div className="relative mb-6">
@@ -347,8 +342,10 @@ export default function PortalPage() {
           <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-indigo-400/20 blur-xl"></div>
           
           <div className="relative z-10 flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 bg-white/20 px-3.5 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20 shadow-sm">
-              <ShieldAlert className="w-4 h-4 text-indigo-200" /> Soporte TI
+            <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20 shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/emblem-clean.png" alt="Limatambo" className="w-4 h-4 rounded object-cover" />
+              <span>Soporte TI · Limatambo</span>
             </div>
             <button 
               onClick={() => { safeStorage.removeItem('portal_pin_verified'); setIsAuthenticated(false); }}

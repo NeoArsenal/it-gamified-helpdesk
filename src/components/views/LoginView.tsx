@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Cpu, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'sonner';
 import { loginUsuario } from '@/services/api/api-client';
+import { LimatamboBrand } from '../ui/LimatamboBrand';
 
 export const LoginView = () => {
   const [email, setEmail] = useState('');
@@ -35,16 +36,8 @@ export const LoginView = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md relative z-10 border border-slate-100">
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/logo-limatambo.png" 
-              alt="Clínicas Limatambo - Soporte TI" 
-              className="h-20 sm:h-24 w-auto object-contain"
-            />
-          </div>
-          <p className="text-slate-500 font-medium text-sm">Accede a la plataforma de soporte</p>
+        <div className="mb-6">
+          <LimatamboBrand subtitle="Accede a la plataforma de soporte" />
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
