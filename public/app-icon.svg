@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo Completo Sólido Azul Corporativo Limatambo para Iconos PWA y Móvil -->
+  <rect width="512" height="512" fill="#134685" />
+
+  <!-- Círculo Central Blanco Nítido (Zona Segura PWA: radio 175) -->
+  <circle cx="256" cy="256" r="176" fill="#ffffff" />
+
+  <!-- Líneas "L" Institucionales de Limatambo en Azul Marino -->
+  <path d="M 239 82 L 239 270 L 430 270" fill="none" stroke="#134685" stroke-width="15" stroke-linecap="square" />
+  <path d="M 264 82 L 264 246 L 430 246" fill="none" stroke="#134685" stroke-width="15" stroke-linecap="square" />
+
+  <!-- 1. Cruz Roja Médica Oficial -->
+  <g fill="#d81e28">
+    <path d="M 322 132 L 362 132 L 362 172 L 402 172 L 402 212 L 362 212 L 362 252 L 322 252 L 322 212 L 282 212 L 282 172 L 322 172 Z" />
+  </g>
+
+  <!-- 2. Monitor TI y Redes -->
+  <g stroke="#d81e28" fill="none" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="130" y="144" width="90" height="70" rx="6" />
+    <line x1="175" y1="214" x2="175" y2="236" stroke-width="5.5" />
+    <line x1="152" y1="236" x2="198" y2="236" stroke-width="5.5" />
+    <path d="M 175 225 L 195 225 L 195 242 L 214 242" stroke-width="4.5" />
+    
+    <rect x="145" y="155" width="60" height="40" rx="3" fill="#d81e28" stroke="none" />
+    <rect x="151" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <rect x="158" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <rect x="165" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <rect x="172" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <rect x="179" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <rect x="186" y="155" width="4.5" height="11" fill="#ffffff" stroke="none" />
+    <path d="M 151 181 L 162 181 L 168 169 L 175 186 L 181 181 L 197 181" fill="none" stroke="#ffffff" stroke-width="2.2" />
+  </g>
+
+  <!-- 3. Paciente en Cama Hospitalaria -->
+  <g fill="#d81e28">
+    <circle cx="172" cy="338" r="17" />
+    <path d="M 195 340 C 206 318 236 310 258 320 L 342 340 C 354 344 366 342 370 336 L 374 336 C 374 348 364 354 350 352 L 220 352 C 202 352 192 348 195 340 Z" />
+    <path d="M 218 338 L 243 312 L 252 320 L 229 342 Z" />
+    <rect x="164" y="358" width="210" height="11" rx="5.5" />
+    <rect x="192" y="369" width="9" height="15" rx="2.5" />
+    <rect x="325" y="369" width="9" height="15" rx="2.5" />
+  </g>
+</svg>

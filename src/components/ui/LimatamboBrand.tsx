@@ -28,7 +28,7 @@ export function LimatamboBrand({
             `}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
-                src="/emblem-clean.png" 
+                src="/emblem.svg" 
                 alt="Clínicas Limatambo" 
                 className="w-full h-full object-cover"
               />
@@ -61,7 +61,7 @@ export function LimatamboBrand({
           `}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
-              src="/emblem-clean.png" 
+              src="/emblem.svg" 
               alt="Clínicas Limatambo" 
               className="w-full h-full object-cover"
             />

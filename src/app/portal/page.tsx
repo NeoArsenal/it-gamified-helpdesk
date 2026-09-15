@@ -344,7 +344,7 @@ export default function PortalPage() {
           <div className="relative z-10 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/emblem-clean.png" alt="Limatambo" className="w-4 h-4 rounded object-cover" />
+              <img src="/emblem.svg" alt="Limatambo" className="w-4 h-4 rounded object-cover" />
               <span>Soporte TI · Limatambo</span>
             </div>
             <button 
