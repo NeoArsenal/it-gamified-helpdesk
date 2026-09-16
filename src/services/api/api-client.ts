@@ -224,6 +224,12 @@ export const trackTicket = async (query: string) => {
   return data;
 };
 
+export const getTicketsActivosPublicos = async () => {
+  const res = await fetch(`${BASE_URL}/tickets/public/active`);
+  if (!res.ok) throw new Error('Error al cargar tickets en atención');
+  return res.json().catch(() => []);
+};
+
 export const eliminarTicket = async (ticketId: string) => {
   const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, {
     method: 'DELETE',

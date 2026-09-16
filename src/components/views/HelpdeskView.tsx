@@ -838,10 +838,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       draggable
                       onDragStart={(e) => handleDragStart(e, ticket.id)}
                       onClick={() => handleAbrirDetalle(ticket)}
-                      className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 ease-out cursor-pointer active:scale-95 active:shadow-md group relative overflow-hidden"
+                      className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 hover:border-blue-300 transition-all duration-300 ease-out cursor-pointer active:scale-95 active:shadow-md group relative ${activeDropdown === ticket.id ? 'z-40' : 'z-0'}`}
                     >
                       {/* Efecto de brillo de fondo al hacer hover */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl overflow-hidden"></div>
 
                       <div className={`flex justify-between items-start mb-2 relative ${activeDropdown === ticket.id ? 'z-50' : 'z-10'}`}>
                         <span className={`flex items-center px-2 py-1 rounded-md text-[10px] font-bold border transform origin-left group-hover:scale-105 transition-transform duration-300 ${style.bg} ${style.color} ${style.border}`}>
@@ -861,7 +861,12 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                           
                           {/* Dropdown flotante (Menú de Acciones y Emergencia) */}
                           {activeDropdown === ticket.id && (
-                            <div className="absolute right-0 top-8 w-52 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-[100] animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/5">
+                            <>
+                              <div 
+                                className="fixed inset-0 z-40 cursor-default" 
+                                onClick={(e) => { e.stopPropagation(); setActiveDropdown(null); }} 
+                              />
+                              <div className="absolute right-0 top-8 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 slide-in-from-top-2 ring-1 ring-black/10 max-h-[380px] overflow-y-auto">
                               {/* Opciones de Estado */}
                               {ticket.estado === 'ABIERTO' && (
                                 <button 
@@ -930,7 +935,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                                 <Trash2 className="w-4 h-4" /> Eliminar Ticket
                               </button>
                             </div>
-                          )}
+                          </>
+                        )}
                         </div>
                       </div>
                       <h4 className="font-bold text-slate-800 text-sm mb-1 leading-snug relative z-10 group-hover:text-blue-700 transition-colors">{ticket.titulo}</h4>

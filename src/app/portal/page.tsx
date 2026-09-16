@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   ShieldAlert, 
   TicketIcon, 
@@ -15,10 +15,12 @@ import {
   RefreshCw, 
   Copy, 
   CheckCheck,
-  ArrowRight,
   AlertCircle,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Play,
+  Zap,
+  Filter
 } from 'lucide-react';
 import { 
   getUbicacionesSedes, 
@@ -26,6 +28,7 @@ import {
   getUbicacionesAreas, 
   crearTicket, 
   trackTicket,
+  getTicketsActivosPublicos,
   verifyPortalPin, 
   verifyPortalAccess, 
   safeStorage 
@@ -74,6 +77,158 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
   );
 }
 
+// Tarjeta con Forma de Ticket Físico (Ticket-Shaped Card)
+function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentlyCreated?: boolean }) {
+  const isAbierto = ticket.estado === 'ABIERTO';
+  const isProgreso = ticket.estado === 'EN_PROGRESO';
+  const code = ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`;
+
+  return (
+    <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${
+      isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : 'border-slate-200 hover:border-indigo-300'
+    }`}>
+      {/* 1. TALÓN SUPERIOR DEL TICKET (Stub) */}
+      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 ${
+        isProgreso ? 'bg-indigo-50/80' : 'bg-amber-50/70'
+      }`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Código de Barras Decorativo del Ticket */}
+          <div className="font-mono text-[9px] font-black tracking-tighter text-slate-400 select-none hidden sm:block">
+            |||| || ||| |||| |
+          </div>
+          <span className="font-mono font-black text-sm md:text-base text-indigo-700 tracking-wider bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-xs">
+            #{code}
+          </span>
+          {isRecentlyCreated && (
+            <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs animate-pulse">
+              Tu Ticket
+            </span>
+          )}
+        </div>
+
+        {/* Badge de Estado Dinámico */}
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs ${
+          isProgreso 
+            ? 'bg-indigo-100 text-indigo-800 border-indigo-300' 
+            : 'bg-amber-100 text-amber-800 border-amber-300'
+        }`}>
+          <span className={`w-2 h-2 rounded-full ${isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
+          <span>{isProgreso ? 'TÉCNICO EN CAMINO' : 'EN ESPERA'}</span>
+        </div>
+      </div>
+
+      {/* 2. MUESCAS TROQUELADAS LATERALES (Forma de Ticket) */}
+      <div className="relative flex items-center justify-between h-4 -my-2 z-10 pointer-events-none">
+        {/* Muesca izquierda (círculo recortado hacia adentro) */}
+        <div className="w-5 h-5 rounded-full bg-slate-50 border-r-2 border-slate-300 -ml-2.5 shadow-inner" />
+        {/* Línea punteada de desglose */}
+        <div className="flex-1 border-t-2 border-dashed border-slate-300 mx-2" />
+        {/* Muesca derecha (círculo recortado hacia adentro) */}
+        <div className="w-5 h-5 rounded-full bg-slate-50 border-l-2 border-slate-300 -mr-2.5 shadow-inner" />
+      </div>
+
+      {/* 3. CUERPO DEL TICKET */}
+      <div className="p-5 md:p-6 space-y-4 bg-white">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+          {/* Ilustración Duolingo */}
+          <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={isProgreso ? '/illustrations/tech-running.jpg' : '/illustrations/ticket-waiting.jpg'}
+              alt={isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
+              className="w-full h-full object-contain"
+            />
+          </div>
+
+          <div className="flex-1 text-center sm:text-left space-y-2">
+            <h3 className="text-base sm:text-lg font-black text-slate-800 leading-snug">
+              {ticket.titulo}
+            </h3>
+
+            {/* Ubicación y Solicitante */}
+            <div className="flex flex-wrap gap-y-1 gap-x-3 text-xs text-slate-600 justify-center sm:justify-start">
+              <span className="flex items-center gap-1 font-semibold text-slate-700">
+                <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                {ticket.sede} · {ticket.departamento} {ticket.ubicacionEspecifica ? `(${ticket.ubicacionEspecifica})` : ''}
+              </span>
+              {ticket.solicitanteNombre && (
+                <span className="flex items-center gap-1 text-slate-500">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  {ticket.solicitanteNombre}
+                </span>
+              )}
+            </div>
+
+            {/* Mensaje descriptivo del avance */}
+            <p className="text-xs text-slate-500 font-medium">
+              {isProgreso
+                ? (ticket.tecnicoAsignado?.nombre 
+                    ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
+                    : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
+                : '⏱️ Tu reporte está en cola y será asignado a un técnico en breve.'
+              }
+            </p>
+          </div>
+        </div>
+
+        {/* 4. STEPPER / PROGRESO DEL TICKET */}
+        <div className="pt-2 border-t border-slate-100">
+          <div className="relative flex items-center justify-between px-3">
+            <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-1.5 bg-slate-200 rounded-full -z-0">
+              <div 
+                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                style={{ width: isProgreso ? '50%' : '10%' }}
+              />
+            </div>
+
+            {/* Paso 1: Recibido */}
+            <div className="flex flex-col items-center relative z-10">
+              <div className="w-7 h-7 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                <Check className="w-3.5 h-3.5 stroke-[3]" />
+              </div>
+              <span className="text-[10px] font-bold text-slate-700 mt-1">Recibido</span>
+            </div>
+
+            {/* Paso 2: En Camino */}
+            <div className="flex flex-col items-center relative z-10">
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all ${
+                isProgreso 
+                  ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' 
+                  : 'bg-slate-200 text-slate-400'
+              }`}>
+                {isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
+              </div>
+              <span className={`text-[10px] font-bold mt-1 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
+                En Camino
+              </span>
+            </div>
+
+            {/* Paso 3: Terminado */}
+            <div className="flex flex-col items-center relative z-10">
+              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 font-bold flex items-center justify-center text-xs shadow-sm">
+                3
+              </div>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">Resuelto</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 5. PIE DEL TICKET: Fecha y Estado en Cola */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
+          <span className="flex items-center gap-1">
+            <Clock className="w-3 h-3 text-slate-400" />
+            {ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
+          </span>
+          <span className="text-emerald-600 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+            En atención activa
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PortalPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isValidatingToken, setIsValidatingToken] = useState(false);
@@ -103,12 +258,11 @@ export default function PortalPage() {
   const [departamentosList, setDepartamentosList] = useState<string[]>([]);
   const [areasList, setAreasList] = useState<string[]>([]);
 
-  // Seguimiento de Tickets
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchingTrack, setIsSearchingTrack] = useState(false);
-  const [trackedTickets, setTrackedTickets] = useState<any[] | null>(null);
-  const [trackError, setTrackError] = useState('');
-  const [lastSearchedCode, setLastSearchedCode] = useState('');
+  // Acumulado de Tickets Activos (Feed en Vivo)
+  const [activeTickets, setActiveTickets] = useState<any[]>([]);
+  const [isLoadingActive, setIsLoadingActive] = useState(false);
+  const [filterSearch, setFilterSearch] = useState('');
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<Date>(new Date());
 
   useEffect(() => {
     // 1. Revisar si viene con token secreto desde el código QR (?key=... o ?token=...)
@@ -119,8 +273,7 @@ export default function PortalPage() {
 
       if (trackParam) {
         setActiveTab('consultar');
-        setSearchQuery(trackParam);
-        ejecutarSeguimiento(trackParam);
+        setFilterSearch(trackParam);
       }
 
       if (tokenParam) {
@@ -160,7 +313,35 @@ export default function PortalPage() {
     getUbicacionesSedes().then(data => {
       setSedesList(data);
     }).catch(console.error);
+    cargarTicketsActivos();
   };
+
+  // Cargar el acumulado de tickets activos (ABIERTO y EN_PROGRESO)
+  const cargarTicketsActivos = async () => {
+    setIsLoadingActive(true);
+    try {
+      const data = await getTicketsActivosPublicos();
+      if (Array.isArray(data)) {
+        setActiveTickets(data);
+        setLastUpdatedTime(new Date());
+      }
+    } catch (error) {
+      console.error('Error al cargar tickets activos:', error);
+    } finally {
+      setIsLoadingActive(false);
+    }
+  };
+
+  // Auto-actualizar tickets activos periódicamente si la pestaña 'consultar' está abierta
+  useEffect(() => {
+    cargarTicketsActivos();
+    const interval = setInterval(() => {
+      if (activeTab === 'consultar' || showDirectTracker) {
+        cargarTicketsActivos();
+      }
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [activeTab, showDirectTracker]);
 
   useEffect(() => {
     if (sede) {
@@ -253,6 +434,8 @@ export default function PortalPage() {
 
       setCreatedTicketInfo(result);
       setIsSuccess(true);
+      // Actualizar la lista activa para que aparezca de inmediato
+      cargarTicketsActivos();
       // Limpiar formulario excepto datos del solicitante
       setTitulo('');
       setSede('');
@@ -271,35 +454,6 @@ export default function PortalPage() {
     }
   };
 
-  const ejecutarSeguimiento = async (queryToSearch?: string) => {
-    const q = (queryToSearch || searchQuery).trim();
-    if (!q || q.length < 3) {
-      setTrackError('Ingresa al menos 3 caracteres de tu código o teléfono');
-      return;
-    }
-
-    setIsSearchingTrack(true);
-    setTrackError('');
-    setLastSearchedCode(q);
-
-    try {
-      const data = await trackTicket(q);
-      if (Array.isArray(data) && data.length > 0) {
-        setTrackedTickets(data);
-      } else if (data && data.id) {
-        setTrackedTickets([data]);
-      } else {
-        setTrackedTickets([]);
-        setTrackError('No encontramos tickets con ese código o número');
-      }
-    } catch (err: any) {
-      setTrackedTickets([]);
-      setTrackError(err?.message || 'No se encontró ningún ticket con esos datos');
-    } finally {
-      setIsSearchingTrack(false);
-    }
-  };
-
   const copiarCodigoTicket = (code: string) => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
       navigator.clipboard.writeText(code);
@@ -309,15 +463,26 @@ export default function PortalPage() {
   };
 
   const irAConsultarCreado = () => {
-    const code = createdTicketInfo?.id ? `TK-${createdTicketInfo.id.slice(0, 6).toUpperCase()}` : '';
     setIsSuccess(false);
     setActiveTab('consultar');
     setShowDirectTracker(true);
-    if (code) {
-      setSearchQuery(code);
-      ejecutarSeguimiento(code);
-    }
+    cargarTicketsActivos();
   };
+
+  // Filtrado reactivo de tickets activos
+  const filteredActiveTickets = useMemo(() => {
+    const q = filterSearch.trim().toLowerCase().replace(/^[#\s]*(tk-?)?/i, '');
+    if (!q) return activeTickets;
+
+    return activeTickets.filter(tk => {
+      const matchCode = (tk.ticketCode || '').toLowerCase().includes(q) || (tk.id || '').toLowerCase().includes(q);
+      const matchTitle = (tk.titulo || '').toLowerCase().includes(q);
+      const matchSede = (tk.sede || '').toLowerCase().includes(q);
+      const matchDept = (tk.departamento || '').toLowerCase().includes(q);
+      const matchName = (tk.solicitanteNombre || '').toLowerCase().includes(q);
+      return matchCode || matchTitle || matchSede || matchDept || matchName;
+    });
+  }, [activeTickets, filterSearch]);
 
   if (isValidatingToken) {
     return (
@@ -353,9 +518,9 @@ export default function PortalPage() {
                 ← Volver al PIN
               </button>
             </div>
-            <h1 className="text-2xl font-black">🔍 Consultar Estado de Ticket</h1>
+            <h1 className="text-2xl font-black">Tickets en Atención</h1>
             <p className="text-indigo-100 text-xs mt-1 font-medium">
-              Ingresa el código (#TK-XXXXXX) o tu número de teléfono registrado
+              Acumulado en vivo de requerimientos. Cambia de estado según se atiende y desaparece al resolverse.
             </p>
           </div>
 
@@ -433,14 +598,17 @@ export default function PortalPage() {
             </button>
           </form>
 
-          {/* Acceso Rápido para Consultar Ticket sin PIN */}
+          {/* Acceso Rápido para Consultar Tickets sin PIN */}
           <div className="mt-6 pt-6 border-t border-slate-100 text-center">
             <button
-              onClick={() => setShowDirectTracker(true)}
+              onClick={() => {
+                setShowDirectTracker(true);
+                cargarTicketsActivos();
+              }}
               className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors py-2 px-3 rounded-lg hover:bg-indigo-50"
             >
-              <Search className="w-4 h-4" />
-              ¿Ya tienes un ticket? Consultar estado aquí
+              <TicketIcon className="w-4 h-4" />
+              Ver tickets en atención en vivo
             </button>
           </div>
         </div>
@@ -448,9 +616,9 @@ export default function PortalPage() {
     );
   }
 
-  // Pantalla de Éxito al Enviar Reporte (con estilo Duolingo y código fácil)
+  // Pantalla de Éxito al Enviar Reporte
   if (isSuccess) {
-    const ticketCode = createdTicketInfo?.id ? `TK-${createdTicketInfo.id.slice(0, 6).toUpperCase()}` : 'TK-RECIBIDO';
+    const ticketCode = createdTicketInfo?.id ? `TK-${createdTicketInfo.id.slice(0, 6).toUpperCase()}` : 'TK-REGISTRADO';
     return (
       <div className="min-h-screen bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 md:p-8 text-center animate-in zoom-in duration-300">
@@ -469,15 +637,15 @@ export default function PortalPage() {
             ¡Reporte Enviado a Sistemas!
           </div>
 
-          <h2 className="text-2xl font-black text-slate-800 mb-1">Tu caso ya está en cola</h2>
+          <h2 className="text-2xl font-black text-slate-800 mb-1">Tu ticket ya está en cola</h2>
           <p className="text-slate-500 text-xs md:text-sm mb-5">
-            El personal técnico ha sido notificado en tiempo real y atenderá tu solicitud.
+            Quedó registrado en el acumulado de tickets y cambiará de estado cuando el técnico vaya en camino.
           </p>
 
           {/* Tarjeta con Código de Ticket Duolingo Style */}
           <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-4 mb-6 relative">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Código de Seguimiento
+              Código de tu Ticket
             </span>
             <div className="flex items-center justify-center gap-2">
               <span className="text-2xl md:text-3xl font-black text-indigo-700 font-mono tracking-wider">
@@ -503,8 +671,8 @@ export default function PortalPage() {
               onClick={irAConsultarCreado}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
             >
-              <Search className="w-5 h-5" />
-              Ver Estado en Vivo de mi Ticket
+              <TicketIcon className="w-5 h-5" />
+              Ver Tickets en Atención
             </button>
 
             <button 
@@ -519,244 +687,95 @@ export default function PortalPage() {
     );
   }
 
-  // Helper para renderizar la interfaz de consulta / tracking
+  // Helper para renderizar la interfaz de seguimiento con forma de ticket
   function renderTrackingInterface() {
     return (
-      <div className="space-y-6">
-        {/* Barra de Búsqueda */}
-        <div className="bg-white border-2 border-indigo-100 rounded-2xl p-4 shadow-sm">
-          <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-            Buscar por Código (#TK-XXXXXX) o Teléfono/Anexo
-          </label>
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && ejecutarSeguimiento()}
-                placeholder="Ej. TK-104 o 999 123 456"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-base font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all font-mono"
-              />
-              <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
-            </div>
-            <button
-              onClick={() => ejecutarSeguimiento()}
-              disabled={isSearchingTrack || searchQuery.trim().length < 3}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold px-5 py-3 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5 shrink-0"
-            >
-              {isSearchingTrack ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <span>Consultar</span>
-              )}
-            </button>
+      <div className="space-y-5">
+        {/* Barra de Filtro Rápido y Actualización */}
+        <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 shadow-sm flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              value={filterSearch}
+              onChange={(e) => setFilterSearch(e.target.value)}
+              placeholder="Filtrar por código (#TK-XXXXXX), título o área..."
+              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all"
+            />
           </div>
-
-          {trackError && (
-            <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-semibold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
-              <span>{trackError}</span>
-            </div>
-          )}
+          <button
+            onClick={() => cargarTicketsActivos()}
+            disabled={isLoadingActive}
+            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all active:scale-95 shrink-0 flex items-center gap-1 text-xs font-bold"
+            title="Actualizar tickets en vivo"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoadingActive ? 'animate-spin text-indigo-600' : ''}`} />
+            <span className="hidden sm:inline">Actualizar</span>
+          </button>
         </div>
 
-        {/* Resultados del Seguimiento */}
-        {trackedTickets && trackedTickets.length > 0 ? (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">
-                {trackedTickets.length === 1 ? '1 Ticket Encontrado' : `${trackedTickets.length} Tickets Encontrados`}
-              </h3>
-              <button
-                onClick={() => ejecutarSeguimiento()}
-                className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Actualizar
-              </button>
-            </div>
+        {/* Resumen de Estado en Vivo */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
+              {filteredActiveTickets.length === 1 ? '1 Ticket en Atención' : `${filteredActiveTickets.length} Tickets en Atención`}
+            </span>
+          </div>
+          <span className="text-[11px] text-slate-400 font-medium">
+            Actualizado: {lastUpdatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+          </span>
+        </div>
 
-            {trackedTickets.map((tk) => {
-              const isAbierto = tk.estado === 'ABIERTO';
-              const isProgreso = tk.estado === 'EN_PROGRESO';
-              const isResuelto = tk.estado === 'RESUELTO' || tk.estado === 'CERRADO';
-
-              let illustrationImg = '/illustrations/ticket-waiting.jpg';
-              let badgeColor = 'bg-amber-100 text-amber-800 border-amber-300';
-              let badgeText = 'EN ESPERA · EN COLA DE ASIGNACIÓN';
-              let titleMsg = 'Tu caso fue recibido y está en espera';
-              let descMsg = 'El equipo de Sistemas lo asignará a un técnico para resolverlo a la brevedad.';
-
-              if (isProgreso) {
-                illustrationImg = '/illustrations/tech-running.jpg';
-                badgeColor = 'bg-indigo-100 text-indigo-800 border-indigo-300';
-                badgeText = 'EN PROGRESO · TÉCNICO EN CAMINO';
-                titleMsg = '¡Técnico en camino a tu área!';
-                descMsg = tk.tecnicoAsignado?.nombre 
-                  ? `${tk.tecnicoAsignado.nombre} está atendiendo tu reporte ahora mismo.`
-                  : 'Un técnico de TI ha tomado tu requerimiento y está en marcha.';
-              } else if (isResuelto) {
-                illustrationImg = '/illustrations/ticket-resolved.jpg';
-                badgeColor = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                badgeText = 'RESUELTO · SERVICIO OPERATIVO';
-                titleMsg = '¡Problema Solucionado con Éxito!';
-                descMsg = tk.solucion 
-                  ? `Solución: ${tk.solucion}`
-                  : 'El equipo técnico dio por concluido el reporte.';
-              }
-
+        {/* Lista de Tickets en Forma de Ticket */}
+        {filteredActiveTickets.length > 0 ? (
+          <div className="space-y-5">
+            {filteredActiveTickets.map((tk) => {
+              const isMine = createdTicketInfo?.id && tk.id === createdTicketInfo.id;
               return (
-                <div 
-                  key={tk.id} 
-                  className="bg-white border-2 border-slate-200 rounded-3xl p-5 md:p-6 shadow-md relative overflow-hidden transition-all hover:border-indigo-300"
-                >
-                  {/* Ilustración Duolingo Dinámica según el Estado */}
-                  <div className="flex flex-col sm:flex-row items-center gap-5 mb-5 pb-5 border-b border-slate-100">
-                    <div className="w-28 h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img 
-                        src={illustrationImg} 
-                        alt={badgeText} 
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-
-                    <div className="flex-1 text-center sm:text-left space-y-1.5">
-                      <div className={`inline-block px-3 py-1 rounded-full text-[11px] font-black tracking-wide border ${badgeColor}`}>
-                        {badgeText}
-                      </div>
-                      <h4 className="text-lg font-black text-slate-800 leading-tight">
-                        {titleMsg}
-                      </h4>
-                      <p className="text-xs md:text-sm text-slate-600 font-medium">
-                        {descMsg}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Stepper Duolingo Style (3 Pasos Visuales) */}
-                  <div className="mb-6 px-2">
-                    <div className="relative flex items-center justify-between">
-                      {/* Línea de Fondo */}
-                      <div className="absolute top-1/2 left-4 right-4 -translate-y-1/2 h-1.5 bg-slate-200 rounded-full -z-0">
-                        <div 
-                          className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                          style={{
-                            width: isResuelto ? '100%' : isProgreso ? '50%' : '5%',
-                          }}
-                        />
-                      </div>
-
-                      {/* Paso 1: Recibido */}
-                      <div className="flex flex-col items-center relative z-10">
-                        <div className="w-8 h-8 rounded-full bg-emerald-500 text-white font-bold flex items-center justify-center text-xs shadow-md">
-                          <Check className="w-4 h-4 stroke-[3]" />
-                        </div>
-                        <span className="text-[11px] font-bold text-slate-700 mt-1">Recibido</span>
-                      </div>
-
-                      {/* Paso 2: En Camino */}
-                      <div className="flex flex-col items-center relative z-10">
-                        <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs shadow-md transition-all ${
-                          isProgreso 
-                            ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' 
-                            : isResuelto 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-slate-200 text-slate-400'
-                        }`}>
-                          {isResuelto ? <Check className="w-4 h-4 stroke-[3]" /> : '2'}
-                        </div>
-                        <span className={`text-[11px] font-bold mt-1 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-600'}`}>
-                          En Camino
-                        </span>
-                      </div>
-
-                      {/* Paso 3: Resuelto */}
-                      <div className="flex flex-col items-center relative z-10">
-                        <div className={`w-8 h-8 rounded-full font-bold flex items-center justify-center text-xs shadow-md transition-all ${
-                          isResuelto 
-                            ? 'bg-emerald-500 text-white ring-4 ring-emerald-200' 
-                            : 'bg-slate-200 text-slate-400'
-                        }`}>
-                          {isResuelto ? <Check className="w-4 h-4 stroke-[3]" /> : '3'}
-                        </div>
-                        <span className={`text-[11px] font-bold mt-1 ${isResuelto ? 'text-emerald-700 font-black' : 'text-slate-400'}`}>
-                          Resuelto
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Técnico Asignado (si existe) */}
-                  {tk.tecnicoAsignado && (
-                    <div className="mb-4 p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-indigo-600 text-white font-black flex items-center justify-center text-sm shadow-sm shrink-0">
-                        {tk.tecnicoAsignado.nombre ? tk.tecnicoAsignado.nombre.slice(0, 2).toUpperCase() : 'TI'}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[10px] uppercase font-black text-indigo-500 tracking-wider block">
-                          Técnico de Sistemas Asignado
-                        </span>
-                        <p className="text-sm font-bold text-slate-800 truncate">
-                          {tk.tecnicoAsignado.nombre}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Resumen del Ticket */}
-                  <div className="bg-slate-50 rounded-2xl p-4 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono font-bold text-indigo-700 text-sm">
-                        #{tk.ticketCode || `TK-${tk.id.slice(0, 6).toUpperCase()}`}
-                      </span>
-                      <span className="text-slate-400 font-medium">
-                        {new Date(tk.creadoEn).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' })}
-                      </span>
-                    </div>
-
-                    <p className="font-bold text-slate-800 text-sm">
-                      {tk.titulo}
-                    </p>
-
-                    <div className="flex flex-wrap gap-y-1 gap-x-3 text-slate-500 pt-1 border-t border-slate-200/60">
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                        {tk.sede} · {tk.departamento} {tk.ubicacionEspecifica ? `(${tk.ubicacionEspecifica})` : ''}
-                      </span>
-                      {tk.solicitanteNombre && (
-                        <span className="flex items-center gap-1">
-                          <User className="w-3.5 h-3.5 text-slate-400" />
-                          {tk.solicitanteNombre}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <TicketShapeCard
+                  key={tk.id}
+                  ticket={tk}
+                  isRecentlyCreated={isMine}
+                />
               );
             })}
           </div>
-        ) : trackedTickets && trackedTickets.length === 0 ? (
-          <div className="text-center py-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 p-6">
-            <HelpCircle className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-base font-bold text-slate-700 mb-1">No se encontraron tickets</h4>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto">
-              Verifica haber escrito correctamente tu código (ej. TK-104) o el número de teléfono/anexo con el que reportaste.
-            </p>
+        ) : isLoadingActive ? (
+          <div className="p-10 text-center text-slate-400 animate-pulse">
+            <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs font-bold">Cargando tickets en atención...</p>
           </div>
         ) : (
-          /* Estado inicial / Guía rápida Duolingo */
-          <div className="bg-indigo-50/60 border border-indigo-200 rounded-3xl p-6 text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
-              <Sparkles className="w-6 h-6" />
+          /* Estado Vacío: ¡No hay tickets pendientes! */
+          <div className="text-center py-12 px-6 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 space-y-3">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h4 className="text-base font-black text-indigo-950">Consulta en Tiempo Real</h4>
-            <p className="text-xs text-indigo-800/80 max-w-sm mx-auto leading-relaxed">
-              No necesitas llamar por anexo a Sistemas. Ingresa el código generado al reportar o tu celular y mira al instante si el técnico ya está en camino a tu consultorio o área.
+            <h4 className="text-base font-black text-slate-800">
+              {filterSearch ? 'No se encontraron coincidencias' : '¡No hay tickets pendientes!'}
+            </h4>
+            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+              {filterSearch 
+                ? 'Prueba borrando el filtro de búsqueda para ver todos los tickets activos.' 
+                : 'Todos los requerimientos anteriores ya fueron resueltos por el equipo de Sistemas. Cuando crees un nuevo ticket, aparecerá aquí.'
+              }
             </p>
+            {filterSearch && (
+              <button
+                onClick={() => setFilterSearch('')}
+                className="text-xs text-indigo-600 font-bold hover:underline"
+              >
+                Limpiar filtro de búsqueda
+              </button>
+            )}
           </div>
         )}
+
+        {/* Nota explicativa de auto-limpieza */}
+        <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900/80 text-center font-medium">
+          💡 <strong>¿Cómo funciona?</strong> Este es el acumulado activo. Tu ticket permanece aquí mientras esté <em>En Espera</em> o <em>En Camino</em>. Una vez que el técnico de Sistemas lo termina de solucionar, se borra automáticamente de la lista.
+        </div>
       </div>
     );
   }
@@ -787,16 +806,16 @@ export default function PortalPage() {
           </div>
 
           <h1 className="text-2xl md:text-3xl font-black relative z-10 leading-tight">
-            {activeTab === 'reportar' ? '¿En qué te podemos ayudar hoy?' : 'Seguimiento de Ticket'}
+            {activeTab === 'reportar' ? '¿En qué te podemos ayudar hoy?' : 'Tickets en Atención'}
           </h1>
           <p className="text-indigo-100/90 text-xs md:text-sm mt-1 font-medium relative z-10">
             {activeTab === 'reportar' 
               ? 'Completa los 3 pasos a continuación para enviar tu reporte rápidamente'
-              : 'Verifica el estado en vivo de tus requerimientos técnicos'
+              : 'Acumulado en vivo: observa cómo avanza tu caso hasta resolverse'
             }
           </p>
 
-          {/* Pestañas Segmentadas Duolingo Style */}
+          {/* Pestañas Segmentadas */}
           <div className="mt-5 p-1 bg-indigo-900/40 backdrop-blur-md rounded-2xl flex gap-1 relative z-10 border border-white/10">
             <button
               type="button"
@@ -812,15 +831,18 @@ export default function PortalPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('consultar')}
+              onClick={() => {
+                setActiveTab('consultar');
+                cargarTicketsActivos();
+              }}
               className={`flex-1 py-2.5 px-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${
                 activeTab === 'consultar'
                   ? 'bg-white text-indigo-700 shadow-md scale-[1.02]'
                   : 'text-indigo-100 hover:text-white hover:bg-white/10'
               }`}
             >
-              <Search className="w-4 h-4" />
-              Consultar mi Ticket
+              <Zap className="w-4 h-4" />
+              Tickets Activos {activeTickets.length > 0 && `(${activeTickets.length})`}
             </button>
           </div>
         </div>
