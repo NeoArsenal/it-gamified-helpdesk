@@ -15,7 +15,9 @@ import {
   CheckCheck,
   Play,
   Zap,
-  Radio
+  Radio,
+  Lock,
+  Search
 } from 'lucide-react';
 import {
   getUbicacionesSedes,
@@ -23,6 +25,7 @@ import {
   getUbicacionesAreas,
   crearTicket,
   getTicketsActivosPublicos,
+  trackTicket,
   verifyPortalPin,
   verifyPortalAccess,
   safeStorage,
@@ -310,6 +313,36 @@ export default function PortalPage() {
   const [lastUpdatedTime, setLastUpdatedTime] = useState<Date>(new Date());
   const [isLiveConnected, setIsLiveConnected] = useState(false);
 
+  // Almacenamiento local de IDs de tickets creados en este dispositivo (Privacidad por equipo)
+  const STORAGE_MY_TICKETS = 'portal_mis_tickets_ids';
+
+  const getStoredMyTicketIds = (): string[] => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = safeStorage.getItem(STORAGE_MY_TICKETS);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const [myTicketIds, setMyTicketIds] = useState<string[]>([]);
+  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [linkCodeInput, setLinkCodeInput] = useState('');
+  const [isLinkingTicket, setIsLinkingTicket] = useState(false);
+  const [linkMessage, setLinkMessage] = useState<{ text: string, error?: boolean } | null>(null);
+
+  const saveNewMyTicket = (ticketId: string) => {
+    const current = getStoredMyTicketIds();
+    if (!current.includes(ticketId)) {
+      const next = [ticketId, ...current].slice(0, 50);
+      try {
+        safeStorage.setItem(STORAGE_MY_TICKETS, JSON.stringify(next));
+      } catch { }
+      setMyTicketIds(next);
+    }
+  };
+
   useEffect(() => {
     // 1. Revisar si viene con token secreto desde el código QR (?key=... o ?token=...)
     if (typeof window !== 'undefined') {
@@ -352,6 +385,9 @@ export default function PortalPage() {
       setIsAuthenticated(true);
       cargarDatosBase();
     }
+
+    // Inicializar tickets creados en este dispositivo
+    setMyTicketIds(getStoredMyTicketIds());
   }, []);
 
   const cargarDatosBase = () => {
@@ -577,6 +613,9 @@ export default function PortalPage() {
       });
 
       setCreatedTicketInfo(result);
+      if (result?.id) {
+        saveNewMyTicket(result.id);
+      }
       setIsSuccess(true);
       cargarTicketsActivos();
       // Limpiar formulario excepto datos del solicitante
@@ -594,6 +633,32 @@ export default function PortalPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Vincular manualmente un ticket registrado en otro equipo
+  const handleLinkTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = linkCodeInput.trim();
+    if (!query) return;
+
+    setIsLinkingTicket(true);
+    setLinkMessage(null);
+    try {
+      const results = await trackTicket(query);
+      if (Array.isArray(results) && results.length > 0) {
+        results.forEach((t: any) => saveNewMyTicket(t.id));
+        setLinkMessage({ text: `¡Se vincularon ${results.length} ticket(s) a este celular!` });
+        setLinkCodeInput('');
+        cargarTicketsActivos();
+        setTimeout(() => setShowLinkInput(false), 2000);
+      } else {
+        setLinkMessage({ text: 'No se encontró ningún ticket con ese código o anexo.', error: true });
+      }
+    } catch {
+      setLinkMessage({ text: 'No se encontró el ticket. Verifica el código.', error: true });
+    } finally {
+      setIsLinkingTicket(false);
     }
   };
 
@@ -814,11 +879,13 @@ export default function PortalPage() {
     );
   }
 
-  // Helper para renderizar la interfaz de seguimiento con forma de ticket (Limpia, en vivo, sin buscador)
+  // Helper para renderizar la interfaz de seguimiento con forma de ticket (Privada por dispositivo)
   function renderTrackingInterface() {
+    const myActiveTickets = activeTickets.filter((tk) => myTicketIds.includes(tk.id));
+
     return (
       <div className="space-y-5">
-        {/* Barra de Estado en Tiempo Real (Sleek, sin buscador) */}
+        {/* Barra de Estado en Tiempo Real (Sleek, Privada) */}
         <div className="bg-white border-2 border-slate-200/80 rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative flex h-3.5 w-3.5 items-center justify-center">
@@ -828,7 +895,7 @@ export default function PortalPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black text-slate-800 tracking-tight">
-                  {activeTickets.length === 1 ? '1 Ticket en Atención' : `${activeTickets.length} Tickets en Atención`}
+                  {myActiveTickets.length === 1 ? '1 Ticket tuyo en atención' : `${myActiveTickets.length} Tickets tuyos en atención`}
                 </span>
                 <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
                   En Vivo
@@ -851,16 +918,16 @@ export default function PortalPage() {
           </button>
         </div>
 
-        {/* Lista de Tickets en Forma de Ticket */}
-        {activeTickets.length > 0 ? (
+        {/* Lista de Tickets del Dispositivo en Forma de Ticket */}
+        {myActiveTickets.length > 0 ? (
           <div className="space-y-5">
-            {activeTickets.map((tk) => {
+            {myActiveTickets.map((tk) => {
               const isMine = createdTicketInfo?.id && tk.id === createdTicketInfo.id;
               return (
                 <TicketShapeCard
                   key={tk.id}
                   ticket={tk}
-                  isRecentlyCreated={isMine}
+                  isRecentlyCreated={Boolean(isMine)}
                 />
               );
             })}
@@ -868,30 +935,91 @@ export default function PortalPage() {
         ) : isLoadingActive ? (
           <div className="p-10 text-center text-slate-400 animate-pulse">
             <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs font-bold">Cargando tickets en atención...</p>
+            <p className="text-xs font-bold">Cargando tus tickets...</p>
           </div>
         ) : (
-          /* Estado Vacío: ¡No hay tickets pendientes! */
-          <div className="text-center py-12 px-6 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 space-y-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
-              <CheckCircle2 className="w-8 h-8" />
+          /* Estado Vacío: ¡No hay tickets en este equipo! */
+          <div className="text-center py-12 px-6 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 space-y-4">
+            <div className="w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
             </div>
-            <h4 className="text-base font-black text-slate-800">
-              ¡No hay tickets pendientes!
-            </h4>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-              Todos los requerimientos ya fueron resueltos por el equipo de Sistemas. Cuando reportes un problema, aparecerá aquí al instante.
-            </p>
+            <div>
+              <h4 className="text-base font-black text-slate-800">
+                ¡No tienes tickets activos en este equipo!
+              </h4>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto mt-1 leading-relaxed">
+                Los reportes que generes desde este celular aparecerán aquí con su seguimiento en vivo.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('reportar')}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 cursor-pointer"
+            >
+              <TicketIcon className="w-4 h-4" />
+              Reportar un Problema Ahora
+            </button>
           </div>
         )}
 
-        {/* Nota explicativa de auto-limpieza */}
+        {/* Herramienta para vincular ticket si reportó desde otro equipo */}
+        <div className="pt-2 border-t border-slate-100">
+          {!showLinkInput ? (
+            <button
+              type="button"
+              onClick={() => setShowLinkInput(true)}
+              className="w-full text-center text-xs font-semibold text-slate-400 hover:text-indigo-600 py-2 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Search className="w-3.5 h-3.5" />
+              ¿Reportaste desde otro equipo? Vincular mi ticket aquí
+            </button>
+          ) : (
+            <form onSubmit={handleLinkTicket} className="bg-slate-50 border border-slate-200 p-3.5 rounded-2xl space-y-2 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-indigo-600" /> Vincular Ticket
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowLinkInput(false)}
+                  className="text-[11px] font-semibold text-slate-400 hover:text-slate-600"
+                >
+                  Cerrar
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={linkCodeInput}
+                  onChange={(e) => setLinkCodeInput(e.target.value)}
+                  placeholder="Ej: #TK-D02BC2 o teléfono..."
+                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="submit"
+                  disabled={isLinkingTicket || !linkCodeInput.trim()}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 cursor-pointer"
+                >
+                  {isLinkingTicket ? 'Buscando...' : 'Vincular'}
+                </button>
+              </div>
+              {linkMessage && (
+                <p className={`text-[11px] font-bold ${linkMessage.error ? 'text-red-500' : 'text-emerald-600'}`}>
+                  {linkMessage.text}
+                </p>
+              )}
+            </form>
+          )}
+        </div>
+
+        {/* Nota explicativa de privacidad */}
         <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900/80 text-center font-medium">
-          💡 <strong>¿Cómo funciona?</strong> Este es el acumulado en tiempo real. Tu ticket avanza automáticamente (<em>En Espera</em> → <em>En Camino</em> → <em>Resuelto</em>). Cuando se soluciona, permanece visible unos minutos para que verifiques que todo quedó listo antes de archivarse.
+          🔒 <strong>Privacidad por equipo:</strong> Esta lista es exclusiva de este dispositivo. Nadie más puede ver tus reportes desde otros celulares.
         </div>
       </div>
     );
   }
+
+  const myActiveTicketsCount = activeTickets.filter((tk) => myTicketIds.includes(tk.id)).length;
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:items-center md:py-10">
@@ -919,12 +1047,12 @@ export default function PortalPage() {
           </div>
 
           <h1 className="text-2xl md:text-3xl font-black relative z-10 leading-tight">
-            {activeTab === 'reportar' ? '¿En qué te podemos ayudar hoy?' : 'Tickets en Atención'}
+            {activeTab === 'reportar' ? '¿En qué te podemos ayudar hoy?' : 'Mis Tickets'}
           </h1>
           <p className="text-indigo-100/90 text-xs md:text-sm mt-1 font-medium relative z-10">
             {activeTab === 'reportar'
               ? 'Completa los 3 pasos a continuación para enviar tu reporte rápidamente'
-              : 'Acumulado en tiempo real: observa cómo avanza tu caso hasta resolverse'
+              : 'Seguimiento privado en tiempo real de tus incidencias en este dispositivo'
             }
           </p>
 
@@ -953,7 +1081,7 @@ export default function PortalPage() {
                 }`}
             >
               <Zap className="w-4 h-4" />
-              Tickets Activos {activeTickets.length > 0 && `(${activeTickets.length})`}
+              Mis Tickets {myActiveTicketsCount > 0 && `(${myActiveTicketsCount})`}
             </button>
           </div>
         </div>
