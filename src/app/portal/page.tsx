@@ -74,17 +74,33 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
 
 // Tarjeta con Forma de Ticket Físico (Ticket-Shaped Card)
 function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentlyCreated?: boolean }) {
+  const isResuelto = ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO';
   const isProgreso = ticket.estado === 'EN_PROGRESO';
   const code = ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`;
 
+  let stubBg = 'bg-amber-50/70';
+  let badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+  let badgeText = 'EN ESPERA';
+  let illustrationImg = '/illustrations/ticket-waiting.jpg';
+
+  if (isResuelto) {
+    stubBg = 'bg-emerald-50/90';
+    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+    badgeText = '✅ RESUELTO';
+    illustrationImg = '/illustrations/ticket-resolved.jpg';
+  } else if (isProgreso) {
+    stubBg = 'bg-indigo-50/90';
+    badgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-300';
+    badgeText = 'TÉCNICO EN CAMINO';
+    illustrationImg = '/illustrations/tech-running.jpg';
+  }
+
   return (
     <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${
-      isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : 'border-slate-200 hover:border-indigo-300'
+      isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : isResuelto ? 'border-emerald-300 ring-4 ring-emerald-500/10' : 'border-slate-200 hover:border-indigo-300'
     }`}>
       {/* 1. TALÓN SUPERIOR DEL TICKET (Stub) */}
-      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${
-        isProgreso ? 'bg-indigo-50/90' : 'bg-amber-50/70'
-      }`}>
+      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${stubBg}`}>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Código de Barras Decorativo del Ticket */}
           <div className="font-mono text-[9px] font-black tracking-tighter text-slate-400 select-none hidden sm:block">
@@ -101,13 +117,9 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
         </div>
 
         {/* Badge de Estado Dinámico */}
-        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${
-          isProgreso 
-            ? 'bg-indigo-100 text-indigo-800 border-indigo-300' 
-            : 'bg-amber-100 text-amber-800 border-amber-300'
-        }`}>
-          <span className={`w-2 h-2 rounded-full ${isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
-          <span>{isProgreso ? 'TÉCNICO EN CAMINO' : 'EN ESPERA'}</span>
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${badgeClass}`}>
+          <span className={`w-2 h-2 rounded-full ${isResuelto ? 'bg-emerald-600' : isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
+          <span>{badgeText}</span>
         </div>
       </div>
 
@@ -128,8 +140,8 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
           <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1 transition-all duration-300">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={isProgreso ? '/illustrations/tech-running.jpg' : '/illustrations/ticket-waiting.jpg'}
-              alt={isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
+              src={illustrationImg}
+              alt={badgeText}
               className="w-full h-full object-contain animate-in fade-in zoom-in duration-300"
             />
           </div>
@@ -155,13 +167,22 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
 
             {/* Mensaje descriptivo del avance en tiempo real */}
             <p className="text-xs text-slate-500 font-medium">
-              {isProgreso
+              {isResuelto
+                ? '🎉 ¡Inconveniente solucionado! Tu equipo o servicio se encuentra 100% operativo.'
+                : isProgreso
                 ? (ticket.tecnicoAsignado?.nombre 
                     ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
                     : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
                 : '⏱️ Tu reporte está en cola y será asignado a un técnico en breve.'
               }
             </p>
+
+            {/* Solución técnica si fue ingresada */}
+            {ticket.solucion && (
+              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium animate-in fade-in text-left">
+                <strong>Solución aplicada:</strong> {ticket.solucion}
+              </div>
+            )}
           </div>
         </div>
 
@@ -170,8 +191,8 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
           <div className="relative flex items-center justify-between px-3">
             <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-1.5 bg-slate-200 rounded-full -z-0">
               <div 
-                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                style={{ width: isProgreso ? '50%' : '10%' }}
+                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                style={{ width: isResuelto ? '100%' : isProgreso ? '50%' : '10%' }}
               />
             </div>
 
@@ -186,23 +207,29 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
             {/* Paso 2: En Camino */}
             <div className="flex flex-col items-center relative z-10">
               <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
-                isProgreso 
-                  ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' 
+                isResuelto || isProgreso
+                  ? 'bg-emerald-500 text-white' 
                   : 'bg-slate-200 text-slate-400'
               }`}>
-                {isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
+                {isResuelto || isProgreso ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
               </div>
-              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-600'}`}>
                 En Camino
               </span>
             </div>
 
             {/* Paso 3: Terminado */}
             <div className="flex flex-col items-center relative z-10">
-              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 font-bold flex items-center justify-center text-xs shadow-sm">
-                3
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
+                isResuelto
+                  ? 'bg-emerald-500 text-white ring-4 ring-emerald-200 animate-pulse'
+                  : 'bg-slate-200 text-slate-400'
+              }`}>
+                {isResuelto ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
               </div>
-              <span className="text-[10px] font-bold text-slate-400 mt-1">Resuelto</span>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isResuelto ? 'text-emerald-700 font-black' : 'text-slate-400'}`}>
+                Resuelto
+              </span>
             </div>
           </div>
         </div>
@@ -213,10 +240,17 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
             <Clock className="w-3 h-3 text-slate-400" />
             {ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
           </span>
-          <span className="text-emerald-600 font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-            En atención activa
-          </span>
+          {isResuelto ? (
+            <span className="text-emerald-600 font-bold flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Resuelto · Saldrá de la lista en unos minutos
+            </span>
+          ) : (
+            <span className="text-emerald-600 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              En atención activa
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -361,13 +395,13 @@ export default function PortalPage() {
       }
     };
 
-    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o se concluye)
+    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o a RESUELTO)
     const handleTicketActualizado = (ticket: any) => {
-      // Si pasa a RESUELTO o CERRADO: se elimina al instante del acumulado ("cuando se termina se borra")
-      if (ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO') {
+      // Si pasa a CERRADO definitivamente: se retira de la pantalla
+      if (ticket.estado === 'CERRADO') {
         setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
-      } else if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') {
-        // Actualizar al instante (< 100ms) cambiando el estado y la ilustración
+      } else {
+        // ABIERTO, EN_PROGRESO o RESUELTO: actualizar de inmediato en tiempo real
         const formatted = {
           ...ticket,
           ticketCode: ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
@@ -382,6 +416,13 @@ export default function PortalPage() {
           if (!exists) return [formatted, ...prev];
           return prev.map(t => t.id === ticket.id ? formatted : t);
         });
+
+        // Si se resolvió, permanece visible en pantalla unos 10 minutos y luego se retira solo de la vista
+        if (ticket.estado === 'RESUELTO') {
+          setTimeout(() => {
+            setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
+          }, 10 * 60 * 1000);
+        }
       }
       setLastUpdatedTime(new Date());
     };
@@ -703,27 +744,13 @@ export default function PortalPage() {
           </p>
 
           {/* Tarjeta con Código de Ticket Duolingo Style */}
-          <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-4 mb-6 relative">
+          <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-4 mb-6">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
               Código de tu Ticket
             </span>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-2xl md:text-3xl font-black text-indigo-700 font-mono tracking-wider">
-                #{ticketCode}
-              </span>
-              <button
-                onClick={() => copiarCodigoTicket(ticketCode)}
-                className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all shadow-xs"
-                title="Copiar código"
-              >
-                {copiedCode ? <CheckCheck className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
-              </button>
-            </div>
-            {copiedCode && (
-              <span className="text-xs text-emerald-600 font-bold mt-1 inline-block animate-in fade-in">
-                ¡Código copiado al portapapeles!
-              </span>
-            )}
+            <span className="text-2xl md:text-3xl font-black text-indigo-700 font-mono tracking-wider">
+              #{ticketCode}
+            </span>
           </div>
 
           <div className="space-y-3">
