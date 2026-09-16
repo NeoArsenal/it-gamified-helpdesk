@@ -1,37 +1,32 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   TicketIcon, 
   CheckCircle2, 
   ChevronDown, 
   LogOut, 
-  Search, 
   Clock, 
   Check, 
   MapPin, 
   User, 
-  Phone, 
   RefreshCw, 
   Copy, 
   CheckCheck,
-  AlertCircle,
-  HelpCircle,
-  Sparkles,
   Play,
   Zap,
-  Filter
+  Radio
 } from 'lucide-react';
 import { 
   getUbicacionesSedes, 
   getUbicacionesDepartamentos, 
   getUbicacionesAreas, 
   crearTicket, 
-  trackTicket,
   getTicketsActivosPublicos,
   verifyPortalPin, 
   verifyPortalAccess, 
-  safeStorage 
+  safeStorage,
+  socket 
 } from '@/services/api/api-client';
 import { LimatamboBrand } from '@/components/ui/LimatamboBrand';
 
@@ -79,7 +74,6 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
 
 // Tarjeta con Forma de Ticket Físico (Ticket-Shaped Card)
 function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentlyCreated?: boolean }) {
-  const isAbierto = ticket.estado === 'ABIERTO';
   const isProgreso = ticket.estado === 'EN_PROGRESO';
   const code = ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`;
 
@@ -88,8 +82,8 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
       isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : 'border-slate-200 hover:border-indigo-300'
     }`}>
       {/* 1. TALÓN SUPERIOR DEL TICKET (Stub) */}
-      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 ${
-        isProgreso ? 'bg-indigo-50/80' : 'bg-amber-50/70'
+      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${
+        isProgreso ? 'bg-indigo-50/90' : 'bg-amber-50/70'
       }`}>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Código de Barras Decorativo del Ticket */}
@@ -107,7 +101,7 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
         </div>
 
         {/* Badge de Estado Dinámico */}
-        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs ${
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${
           isProgreso 
             ? 'bg-indigo-100 text-indigo-800 border-indigo-300' 
             : 'bg-amber-100 text-amber-800 border-amber-300'
@@ -131,12 +125,12 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
       <div className="p-5 md:p-6 space-y-4 bg-white">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
           {/* Ilustración Duolingo */}
-          <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1 transition-all duration-300">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={isProgreso ? '/illustrations/tech-running.jpg' : '/illustrations/ticket-waiting.jpg'}
               alt={isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain animate-in fade-in zoom-in duration-300"
             />
           </div>
 
@@ -159,7 +153,7 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
               )}
             </div>
 
-            {/* Mensaje descriptivo del avance */}
+            {/* Mensaje descriptivo del avance en tiempo real */}
             <p className="text-xs text-slate-500 font-medium">
               {isProgreso
                 ? (ticket.tecnicoAsignado?.nombre 
@@ -191,14 +185,14 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
 
             {/* Paso 2: En Camino */}
             <div className="flex flex-col items-center relative z-10">
-              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all ${
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
                 isProgreso 
                   ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse' 
                   : 'bg-slate-200 text-slate-400'
               }`}>
                 {isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
               </div>
-              <span className={`text-[10px] font-bold mt-1 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
                 En Camino
               </span>
             </div>
@@ -258,11 +252,11 @@ export default function PortalPage() {
   const [departamentosList, setDepartamentosList] = useState<string[]>([]);
   const [areasList, setAreasList] = useState<string[]>([]);
 
-  // Acumulado de Tickets Activos (Feed en Vivo)
+  // Acumulado de Tickets Activos (Feed en Vivo WebSockets)
   const [activeTickets, setActiveTickets] = useState<any[]>([]);
   const [isLoadingActive, setIsLoadingActive] = useState(false);
-  const [filterSearch, setFilterSearch] = useState('');
   const [lastUpdatedTime, setLastUpdatedTime] = useState<Date>(new Date());
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   useEffect(() => {
     // 1. Revisar si viene con token secreto desde el código QR (?key=... o ?token=...)
@@ -273,7 +267,6 @@ export default function PortalPage() {
 
       if (trackParam) {
         setActiveTab('consultar');
-        setFilterSearch(trackParam);
       }
 
       if (tokenParam) {
@@ -332,14 +325,97 @@ export default function PortalPage() {
     }
   };
 
-  // Auto-actualizar tickets activos periódicamente si la pestaña 'consultar' está abierta
+  // Conexión WebSockets en tiempo real instantáneo (0 segundos)
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const onConnect = () => setIsLiveConnected(true);
+    const onDisconnect = () => setIsLiveConnected(false);
+
+    if (socket.connected) {
+      setIsLiveConnected(true);
+    }
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+
+    // 1. Cuando se crea un nuevo ticket
+    const handleNuevoTicket = (ticket: any) => {
+      if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') {
+        const formatted = {
+          ...ticket,
+          ticketCode: ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
+          tecnicoAsignado: ticket.asignadoA ? {
+            nombre: ticket.asignadoA.nombre,
+            avatar: ticket.asignadoA.avatar,
+            rol: ticket.asignadoA.rol,
+          } : null,
+        };
+        setActiveTickets(prev => {
+          if (prev.some(t => t.id === ticket.id)) return prev;
+          return [formatted, ...prev];
+        });
+        setLastUpdatedTime(new Date());
+      }
+    };
+
+    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o se concluye)
+    const handleTicketActualizado = (ticket: any) => {
+      // Si pasa a RESUELTO o CERRADO: se elimina al instante del acumulado ("cuando se termina se borra")
+      if (ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO') {
+        setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
+      } else if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') {
+        // Actualizar al instante (< 100ms) cambiando el estado y la ilustración
+        const formatted = {
+          ...ticket,
+          ticketCode: ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
+          tecnicoAsignado: ticket.asignadoA ? {
+            nombre: ticket.asignadoA.nombre,
+            avatar: ticket.asignadoA.avatar,
+            rol: ticket.asignadoA.rol,
+          } : null,
+        };
+        setActiveTickets(prev => {
+          const exists = prev.some(t => t.id === ticket.id);
+          if (!exists) return [formatted, ...prev];
+          return prev.map(t => t.id === ticket.id ? formatted : t);
+        });
+      }
+      setLastUpdatedTime(new Date());
+    };
+
+    // 3. Si se elimina un ticket
+    const handleTicketEliminado = (data: any) => {
+      const id = typeof data === 'string' ? data : data?.id;
+      if (id) {
+        setActiveTickets(prev => prev.filter(t => t.id !== id));
+        setLastUpdatedTime(new Date());
+      }
+    };
+
+    socket.on('nuevoTicket', handleNuevoTicket);
+    socket.on('ticketActualizado', handleTicketActualizado);
+    socket.on('ticketEliminado', handleTicketEliminado);
+
+    return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('nuevoTicket', handleNuevoTicket);
+      socket.off('ticketActualizado', handleTicketActualizado);
+      socket.off('ticketEliminado', handleTicketEliminado);
+    };
+  }, []);
+
+  // Polling de respaldo cada 30 segundos
   useEffect(() => {
     cargarTicketsActivos();
     const interval = setInterval(() => {
       if (activeTab === 'consultar' || showDirectTracker) {
         cargarTicketsActivos();
       }
-    }, 15000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [activeTab, showDirectTracker]);
 
@@ -434,7 +510,6 @@ export default function PortalPage() {
 
       setCreatedTicketInfo(result);
       setIsSuccess(true);
-      // Actualizar la lista activa para que aparezca de inmediato
       cargarTicketsActivos();
       // Limpiar formulario excepto datos del solicitante
       setTitulo('');
@@ -468,21 +543,6 @@ export default function PortalPage() {
     setShowDirectTracker(true);
     cargarTicketsActivos();
   };
-
-  // Filtrado reactivo de tickets activos
-  const filteredActiveTickets = useMemo(() => {
-    const q = filterSearch.trim().toLowerCase().replace(/^[#\s]*(tk-?)?/i, '');
-    if (!q) return activeTickets;
-
-    return activeTickets.filter(tk => {
-      const matchCode = (tk.ticketCode || '').toLowerCase().includes(q) || (tk.id || '').toLowerCase().includes(q);
-      const matchTitle = (tk.titulo || '').toLowerCase().includes(q);
-      const matchSede = (tk.sede || '').toLowerCase().includes(q);
-      const matchDept = (tk.departamento || '').toLowerCase().includes(q);
-      const matchName = (tk.solicitanteNombre || '').toLowerCase().includes(q);
-      return matchCode || matchTitle || matchSede || matchDept || matchName;
-    });
-  }, [activeTickets, filterSearch]);
 
   if (isValidatingToken) {
     return (
@@ -520,7 +580,7 @@ export default function PortalPage() {
             </div>
             <h1 className="text-2xl font-black">Tickets en Atención</h1>
             <p className="text-indigo-100 text-xs mt-1 font-medium">
-              Acumulado en vivo de requerimientos. Cambia de estado según se atiende y desaparece al resolverse.
+              Acumulado en tiempo real: observa el avance hasta que el técnico concluya tu caso.
             </p>
           </div>
 
@@ -639,7 +699,7 @@ export default function PortalPage() {
 
           <h2 className="text-2xl font-black text-slate-800 mb-1">Tu ticket ya está en cola</h2>
           <p className="text-slate-500 text-xs md:text-sm mb-5">
-            Quedó registrado en el acumulado de tickets y cambiará de estado cuando el técnico vaya en camino.
+            Quedó registrado en el acumulado y cambiará de estado al instante cuando el técnico lo tome.
           </p>
 
           {/* Tarjeta con Código de Ticket Duolingo Style */}
@@ -687,50 +747,47 @@ export default function PortalPage() {
     );
   }
 
-  // Helper para renderizar la interfaz de seguimiento con forma de ticket
+  // Helper para renderizar la interfaz de seguimiento con forma de ticket (Limpia, en vivo, sin buscador)
   function renderTrackingInterface() {
     return (
       <div className="space-y-5">
-        {/* Barra de Filtro Rápido y Actualización */}
-        <div className="bg-white border-2 border-slate-200 rounded-2xl p-3 shadow-sm flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
-              placeholder="Filtrar por código (#TK-XXXXXX), título o área..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs md:text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all"
-            />
+        {/* Barra de Estado en Tiempo Real (Sleek, sin buscador) */}
+        <div className="bg-white border-2 border-slate-200/80 rounded-2xl p-3.5 shadow-sm flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-3.5 w-3.5 items-center justify-center">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-slate-800 tracking-tight">
+                  {activeTickets.length === 1 ? '1 Ticket en Atención' : `${activeTickets.length} Tickets en Atención`}
+                </span>
+                <span className="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                  En Vivo
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">
+                Actualizado: {lastUpdatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
           </div>
+
           <button
             onClick={() => cargarTicketsActivos()}
             disabled={isLoadingActive}
-            className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all active:scale-95 shrink-0 flex items-center gap-1 text-xs font-bold"
-            title="Actualizar tickets en vivo"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-2xs"
+            title="Refrescar manualmente"
           >
-            <RefreshCw className={`w-4 h-4 ${isLoadingActive ? 'animate-spin text-indigo-600' : ''}`} />
-            <span className="hidden sm:inline">Actualizar</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingActive ? 'animate-spin text-indigo-600' : 'text-slate-400'}`} />
+            <span>Actualizar</span>
           </button>
         </div>
 
-        {/* Resumen de Estado en Vivo */}
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-              {filteredActiveTickets.length === 1 ? '1 Ticket en Atención' : `${filteredActiveTickets.length} Tickets en Atención`}
-            </span>
-          </div>
-          <span className="text-[11px] text-slate-400 font-medium">
-            Actualizado: {lastUpdatedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-          </span>
-        </div>
-
         {/* Lista de Tickets en Forma de Ticket */}
-        {filteredActiveTickets.length > 0 ? (
+        {activeTickets.length > 0 ? (
           <div className="space-y-5">
-            {filteredActiveTickets.map((tk) => {
+            {activeTickets.map((tk) => {
               const isMine = createdTicketInfo?.id && tk.id === createdTicketInfo.id;
               return (
                 <TicketShapeCard
@@ -753,22 +810,11 @@ export default function PortalPage() {
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h4 className="text-base font-black text-slate-800">
-              {filterSearch ? 'No se encontraron coincidencias' : '¡No hay tickets pendientes!'}
+              ¡No hay tickets pendientes!
             </h4>
             <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-              {filterSearch 
-                ? 'Prueba borrando el filtro de búsqueda para ver todos los tickets activos.' 
-                : 'Todos los requerimientos anteriores ya fueron resueltos por el equipo de Sistemas. Cuando crees un nuevo ticket, aparecerá aquí.'
-              }
+              Todos los requerimientos ya fueron resueltos por el equipo de Sistemas. Cuando reportes un problema, aparecerá aquí al instante.
             </p>
-            {filterSearch && (
-              <button
-                onClick={() => setFilterSearch('')}
-                className="text-xs text-indigo-600 font-bold hover:underline"
-              >
-                Limpiar filtro de búsqueda
-              </button>
-            )}
           </div>
         )}
 
@@ -811,7 +857,7 @@ export default function PortalPage() {
           <p className="text-indigo-100/90 text-xs md:text-sm mt-1 font-medium relative z-10">
             {activeTab === 'reportar' 
               ? 'Completa los 3 pasos a continuación para enviar tu reporte rápidamente'
-              : 'Acumulado en vivo: observa cómo avanza tu caso hasta resolverse'
+              : 'Acumulado en tiempo real: observa cómo avanza tu caso hasta resolverse'
             }
           </p>
 
