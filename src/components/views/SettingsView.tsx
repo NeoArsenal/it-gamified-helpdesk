@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Settings, User, Gamepad2, Palette, Save, Bell, Shield, Volume2, Monitor, Award, Layers, Tags, Sun, Moon, Lock, Check, MapPin, Plus, Trash2, X, Key, RotateCcw, Sparkles, Trophy, Sliders, RefreshCw, Cpu, Wifi, BookOpen, GraduationCap } from 'lucide-react';
 import { getPerfilUsuario, actualizarPreferenciasUsuario, getUbicaciones, crearUbicacion, eliminarUbicacion, getPortalPin, setPortalPin, getPortalConfig, regeneratePortalToken, getCatalogos, actualizarCatalogo, safeStorage, getReglasGamificacion, guardarReglasGamificacion, ReglasGamificacion } from '@/services/api/api-client';
 import { QRCodeSVG } from 'qrcode.react';
@@ -33,6 +33,12 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [nuevoDepto, setNuevoDepto] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
 
+  // Creación personalizada / dinámica de sede y departamento
+  const [isCreandoNuevaSede, setIsCreandoNuevaSede] = useState(false);
+  const [nuevaSedeTexto, setNuevaSedeTexto] = useState('');
+  const [isCreandoNuevoDepto, setIsCreandoNuevoDepto] = useState(false);
+  const [nuevoDeptoTexto, setNuevoDeptoTexto] = useState('');
+
   // Portal State
   const [portalPin, setPortalPinState] = useState('');
   const [portalToken, setPortalToken] = useState('');
@@ -43,6 +49,19 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [departamentos, setDepartamentos] = useState<string[]>([]);
   const [categoriasActivos, setCategoriasActivos] = useState<string[]>([]);
   const [nuevoDeptoNombre, setNuevoDeptoNombre] = useState('');
+
+  // Listas consolidadas y sin duplicados para los selectores
+  const sedesExistentes = useMemo(() => {
+    const list = Array.from(new Set(ubicaciones.map(u => (u.sede || '').trim()).filter(Boolean)));
+    if (list.length === 0) return ['Clínica', 'Tower 1'];
+    return list;
+  }, [ubicaciones]);
+
+  const departamentosDisponibles = useMemo(() => {
+    const fromCat = departamentos.map(d => d.trim()).filter(Boolean);
+    const fromUbi = ubicaciones.map(u => (u.departamento || '').trim()).filter(Boolean);
+    return Array.from(new Set([...fromCat, ...fromUbi]));
+  }, [departamentos, ubicaciones]);
   const [nuevaCatNombre, setNuevaCatNombre] = useState('');
   const [isAddingDepto, setIsAddingDepto] = useState(false);
   const [isAddingCat, setIsAddingCat] = useState(false);
@@ -253,13 +272,52 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   const handleCrearUbicacion = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevaSede.trim() || !nuevoDepto.trim() || !nuevaArea.trim()) return;
+    const finalSede = isCreandoNuevaSede ? nuevaSedeTexto.trim() : nuevaSede.trim();
+    const finalDepto = isCreandoNuevoDepto ? nuevoDeptoTexto.trim() : nuevoDepto.trim();
+    const finalArea = nuevaArea.trim();
+
+    if (!finalSede) {
+      toast.error('Por favor selecciona o escribe el nombre de la Sede.');
+      return;
+    }
+    if (!finalDepto) {
+      toast.error('Por favor selecciona o escribe el nombre del Departamento.');
+      return;
+    }
+    if (!finalArea) {
+      toast.error('Por favor escribe el Área Específica (ej: Oficina 501).');
+      return;
+    }
+
     try {
-      await crearUbicacion({ sede: nuevaSede, departamento: nuevoDepto, area: nuevaArea });
-      setNuevaArea(''); // Limpiar solo el área para crear más rápido
+      await crearUbicacion({ sede: finalSede, departamento: finalDepto, area: finalArea });
+      toast.success(`Ubicación "${finalArea}" creada exitosamente`);
+
+      // Si se creó una nueva sede, guardarla como la seleccionada para seguir agregando
+      if (isCreandoNuevaSede) {
+        setNuevaSede(finalSede);
+        setIsCreandoNuevaSede(false);
+        setNuevaSedeTexto('');
+      }
+
+      // Si se creó un nuevo departamento, agregarlo también al catálogo de departamentos del helpdesk
+      if (isCreandoNuevoDepto) {
+        if (!departamentos.some(d => d.toLowerCase() === finalDepto.toLowerCase())) {
+          const updatedDeptos = [...departamentos, finalDepto];
+          setDepartamentos(updatedDeptos);
+          actualizarCatalogo('departamentos', updatedDeptos).catch(console.error);
+        }
+        setNuevoDepto(finalDepto);
+        setIsCreandoNuevoDepto(false);
+        setNuevoDeptoTexto('');
+      }
+
+      // Limpiar SOLO el área para permitir añadir más consultorios/oficinas en la misma Sede y Departamento rápidamente
+      setNuevaArea('');
       fetchUbicaciones();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e.message || 'Error al agregar ubicación');
     }
   };
 
@@ -963,32 +1021,147 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
                     <Plus className="w-4 h-4 text-purple-500" /> Nueva Ubicación
                   </h4>
                   <form onSubmit={handleCrearUbicacion} className="space-y-4">
+                    {/* 1. SEDE (Selector de Sedes existentes o Crear Nueva) */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Sede</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Sede</label>
+                        {!isCreandoNuevaSede ? (
+                          <button
+                            type="button"
+                            onClick={() => { setIsCreandoNuevaSede(true); setNuevaSedeTexto(''); }}
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" /> Nueva Sede
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setIsCreandoNuevaSede(false); }}
+                            className="text-[11px] font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                          >
+                            Seleccionar existente
+                          </button>
+                        )}
+                      </div>
+
+                      {!isCreandoNuevaSede ? (
+                        <select
+                          value={nuevaSede}
+                          onChange={e => {
+                            if (e.target.value === '__NUEVA__') {
+                              setIsCreandoNuevaSede(true);
+                              setNuevaSedeTexto('');
+                            } else {
+                              setNuevaSede(e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium cursor-pointer"
+                        >
+                          <option value="">-- Seleccionar Sede existente --</option>
+                          {sedesExistentes.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                          <option value="__NUEVA__" className="text-purple-600 font-bold">+ Crear Nueva Sede...</option>
+                        </select>
+                      ) : (
+                        <div className="space-y-1.5 animate-in fade-in">
+                          <input
+                            type="text"
+                            required
+                            autoFocus
+                            placeholder="Nombre de la nueva sede (Ej: Sede Sur, Torre 2)..."
+                            value={nuevaSedeTexto}
+                            onChange={e => setNuevaSedeTexto(e.target.value)}
+                            className="w-full px-3 py-2 bg-white text-slate-900 border-2 border-purple-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                          <span className="text-[10px] text-slate-500 block">
+                            💡 Al guardar la primera área, esta sede quedará registrada permanentemente en el sistema.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. DEPARTAMENTO (Selector del Catálogo Central o Crear Nuevo) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-bold text-slate-700">Departamento</label>
+                        {!isCreandoNuevoDepto ? (
+                          <button
+                            type="button"
+                            onClick={() => { setIsCreandoNuevoDepto(true); setNuevoDeptoTexto(''); }}
+                            className="text-[11px] font-bold text-purple-600 hover:text-purple-700 flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" /> Nuevo Depto
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setIsCreandoNuevoDepto(false); }}
+                            className="text-[11px] font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                          >
+                            Seleccionar del catálogo
+                          </button>
+                        )}
+                      </div>
+
+                      {!isCreandoNuevoDepto ? (
+                        <select
+                          value={nuevoDepto}
+                          onChange={e => {
+                            if (e.target.value === '__NUEVO__') {
+                              setIsCreandoNuevoDepto(true);
+                              setNuevoDeptoTexto('');
+                            } else {
+                              setNuevoDepto(e.target.value);
+                            }
+                          }}
+                          className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium cursor-pointer"
+                        >
+                          <option value="">-- Seleccionar Departamento del Catálogo --</option>
+                          {departamentosDisponibles.map(d => (
+                            <option key={d} value={d}>{d}</option>
+                          ))}
+                          <option value="__NUEVO__" className="text-purple-600 font-bold">+ Crear Nuevo Departamento...</option>
+                        </select>
+                      ) : (
+                        <div className="space-y-1.5 animate-in fade-in">
+                          <input
+                            type="text"
+                            required
+                            autoFocus
+                            placeholder="Nombre del departamento (Ej: Pediatría, Urgencias)..."
+                            value={nuevoDeptoTexto}
+                            onChange={e => setNuevoDeptoTexto(e.target.value)}
+                            className="w-full px-3 py-2 bg-white text-slate-900 border-2 border-purple-400 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                          <span className="text-[10px] text-slate-500 block">
+                            💡 Se añadirá automáticamente a la lista central de Gestión de Departamentos.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. ÁREA ESPECÍFICA */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Área Específica / Consultorio / Oficina</label>
                       <input 
-                        type="text" required placeholder="Ej: Tower 1"
-                        value={nuevaSede} onChange={e => setNuevaSede(e.target.value)}
+                        type="text" 
+                        required 
+                        placeholder="Ej: Consultorio 101, Oficina 502, Triaje..."
+                        value={nuevaArea} 
+                        onChange={e => setNuevaArea(e.target.value)}
                         className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                       />
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        Al pulsar "Agregar Ubicación", la sede y departamento se mantienen seleccionados para agregar múltiples áreas rápido.
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Departamento</label>
-                      <input 
-                        type="text" required placeholder="Ej: Piso 5"
-                        value={nuevoDepto} onChange={e => setNuevoDepto(e.target.value)}
-                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Área Específica</label>
-                      <input 
-                        type="text" required placeholder="Ej: Oficina 501"
-                        value={nuevaArea} onChange={e => setNuevaArea(e.target.value)}
-                        className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                    </div>
-                    <button type="submit" className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm mt-2">
-                      Agregar Ubicación
+
+                    <button 
+                      type="submit" 
+                      className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold rounded-lg transition-all shadow-sm mt-2 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <Plus className="w-4 h-4" /> Agregar Ubicación
                     </button>
                   </form>
                 </div>
