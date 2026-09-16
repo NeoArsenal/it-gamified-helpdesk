@@ -75,20 +75,33 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
 // Tarjeta con Forma de Ticket Físico (Ticket-Shaped Card)
 function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentlyCreated?: boolean }) {
   const isProgreso = ticket.estado === 'EN_PROGRESO';
+  const isResuelto = ticket.estado === 'RESUELTO';
   const code = ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`;
 
   return (
-    <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : 'border-slate-200 hover:border-indigo-300'
-      }`}>
+    <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${
+      isResuelto
+        ? 'border-emerald-400 ring-4 ring-emerald-500/10'
+        : isRecentlyCreated
+          ? 'border-indigo-500 ring-4 ring-indigo-500/15'
+          : 'border-slate-200 hover:border-indigo-300'
+    }`}>
       {/* 1. TALÓN SUPERIOR DEL TICKET (Stub) */}
-      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${isProgreso ? 'bg-indigo-50/90' : 'bg-amber-50/70'
-        }`}>
+      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${
+        isResuelto
+          ? 'bg-emerald-50/90'
+          : isProgreso
+            ? 'bg-indigo-50/90'
+            : 'bg-amber-50/70'
+      }`}>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Código de Barras Decorativo del Ticket */}
           <div className="font-mono text-[9px] font-black tracking-tighter text-slate-400 select-none hidden sm:block">
             |||| || ||| |||| |
           </div>
-          <span className="font-mono font-black text-sm md:text-base text-indigo-700 tracking-wider bg-white px-2.5 py-1 rounded-lg border border-indigo-100 shadow-xs">
+          <span className={`font-mono font-black text-sm md:text-base tracking-wider bg-white px-2.5 py-1 rounded-lg border shadow-xs ${
+            isResuelto ? 'text-emerald-700 border-emerald-200' : 'text-indigo-700 border-indigo-100'
+          }`}>
             #{code}
           </span>
           {isRecentlyCreated && (
@@ -99,12 +112,21 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
         </div>
 
         {/* Badge de Estado Dinámico */}
-        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${isProgreso
-          ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
-          : 'bg-amber-100 text-amber-800 border-amber-300'
-          }`}>
-          <span className={`w-2 h-2 rounded-full ${isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
-          <span>{isProgreso ? 'TÉCNICO EN CAMINO' : 'EN ESPERA'}</span>
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${
+          isResuelto
+            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            : isProgreso
+              ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+              : 'bg-amber-100 text-amber-800 border-amber-300'
+        }`}>
+          <span className={`w-2 h-2 rounded-full ${
+            isResuelto
+              ? 'bg-emerald-600'
+              : isProgreso
+                ? 'bg-indigo-600 animate-ping'
+                : 'bg-amber-500'
+          }`} />
+          <span>{isResuelto ? '¡RESUELTO!' : isProgreso ? 'TÉCNICO EN CAMINO' : 'EN ESPERA'}</span>
         </div>
       </div>
 
@@ -122,17 +144,25 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
       <div className="p-5 md:p-6 space-y-4 bg-white">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
           {/* Ilustración Duolingo */}
-          <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1 transition-all duration-300">
+          <div className={`w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl border-2 overflow-hidden shadow-inner flex items-center justify-center p-1 transition-all duration-300 ${
+            isResuelto ? 'bg-emerald-50/60 border-emerald-200' : 'bg-slate-50 border-slate-200'
+          }`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={isProgreso ? '/illustrations/tech-running.jpg' : '/illustrations/ticket-waiting.jpg'}
-              alt={isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
+              src={
+                isResuelto
+                  ? '/illustrations/ticket-resolved.jpg'
+                  : isProgreso
+                    ? '/illustrations/tech-running.jpg'
+                    : '/illustrations/ticket-waiting.jpg'
+              }
+              alt={isResuelto ? 'Ticket resuelto' : isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
               className="w-full h-full object-contain animate-in fade-in zoom-in duration-300"
             />
           </div>
 
           <div className="flex-1 text-center sm:text-left space-y-2">
-            <h3 className="text-base sm:text-lg font-black text-slate-800 leading-snug">
+            <h3 className={`text-base sm:text-lg font-black leading-snug ${isResuelto ? 'text-emerald-950' : 'text-slate-800'}`}>
               {ticket.titulo}
             </h3>
 
@@ -151,12 +181,14 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
             </div>
 
             {/* Mensaje descriptivo del avance en tiempo real */}
-            <p className="text-xs text-slate-500 font-medium">
-              {isProgreso
-                ? (ticket.tecnicoAsignado?.nombre
-                  ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
-                  : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
-                : '⏱️ Tu reporte está en cola y será asignado a un técnico en breve.'
+            <p className={`text-xs ${isResuelto ? 'text-emerald-700 font-bold' : 'text-slate-500 font-medium'}`}>
+              {isResuelto
+                ? (ticket.solucion ? `✅ Solución: ${ticket.solucion}` : '🎉 ¡Problema solucionado con éxito por Sistemas!')
+                : isProgreso
+                  ? (ticket.tecnicoAsignado?.nombre
+                    ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
+                    : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
+                  : '⏱️ Tu reporte está en cola y será asignado a un técnico en breve.'
               }
             </p>
           </div>
@@ -167,8 +199,8 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
           <div className="relative flex items-center justify-between px-3">
             <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-1.5 bg-slate-200 rounded-full -z-0">
               <div
-                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
-                style={{ width: isProgreso ? '50%' : '10%' }}
+                className={`h-full rounded-full transition-all duration-500 ${isResuelto ? 'bg-emerald-500' : 'bg-indigo-600'}`}
+                style={{ width: isResuelto ? '100%' : isProgreso ? '50%' : '10%' }}
               />
             </div>
 
@@ -182,37 +214,61 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
 
             {/* Paso 2: En Camino */}
             <div className="flex flex-col items-center relative z-10">
-              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${isProgreso
-                ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse'
-                : 'bg-slate-200 text-slate-400'
-                }`}>
-                {isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
+                isResuelto
+                  ? 'bg-emerald-500 text-white'
+                  : isProgreso
+                    ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse'
+                    : 'bg-slate-200 text-slate-400'
+              }`}>
+                {isResuelto ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
               </div>
-              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${
+                isResuelto ? 'text-emerald-700 font-bold' : isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'
+              }`}>
                 En Camino
               </span>
             </div>
 
             {/* Paso 3: Terminado */}
             <div className="flex flex-col items-center relative z-10">
-              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 font-bold flex items-center justify-center text-xs shadow-sm">
-                3
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
+                isResuelto
+                  ? 'bg-emerald-600 text-white ring-4 ring-emerald-200 shadow-md'
+                  : 'bg-slate-200 text-slate-400'
+              }`}>
+                {isResuelto ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
               </div>
-              <span className="text-[10px] font-bold text-slate-400 mt-1">Resuelto</span>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${
+                isResuelto ? 'text-emerald-700 font-black' : 'text-slate-400'
+              }`}>
+                Resuelto
+              </span>
             </div>
           </div>
         </div>
 
-        {/* 5. PIE DEL TICKET: Fecha y Estado en Cola */}
+        {/* 5. PIE DEL TICKET: Fecha y Estado */}
         <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400 font-medium">
           <span className="flex items-center gap-1">
             <Clock className="w-3 h-3 text-slate-400" />
-            {ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
+            {isResuelto ? 'Resuelto' : 'Registrado'}: {
+              isResuelto && (ticket.resueltoEn || ticket.actualizadoEn)
+                ? new Date(ticket.resueltoEn || ticket.actualizadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })
+                : ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''
+            }
           </span>
-          <span className="text-emerald-600 font-bold flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-            En atención activa
-          </span>
+          {isResuelto ? (
+            <span className="text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              Caso Concluido
+            </span>
+          ) : (
+            <span className="text-emerald-600 font-bold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              En atención activa
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -357,13 +413,13 @@ export default function PortalPage() {
       }
     };
 
-    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o se concluye)
+    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o se RESUELVE)
     const handleTicketActualizado = (ticket: any) => {
-      // Si pasa a RESUELTO o CERRADO: se elimina al instante del acumulado ("cuando se termina se borra")
-      if (ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO') {
+      // Si pasa a CERRADO (archivado definitivo): se quita de la lista
+      if (ticket.estado === 'CERRADO') {
         setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
-      } else if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') {
-        // Actualizar al instante (< 100ms) cambiando el estado y la ilustración
+      } else if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO' || ticket.estado === 'RESUELTO') {
+        // Actualizar al instante (< 100ms) cambiando el estado, animación e ilustración
         const formatted = {
           ...ticket,
           ticketCode: ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
@@ -412,7 +468,23 @@ export default function PortalPage() {
         cargarTicketsActivos();
       }
     }, 30000);
-    return () => clearInterval(interval);
+
+    // Limpieza automática en cliente de tickets concluidos después de 15 minutos
+    const cleanupTimer = setInterval(() => {
+      const fifteenMinAgo = Date.now() - 15 * 60 * 1000;
+      setActiveTickets(prev => prev.filter(t => {
+        if (t.estado === 'RESUELTO') {
+          const resueltoTimestamp = new Date(t.resueltoEn || t.actualizadoEn || t.creadoEn).getTime();
+          return resueltoTimestamp >= fifteenMinAgo;
+        }
+        return true;
+      }));
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(cleanupTimer);
+    };
   }, [activeTab, showDirectTracker]);
 
   useEffect(() => {
@@ -815,7 +887,7 @@ export default function PortalPage() {
 
         {/* Nota explicativa de auto-limpieza */}
         <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-2xl text-[11px] text-indigo-900/80 text-center font-medium">
-          💡 <strong>¿Cómo funciona?</strong> Este es el acumulado activo. Tu ticket permanece aquí mientras esté <em>En Espera</em> o <em>En Camino</em>. Una vez que el técnico de Sistemas lo termina de solucionar, se borra automáticamente de la lista.
+          💡 <strong>¿Cómo funciona?</strong> Este es el acumulado en tiempo real. Tu ticket avanza automáticamente (<em>En Espera</em> → <em>En Camino</em> → <em>Resuelto</em>). Cuando se soluciona, permanece visible unos minutos para que verifiques que todo quedó listo antes de archivarse.
         </div>
       </div>
     );
