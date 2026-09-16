@@ -49,6 +49,15 @@ export const safeStorage = {
   }
 };
 
+export const safeJsonResponse = async (res: Response) => {
+  try {
+    const text = await res.text();
+    return text ? JSON.parse(text) : { success: true };
+  } catch {
+    return { success: true };
+  }
+};
+
 const originalFetch = globalThis.fetch;
 const fetch = async (url: RequestInfo | URL, options?: RequestInit) => {
   const token = safeStorage.getItem('auth_token');
@@ -134,7 +143,7 @@ export const eliminarUsuario = async (id: string) => {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || 'Error al eliminar usuario');
   }
-  return res.json();
+  return safeJsonResponse(res);
 };
 
 export const getUsuario = async (userId: string) => {
@@ -235,7 +244,7 @@ export const eliminarTicket = async (ticketId: string) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Error al eliminar ticket');
-  return res.json();
+  return safeJsonResponse(res);
 };
 
 export const resolverTicket = async (ticketId: string, resolutorId: string) => {
@@ -321,7 +330,7 @@ export const eliminarGuia = async (id: string) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Error al eliminar guía');
-  return res.json();
+  return safeJsonResponse(res);
 };
 
 // --- Red ---
@@ -447,7 +456,7 @@ export const eliminarActivo = async (id: string) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Error al eliminar activo');
-  return res.json();
+  return safeJsonResponse(res);
 };
 
 export const uploadFileToStorage = async (file: File) => {
@@ -506,7 +515,7 @@ export const eliminarUbicacion = async (id: string) => {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Error al eliminar ubicacion');
-  return res.json();
+  return safeJsonResponse(res);
 };
 
 // --- Portal Configuracion ---

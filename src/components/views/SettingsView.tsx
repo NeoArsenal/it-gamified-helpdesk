@@ -323,11 +323,16 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   const handleEliminarUbicacion = async (id: string) => {
     if (!confirm('¿Eliminar esta ubicación?')) return;
+    // Eliminación optimista instantánea en la interfaz
+    setUbicaciones(prev => prev.filter(u => u.id !== id));
     try {
       await eliminarUbicacion(id);
+      toast.success('Ubicación eliminada');
       fetchUbicaciones();
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e.message || 'Error al eliminar ubicación');
+      fetchUbicaciones();
     }
   };
 
