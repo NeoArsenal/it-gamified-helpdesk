@@ -214,6 +214,16 @@ export const crearTicket = async (ticketData: any) => {
   return res.json().catch(() => ({ success: true }));
 };
 
+export const trackTicket = async (query: string) => {
+  const encoded = encodeURIComponent(query.trim());
+  const res = await fetch(`${BASE_URL}/tickets/track?q=${encoded}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.message || 'No se encontró información para este ticket o teléfono.');
+  }
+  return data;
+};
+
 export const eliminarTicket = async (ticketId: string) => {
   const res = await fetch(`${BASE_URL}/tickets/${ticketId}`, {
     method: 'DELETE',
