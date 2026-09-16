@@ -1,32 +1,32 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { 
-  ShieldAlert, 
-  TicketIcon, 
-  CheckCircle2, 
-  ChevronDown, 
-  LogOut, 
-  Clock, 
-  Check, 
-  MapPin, 
-  User, 
-  RefreshCw, 
-  Copy, 
+import {
+  ShieldAlert,
+  TicketIcon,
+  CheckCircle2,
+  ChevronDown,
+  LogOut,
+  Clock,
+  Check,
+  MapPin,
+  User,
+  RefreshCw,
+  Copy,
   CheckCheck,
   Play,
   Zap,
   Radio
 } from 'lucide-react';
-import { 
-  getUbicacionesSedes, 
-  getUbicacionesDepartamentos, 
-  getUbicacionesAreas, 
-  crearTicket, 
+import {
+  getUbicacionesSedes,
+  getUbicacionesDepartamentos,
+  getUbicacionesAreas,
+  crearTicket,
   getTicketsActivosPublicos,
-  verifyPortalPin, 
-  verifyPortalAccess, 
+  verifyPortalPin,
+  verifyPortalAccess,
   safeStorage,
-  socket 
+  socket
 } from '@/services/api/api-client';
 import { LimatamboBrand } from '@/components/ui/LimatamboBrand';
 
@@ -35,8 +35,8 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="relative">
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
         className="w-full flex items-center justify-between px-4 py-3 bg-white text-slate-900 border-2 border-slate-300 rounded-xl text-base hover:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold shadow-sm"
@@ -44,7 +44,7 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
         <span className={value ? 'text-slate-900 font-bold' : 'text-slate-400 font-medium'}>{value || placeholder}</span>
         <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-indigo-500' : ''}`} />
       </button>
-      
+
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-white border-2 border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="max-h-60 overflow-y-auto p-1.5 space-y-0.5">
@@ -74,33 +74,15 @@ function PortalSelect({ value, options, onChange, placeholder }: { value: string
 
 // Tarjeta con Forma de Ticket Físico (Ticket-Shaped Card)
 function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentlyCreated?: boolean }) {
-  const isResuelto = ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO';
   const isProgreso = ticket.estado === 'EN_PROGRESO';
   const code = ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`;
 
-  let stubBg = 'bg-amber-50/70';
-  let badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-  let badgeText = 'EN ESPERA';
-  let illustrationImg = '/illustrations/ticket-waiting.jpg';
-
-  if (isResuelto) {
-    stubBg = 'bg-emerald-50/90';
-    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-    badgeText = '✅ RESUELTO';
-    illustrationImg = '/illustrations/ticket-resolved.jpg';
-  } else if (isProgreso) {
-    stubBg = 'bg-indigo-50/90';
-    badgeClass = 'bg-indigo-100 text-indigo-800 border-indigo-300';
-    badgeText = 'TÉCNICO EN CAMINO';
-    illustrationImg = '/illustrations/tech-running.jpg';
-  }
-
   return (
-    <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${
-      isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : isResuelto ? 'border-emerald-300 ring-4 ring-emerald-500/10' : 'border-slate-200 hover:border-indigo-300'
-    }`}>
+    <div className={`relative bg-white rounded-3xl border-2 transition-all duration-300 shadow-md hover:shadow-xl overflow-hidden ${isRecentlyCreated ? 'border-indigo-500 ring-4 ring-indigo-500/15' : 'border-slate-200 hover:border-indigo-300'
+      }`}>
       {/* 1. TALÓN SUPERIOR DEL TICKET (Stub) */}
-      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${stubBg}`}>
+      <div className={`px-5 pt-4 pb-3 flex items-center justify-between border-b border-dashed border-slate-200 transition-colors duration-500 ${isProgreso ? 'bg-indigo-50/90' : 'bg-amber-50/70'
+        }`}>
         <div className="flex items-center gap-2 flex-wrap">
           {/* Código de Barras Decorativo del Ticket */}
           <div className="font-mono text-[9px] font-black tracking-tighter text-slate-400 select-none hidden sm:block">
@@ -117,9 +99,12 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
         </div>
 
         {/* Badge de Estado Dinámico */}
-        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${badgeClass}`}>
-          <span className={`w-2 h-2 rounded-full ${isResuelto ? 'bg-emerald-600' : isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
-          <span>{badgeText}</span>
+        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border shadow-xs transition-all duration-300 ${isProgreso
+          ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+          : 'bg-amber-100 text-amber-800 border-amber-300'
+          }`}>
+          <span className={`w-2 h-2 rounded-full ${isProgreso ? 'bg-indigo-600 animate-ping' : 'bg-amber-500'}`} />
+          <span>{isProgreso ? 'TÉCNICO EN CAMINO' : 'EN ESPERA'}</span>
         </div>
       </div>
 
@@ -140,8 +125,8 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
           <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 rounded-2xl bg-slate-50 border-2 border-slate-200 overflow-hidden shadow-inner flex items-center justify-center p-1 transition-all duration-300">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={illustrationImg}
-              alt={badgeText}
+              src={isProgreso ? '/illustrations/tech-running.jpg' : '/illustrations/ticket-waiting.jpg'}
+              alt={isProgreso ? 'Técnico en camino' : 'Doctor esperando'}
               className="w-full h-full object-contain animate-in fade-in zoom-in duration-300"
             />
           </div>
@@ -167,22 +152,13 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
 
             {/* Mensaje descriptivo del avance en tiempo real */}
             <p className="text-xs text-slate-500 font-medium">
-              {isResuelto
-                ? '🎉 ¡Inconveniente solucionado! Tu equipo o servicio se encuentra 100% operativo.'
-                : isProgreso
-                ? (ticket.tecnicoAsignado?.nombre 
-                    ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
-                    : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
+              {isProgreso
+                ? (ticket.tecnicoAsignado?.nombre
+                  ? `👨‍💻 ${ticket.tecnicoAsignado.nombre} de Sistemas está atendiendo tu caso y va en camino.`
+                  : '👨‍💻 El personal de Sistemas ya está en marcha hacia tu ubicación.')
                 : '⏱️ Tu reporte está en cola y será asignado a un técnico en breve.'
               }
             </p>
-
-            {/* Solución técnica si fue ingresada */}
-            {ticket.solucion && (
-              <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 font-medium animate-in fade-in text-left">
-                <strong>Solución aplicada:</strong> {ticket.solucion}
-              </div>
-            )}
           </div>
         </div>
 
@@ -190,9 +166,9 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
         <div className="pt-2 border-t border-slate-100">
           <div className="relative flex items-center justify-between px-3">
             <div className="absolute top-1/2 left-6 right-6 -translate-y-1/2 h-1.5 bg-slate-200 rounded-full -z-0">
-              <div 
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
-                style={{ width: isResuelto ? '100%' : isProgreso ? '50%' : '10%' }}
+              <div
+                className="h-full bg-indigo-600 rounded-full transition-all duration-500"
+                style={{ width: isProgreso ? '50%' : '10%' }}
               />
             </div>
 
@@ -206,30 +182,23 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
 
             {/* Paso 2: En Camino */}
             <div className="flex flex-col items-center relative z-10">
-              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
-                isResuelto || isProgreso
-                  ? 'bg-emerald-500 text-white' 
-                  : 'bg-slate-200 text-slate-400'
-              }`}>
-                {isResuelto || isProgreso ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '2'}
+              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${isProgreso
+                ? 'bg-indigo-600 text-white ring-4 ring-indigo-200 animate-pulse'
+                : 'bg-slate-200 text-slate-400'
+                }`}>
+                {isProgreso ? <Play className="w-3.5 h-3.5 fill-white" /> : '2'}
               </div>
-              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-600'}`}>
+              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isProgreso ? 'text-indigo-700 font-black' : 'text-slate-400'}`}>
                 En Camino
               </span>
             </div>
 
             {/* Paso 3: Terminado */}
             <div className="flex flex-col items-center relative z-10">
-              <div className={`w-7 h-7 rounded-full font-bold flex items-center justify-center text-xs shadow-sm transition-all duration-300 ${
-                isResuelto
-                  ? 'bg-emerald-500 text-white ring-4 ring-emerald-200 animate-pulse'
-                  : 'bg-slate-200 text-slate-400'
-              }`}>
-                {isResuelto ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : '3'}
+              <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-400 font-bold flex items-center justify-center text-xs shadow-sm">
+                3
               </div>
-              <span className={`text-[10px] font-bold mt-1 transition-colors duration-300 ${isResuelto ? 'text-emerald-700 font-black' : 'text-slate-400'}`}>
-                Resuelto
-              </span>
+              <span className="text-[10px] font-bold text-slate-400 mt-1">Resuelto</span>
             </div>
           </div>
         </div>
@@ -240,17 +209,10 @@ function TicketShapeCard({ ticket, isRecentlyCreated }: { ticket: any, isRecentl
             <Clock className="w-3 h-3 text-slate-400" />
             {ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }) : ''}
           </span>
-          {isResuelto ? (
-            <span className="text-emerald-600 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              Resuelto · Saldrá de la lista en unos minutos
-            </span>
-          ) : (
-            <span className="text-emerald-600 font-bold flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              En atención activa
-            </span>
-          )}
+          <span className="text-emerald-600 font-bold flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+            En atención activa
+          </span>
         </div>
       </div>
     </div>
@@ -262,7 +224,7 @@ export default function PortalPage() {
   const [isValidatingToken, setIsValidatingToken] = useState(false);
   const [pin, setPin] = useState('');
   const [pinError, setPinError] = useState('');
-  
+
   // Pestañas del Portal: 'reportar' | 'consultar'
   const [activeTab, setActiveTab] = useState<'reportar' | 'consultar'>('reportar');
   const [showDirectTracker, setShowDirectTracker] = useState(false);
@@ -272,11 +234,11 @@ export default function PortalPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [createdTicketInfo, setCreatedTicketInfo] = useState<any>(null);
   const [copiedCode, setCopiedCode] = useState(false);
-  
+
   const [titulo, setTitulo] = useState('');
   const [solicitanteNombre, setSolicitanteNombre] = useState('');
   const [solicitanteContacto, setSolicitanteContacto] = useState('');
-  
+
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [area, setArea] = useState('');
@@ -313,7 +275,7 @@ export default function PortalPage() {
               cargarDatosBase();
               try {
                 window.history.replaceState({}, '', window.location.pathname);
-              } catch (e) {}
+              } catch (e) { }
             } else {
               setPinError('Código QR no válido o expirado. Ingresa el PIN manual.');
             }
@@ -395,13 +357,13 @@ export default function PortalPage() {
       }
     };
 
-    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o a RESUELTO)
+    // 2. Cuando cambia de estado (ej: pasa a EN_PROGRESO o se concluye)
     const handleTicketActualizado = (ticket: any) => {
-      // Si pasa a CERRADO definitivamente: se retira de la pantalla
-      if (ticket.estado === 'CERRADO') {
+      // Si pasa a RESUELTO o CERRADO: se elimina al instante del acumulado ("cuando se termina se borra")
+      if (ticket.estado === 'RESUELTO' || ticket.estado === 'CERRADO') {
         setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
-      } else {
-        // ABIERTO, EN_PROGRESO o RESUELTO: actualizar de inmediato en tiempo real
+      } else if (ticket.estado === 'ABIERTO' || ticket.estado === 'EN_PROGRESO') {
+        // Actualizar al instante (< 100ms) cambiando el estado y la ilustración
         const formatted = {
           ...ticket,
           ticketCode: ticket.ticketCode || `TK-${ticket.id.slice(0, 6).toUpperCase()}`,
@@ -416,13 +378,6 @@ export default function PortalPage() {
           if (!exists) return [formatted, ...prev];
           return prev.map(t => t.id === ticket.id ? formatted : t);
         });
-
-        // Si se resolvió, permanece visible en pantalla unos 10 minutos y luego se retira solo de la vista
-        if (ticket.estado === 'RESUELTO') {
-          setTimeout(() => {
-            setActiveTickets(prev => prev.filter(t => t.id !== ticket.id));
-          }, 10 * 60 * 1000);
-        }
       }
       setLastUpdatedTime(new Date());
     };
@@ -530,7 +485,7 @@ export default function PortalPage() {
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo || !sede || !departamento) return;
-    
+
     const digits = solicitanteContacto.replace(/\D/g, '');
     if (digits.length > 0 && digits.length < 3) {
       alert('Por favor escribe un anexo válido (mínimo 3 dígitos) o celular (9 dígitos), o déjalo en blanco.');
@@ -612,7 +567,7 @@ export default function PortalPage() {
                 <img src="/emblem.svg" alt="Limatambo" className="w-4 h-4 rounded object-cover" />
                 <span>Soporte TI · Clínicas Limatambo</span>
               </div>
-              <button 
+              <button
                 onClick={() => setShowDirectTracker(false)}
                 className="px-3 py-1 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition-all"
               >
@@ -640,7 +595,7 @@ export default function PortalPage() {
           <div className="mb-8">
             <LimatamboBrand subtitle="Ingresa el PIN de acceso para reportar un problema." />
           </div>
-          
+
           <form onSubmit={handleVerifyPin}>
             <div className="relative mb-6">
               <div className="flex justify-center items-center gap-3">
@@ -650,13 +605,12 @@ export default function PortalPage() {
                   return (
                     <div
                       key={index}
-                      className={`w-14 h-16 sm:w-16 sm:h-20 rounded-2xl border-2 flex items-center justify-center transition-all ${
-                        hasChar
-                          ? 'border-indigo-600 bg-indigo-50/60 shadow-sm scale-105'
-                          : isCurrent
+                      className={`w-14 h-16 sm:w-16 sm:h-20 rounded-2xl border-2 flex items-center justify-center transition-all ${hasChar
+                        ? 'border-indigo-600 bg-indigo-50/60 shadow-sm scale-105'
+                        : isCurrent
                           ? 'border-indigo-500 bg-white ring-4 ring-indigo-500/15'
                           : 'border-slate-200 bg-slate-50'
-                      }`}
+                        }`}
                     >
                       {hasChar ? (
                         <span className="w-4 h-4 bg-indigo-600 rounded-full shadow-xs transform scale-110 transition-transform" />
@@ -690,7 +644,7 @@ export default function PortalPage() {
               </p>
             )}
 
-            <button 
+            <button
               type="submit"
               disabled={pin.length < 4}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-bold py-4 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
@@ -726,9 +680,9 @@ export default function PortalPage() {
           {/* Ilustración Duolingo Doctor Esperando */}
           <div className="relative w-36 h-36 mx-auto mb-4 overflow-hidden rounded-2xl bg-amber-50 border-2 border-amber-200 shadow-inner flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/illustrations/ticket-waiting.jpg" 
-              alt="Caso recibido en espera" 
+            <img
+              src="/illustrations/ticket-waiting.jpg"
+              alt="Caso recibido en espera"
               className="w-full h-full object-contain"
             />
           </div>
@@ -744,17 +698,31 @@ export default function PortalPage() {
           </p>
 
           {/* Tarjeta con Código de Ticket Duolingo Style */}
-          <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-4 mb-6">
+          <div className="bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl p-4 mb-6 relative">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
               Código de tu Ticket
             </span>
-            <span className="text-2xl md:text-3xl font-black text-indigo-700 font-mono tracking-wider">
-              #{ticketCode}
-            </span>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl md:text-3xl font-black text-indigo-700 font-mono tracking-wider">
+                #{ticketCode}
+              </span>
+              <button
+                onClick={() => copiarCodigoTicket(ticketCode)}
+                className="p-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-600 transition-all shadow-xs"
+                title="Copiar código"
+              >
+                {copiedCode ? <CheckCheck className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
+              </button>
+            </div>
+            {copiedCode && (
+              <span className="text-xs text-emerald-600 font-bold mt-1 inline-block animate-in fade-in">
+                ¡Código copiado al portapapeles!
+              </span>
+            )}
           </div>
 
           <div className="space-y-3">
-            <button 
+            <button
               onClick={irAConsultarCreado}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-3.5 px-4 rounded-xl transition-all shadow-md active:scale-[0.98] flex items-center justify-center gap-2"
             >
@@ -762,7 +730,7 @@ export default function PortalPage() {
               Ver Tickets en Atención
             </button>
 
-            <button 
+            <button
               onClick={() => { setIsSuccess(false); setActiveTab('reportar'); }}
               className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-xl transition-all text-sm"
             >
@@ -856,19 +824,19 @@ export default function PortalPage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:items-center md:py-10">
       <div className="max-w-lg w-full bg-white md:rounded-3xl shadow-xl overflow-hidden flex-1 md:flex-none flex flex-col relative">
-        
+
         {/* Header Decorativo */}
         <div className="bg-indigo-600 p-6 md:p-8 text-white relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-white/10 blur-2xl"></div>
           <div className="absolute bottom-0 left-0 -ml-8 -mb-8 w-24 h-24 rounded-full bg-indigo-400/20 blur-xl"></div>
-          
+
           <div className="relative z-10 flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm border border-white/20 shadow-sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/emblem.svg" alt="Limatambo" className="w-4 h-4 rounded object-cover" />
               <span>Soporte TI · Limatambo</span>
             </div>
-            <button 
+            <button
               onClick={() => { safeStorage.removeItem('portal_pin_verified'); setIsAuthenticated(false); }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-indigo-700 hover:bg-indigo-50 active:scale-95 text-xs font-black shadow-md border border-white/40 transition-all cursor-pointer"
               title="Cerrar sesión del portal"
@@ -882,7 +850,7 @@ export default function PortalPage() {
             {activeTab === 'reportar' ? '¿En qué te podemos ayudar hoy?' : 'Tickets en Atención'}
           </h1>
           <p className="text-indigo-100/90 text-xs md:text-sm mt-1 font-medium relative z-10">
-            {activeTab === 'reportar' 
+            {activeTab === 'reportar'
               ? 'Completa los 3 pasos a continuación para enviar tu reporte rápidamente'
               : 'Acumulado en tiempo real: observa cómo avanza tu caso hasta resolverse'
             }
@@ -893,11 +861,10 @@ export default function PortalPage() {
             <button
               type="button"
               onClick={() => setActiveTab('reportar')}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'reportar'
-                  ? 'bg-white text-indigo-700 shadow-md scale-[1.02]'
-                  : 'text-indigo-100 hover:text-white hover:bg-white/10'
-              }`}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'reportar'
+                ? 'bg-white text-indigo-700 shadow-md scale-[1.02]'
+                : 'text-indigo-100 hover:text-white hover:bg-white/10'
+                }`}
             >
               <TicketIcon className="w-4 h-4" />
               Reportar Problema
@@ -908,11 +875,10 @@ export default function PortalPage() {
                 setActiveTab('consultar');
                 cargarTicketsActivos();
               }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'consultar'
-                  ? 'bg-white text-indigo-700 shadow-md scale-[1.02]'
-                  : 'text-indigo-100 hover:text-white hover:bg-white/10'
-              }`}
+              className={`flex-1 py-2.5 px-3 rounded-xl text-xs md:text-sm font-black transition-all flex items-center justify-center gap-2 ${activeTab === 'consultar'
+                ? 'bg-white text-indigo-700 shadow-md scale-[1.02]'
+                : 'text-indigo-100 hover:text-white hover:bg-white/10'
+                }`}
             >
               <Zap className="w-4 h-4" />
               Tickets Activos {activeTickets.length > 0 && `(${activeTickets.length})`}
@@ -927,7 +893,7 @@ export default function PortalPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmitTicket} className="p-6 md:p-8 space-y-6 flex-1 overflow-y-auto pb-32 md:pb-8">
-            
+
             {/* Campo invisible Honeypot anti-spam */}
             <div className="absolute opacity-0 pointer-events-none -z-50 h-0 w-0 overflow-hidden" aria-hidden="true" tabIndex={-1}>
               <label htmlFor="website_check">Dejar este campo vacío</label>
@@ -952,21 +918,21 @@ export default function PortalPage() {
                   ¿Dónde te encuentras?
                 </h2>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
                     Sede <span className="text-red-500 font-bold">*</span>
                   </label>
-                  <PortalSelect value={sede} onChange={setSede} options={sedesList} placeholder="Seleccionar sede..." />
+                  <PortalSelect value={sede} onChange={setSede} options={sedesList} placeholder="Seleccionar" />
                 </div>
-                
+
                 {sede && (
                   <div className="animate-in fade-in slide-in-from-top-2">
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">
                       Departamento <span className="text-red-500 font-bold">*</span>
                     </label>
-                    <PortalSelect value={departamento} onChange={setDepartamento} options={departamentosList} placeholder="Seleccionar departamento..." />
+                    <PortalSelect value={departamento} onChange={setDepartamento} options={departamentosList} placeholder="Seleccionar" />
                   </div>
                 )}
               </div>
@@ -1054,7 +1020,7 @@ export default function PortalPage() {
                       Anexo / Teléfono <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
                     </label>
                     <span className="text-[11px] font-semibold text-slate-400">
-                      {solicitanteContacto.replace(/\D/g, '').length}/9 dígitos
+                      {solicitanteContacto.replace(/\D/g, '').length}/9
                     </span>
                   </div>
                   <input
