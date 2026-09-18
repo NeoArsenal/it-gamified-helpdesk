@@ -65,11 +65,31 @@ export function exportToExcel<T = any>(
 }
 
 /**
+ * Formatea fechas ISO o Date a cadena legible en español (DD/MM/YYYY HH:mm)
+ */
+function formatFecha(val: any): string {
+  if (!val) return '';
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return String(val);
+    return d.toLocaleString('es-PE', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(val);
+  }
+}
+
+/**
  * Exportador especializado para Tickets de Soporte en formato nativo Excel (.xlsx)
  */
 export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-tickets') {
   const columns: ExportColumn[] = [
-    { header: 'N° Ticket', accessor: t => t.id ? `#${t.id.slice(0, 8).toUpperCase()}` : '' },
+    { header: 'N° Ticket', accessor: t => t.ticketCode || (t.id ? `#${t.id.slice(0, 8).toUpperCase()}` : '') },
     { header: 'Título', accessor: t => t.titulo || '' },
     { header: 'Descripción', accessor: t => t.descripcion || '' },
     { header: 'Prioridad', accessor: t => t.prioridad || 'NORMAL' },
@@ -77,12 +97,12 @@ export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-t
     { header: 'Categoría / Tipo', accessor: t => t.tipo || t.categoria || 'General' },
     { header: 'Sede', accessor: t => t.sede || 'Sin sede' },
     { header: 'Departamento', accessor: t => t.departamento || 'General' },
-    { header: 'Ubicación Detallada', accessor: t => t.ubicacion || '' },
+    { header: 'Ubicación Detallada', accessor: t => t.ubicacionEspecifica || t.ubicacion || t.area || '' },
     { header: 'Solicitante', accessor: t => t.solicitanteNombre || t.solicitante || 'Anónimo' },
-    { header: 'Técnico Asignado', accessor: t => t.tecnicoAsignadoNombre || t.tecnicoNombre || 'Sin asignar' },
-    { header: 'Fecha Creación', accessor: t => t.createdAt ? new Date(t.createdAt).toLocaleString('es-PE') : '' },
-    { header: 'Fecha Resolución', accessor: t => t.resolvedAt ? new Date(t.resolvedAt).toLocaleString('es-PE') : (t.updatedAt && t.estado === 'RESUELTO' ? new Date(t.updatedAt).toLocaleString('es-PE') : '') },
-    { header: 'Puntos XP', accessor: t => t.xpOtorgados || t.xp || 0 },
+    { header: 'Técnico Asignado', accessor: t => t.asignadoA?.nombre || t.tecnicoAsignado?.nombre || (typeof t.asignadoA === 'string' ? t.asignadoA : '') || t.tecnicoAsignadoNombre || t.tecnicoNombre || 'Sin asignar' },
+    { header: 'Fecha Creación', accessor: t => formatFecha(t.creadoEn || t.createdAt) },
+    { header: 'Fecha Resolución', accessor: t => formatFecha(t.resueltoEn || t.resolvedAt || ((t.estado === 'RESUELTO' || t.estado === 'CERRADO') ? (t.actualizadoEn || t.updatedAt) : '')) },
+    { header: 'Puntos XP', accessor: t => t.xpRecompensa ?? t.xpOtorgados ?? t.xp ?? 0 },
     { header: 'Diagnóstico / Solución Técnica', accessor: t => t.solucion || t.notasDiagnostico || '' },
   ];
 
@@ -94,16 +114,16 @@ export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-t
  */
 export function exportActivosToExcel(activos: any[], filenamePrefix = 'inventario-hardware') {
   const columns: ExportColumn[] = [
-    { header: 'Código Patrimonial', accessor: a => a.codigo || '' },
-    { header: 'Tipo de Equipo', accessor: a => a.tipo || '' },
-    { header: 'Marca / Modelo', accessor: a => a.modelo || '' },
+    { header: 'Código Patrimonial', accessor: a => a.codigo || a.codigoInventario || '' },
+    { header: 'Tipo de Equipo', accessor: a => a.tipo || a.categoria || a.nombre || '' },
+    { header: 'Marca / Modelo', accessor: a => a.modelo ? (a.marca ? `${a.marca} ${a.modelo}` : a.modelo) : (a.marca || '') },
     { header: 'Sede', accessor: a => a.sede || 'Sin sede' },
     { header: 'Departamento', accessor: a => a.departamento || 'General' },
-    { header: 'Ubicación / Oficina', accessor: a => a.ubicacion || '' },
-    { header: 'Responsable', accessor: a => a.responsable || 'Sin asignar' },
+    { header: 'Ubicación / Oficina', accessor: a => a.ubicacionDetallada || a.ubicacion || a.area || '' },
+    { header: 'Responsable', accessor: a => a.responsable || a.usuarioAsignado || 'Sin asignar' },
     { header: 'Estado', accessor: a => a.estado || 'OPERATIVO' },
-    { header: 'Observaciones / Diagnóstico', accessor: a => a.observaciones || '' },
-    { header: 'Fecha de Registro', accessor: a => a.createdAt ? new Date(a.createdAt).toLocaleString('es-PE') : '' },
+    { header: 'Observaciones / Diagnóstico', accessor: a => a.observaciones || a.diagnostico || a.especificaciones?.observaciones || '' },
+    { header: 'Fecha de Registro', accessor: a => formatFecha(a.creadoEn || a.createdAt) },
   ];
 
   exportToExcel(filenamePrefix, columns, activos, 'Equipos TI');
