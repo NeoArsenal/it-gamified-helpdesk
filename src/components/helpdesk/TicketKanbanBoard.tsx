@@ -74,7 +74,7 @@ export const TicketKanbanBoard: React.FC<TicketKanbanBoardProps> = ({
               </span>
             </div>
 
-            <div className="p-3 flex-1 overflow-y-auto space-y-3">
+            <div className="p-3 flex-1 overflow-y-auto space-y-3 pb-16 md:pb-3 custom-scrollbar">
               {colTickets.map((ticket) => (
                 <TicketKanbanCard
                   key={ticket.id}

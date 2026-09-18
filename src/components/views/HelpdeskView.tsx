@@ -277,60 +277,73 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         </div>
 
         {/* Botones de Acción Principales */}
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+        <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-auto flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={handleExportarReporte}
-            className="bg-white hover:bg-emerald-50/80 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+            className="flex-1 sm:flex-none bg-white hover:bg-emerald-50/80 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-2xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
             title="Descargar reporte de tickets en Excel (.xlsx)"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span>Exportar Excel</span>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span className="truncate">Exportar Excel</span>
+          </button>
+
+          {/* Botón Historial visible directamente en la cabecera en móvil */}
+          <button
+            type="button"
+            onClick={() => setIsHistoryDrawerOpen(true)}
+            className="md:hidden flex-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
+            title="Abrir Historial de Tickets Cerrados"
+          >
+            <Clock className="w-4 h-4 text-indigo-600 shrink-0" />
+            <span className="truncate">Historial ({historyTickets.length})</span>
           </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Nuevo Ticket
+            <Plus className="w-4 h-4 shrink-0" />
+            <span className="truncate">Nuevo Ticket</span>
           </button>
         </div>
       </div>
 
       {/* Barra de Filtros y Búsqueda Dedicada */}
-      <div className="bg-slate-50/90 p-2 md:p-2.5 rounded-2xl border border-slate-200/90 flex flex-wrap items-center justify-between gap-2.5 shrink-0 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-2.5 flex-1 w-full sm:w-auto">
-          {/* Buscador */}
-          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por título, sede, autor..."
-              className="pl-9.5 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full shadow-2xs transition-all placeholder:text-slate-400 font-medium text-slate-800"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-                title="Limpiar búsqueda"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+      <div className="bg-slate-50/90 p-2 md:p-2.5 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 shadow-2xs">
+        {/* Buscador */}
+        <div className="relative w-full sm:w-64 md:w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por título, sede, autor..."
+            className="pl-9.5 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full shadow-2xs transition-all placeholder:text-slate-400 font-medium text-slate-800"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
+        {/* Dropdowns: En móvil 2 columnas lado a lado (50% cada uno), en desktop flex inline */}
+        <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto sm:items-center">
           {/* FILTRO 1: Emergencia */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
                 setIsBoardEmergencyOpen(!isBoardEmergencyOpen);
                 setIsBoardSedeOpen(false);
               }}
-              className={`px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
                 filterBoardEmergency !== 'TODAS'
                   ? filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
                     ? 'bg-red-50 border-red-300 text-red-700 ring-2 ring-red-500/20 shadow-red-100'
@@ -341,30 +354,29 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               }`}
               title="Filtrar por nivel de emergencia e importancia"
             >
-              <ShieldAlert
-                className={`w-4 h-4 ${
-                  filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
-                    ? 'text-red-600'
-                    : filterBoardEmergency === 'ALTA'
-                    ? 'text-orange-600'
-                    : filterBoardEmergency !== 'TODAS'
-                    ? 'text-blue-600'
-                    : 'text-slate-400'
-                }`}
-              />
-              <span className="flex items-center gap-1">
-                <span className="text-slate-500 font-normal hidden xl:inline">Urgencia:</span>
-                <span>
-                  {filterBoardEmergency === 'TODAS' && 'Emergencia / Importancia'}
-                  {filterBoardEmergency === 'EMERGENCIAS' && '🚨 Emergencias / Altas'}
+              <div className="flex items-center gap-1.5 truncate">
+                <ShieldAlert
+                  className={`w-4 h-4 shrink-0 ${
+                    filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
+                      ? 'text-red-600'
+                      : filterBoardEmergency === 'ALTA'
+                      ? 'text-orange-600'
+                      : filterBoardEmergency !== 'TODAS'
+                      ? 'text-blue-600'
+                      : 'text-slate-400'
+                  }`}
+                />
+                <span className="truncate">
+                  {filterBoardEmergency === 'TODAS' && 'Urgencia'}
+                  {filterBoardEmergency === 'EMERGENCIAS' && '🚨 Altas'}
                   {filterBoardEmergency === 'CRITICA' && '🚨 Crítica'}
-                  {filterBoardEmergency === 'ALTA' && '⚠️ Importante'}
+                  {filterBoardEmergency === 'ALTA' && '⚠️ Alta'}
                   {filterBoardEmergency === 'MEDIA' && '⏱️ Normal'}
                   {filterBoardEmergency === 'BAJA' && '🟢 Baja'}
                 </span>
-              </span>
+              </div>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
                   isBoardEmergencyOpen ? 'rotate-180 text-blue-600' : ''
                 }`}
               />
@@ -426,29 +438,28 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
           </div>
 
           {/* FILTRO 2: Sedes */}
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <button
               type="button"
               onClick={() => {
                 setIsBoardSedeOpen(!isBoardSedeOpen);
                 setIsBoardEmergencyOpen(false);
               }}
-              className={`px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
                 filterBoardSede !== 'TODAS'
                   ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20 shadow-indigo-100'
                   : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
               title="Filtrar cajas del tablero por sede"
             >
-              <MapPin className={`w-4 h-4 ${filterBoardSede !== 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
-              <span className="flex items-center gap-1.5">
-                <span className="text-slate-500 font-normal hidden xl:inline">Sede:</span>
-                <span className={filterBoardSede !== 'TODAS' ? 'text-indigo-700 font-black' : 'text-slate-900'}>
+              <div className="flex items-center gap-1.5 truncate">
+                <MapPin className={`w-4 h-4 shrink-0 ${filterBoardSede !== 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className="truncate">
                   {filterBoardSede === 'TODAS' ? 'Todas las Sedes' : filterBoardSede}
                 </span>
-              </span>
+              </div>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
                   isBoardSedeOpen ? 'rotate-180 text-indigo-600' : ''
                 }`}
               />
@@ -631,28 +642,48 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         handleResetFilters={handleResetFilters}
       />
 
-      {/* Botón Responsive para Historial Móvil */}
-      <div className="md:hidden shrink-0 pt-1">
+      {/* Botón Flotante Fijo para Historial Móvil (FAB) - Siempre visible y accesible con el pulgar */}
+      <div className="fixed bottom-6 right-4 z-40 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           type="button"
           onClick={() => setIsHistoryDrawerOpen(true)}
-          className="w-full p-3.5 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white rounded-2xl shadow-lg border border-slate-700/60 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer"
+          className="flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-full shadow-2xl border border-indigo-400/40 active:scale-95 transition-all cursor-pointer ring-4 ring-indigo-500/20 group"
+          title="Abrir Historial de Tickets Cerrados"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-              <Clock className="w-5 h-5" />
+          <div className="relative flex items-center justify-center">
+            <Clock className="w-4 h-4 text-indigo-400 group-hover:rotate-45 transition-transform duration-300" />
+            {historyTickets.length > 0 && (
+              <span className="absolute -top-2.5 -right-3 bg-indigo-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full border border-slate-900 shadow-xs">
+                {historyTickets.length > 99 ? '99+' : historyTickets.length}
+              </span>
+            )}
+          </div>
+          <span className="text-xs font-black tracking-wide pr-0.5">Historial</span>
+        </button>
+      </div>
+
+      {/* Botón Inferior en Flujo para Historial Móvil */}
+      <div className="md:hidden shrink-0 pt-2 pb-1">
+        <button
+          type="button"
+          onClick={() => setIsHistoryDrawerOpen(true)}
+          className="w-full p-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl shadow-md border border-slate-700/60 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
+              <Clock className="w-4 h-4" />
             </div>
             <div className="text-left">
-              <div className="text-sm font-bold flex items-center gap-2">
-                Historial de Tickets Cerrados
-                <span className="bg-indigo-500 text-white text-xs font-black px-2 py-0.5 rounded-full shadow-sm">
+              <div className="text-xs font-bold flex items-center gap-1.5">
+                <span>Historial de Tickets Cerrados</span>
+                <span className="bg-indigo-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full shadow-sm">
                   {historyTickets.length}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300">Toca para abrir y consultar soluciones aplicadas</p>
+              <p className="text-[10px] text-slate-400">Toca para abrir diagnósticos y soluciones</p>
             </div>
           </div>
-          <ChevronDown className="w-5 h-5 text-indigo-300 -rotate-90 group-hover:translate-x-1 transition-transform" />
+          <ChevronDown className="w-4 h-4 text-indigo-300 -rotate-90 group-hover:translate-x-1 transition-transform" />
         </button>
       </div>
 
