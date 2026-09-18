@@ -662,31 +662,6 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         </button>
       </div>
 
-      {/* Botón Inferior en Flujo para Historial Móvil */}
-      <div className="md:hidden shrink-0 pt-2 pb-1">
-        <button
-          type="button"
-          onClick={() => setIsHistoryDrawerOpen(true)}
-          className="w-full p-3 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl shadow-md border border-slate-700/60 flex items-center justify-between group active:scale-[0.98] transition-all cursor-pointer"
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-              <Clock className="w-4 h-4" />
-            </div>
-            <div className="text-left">
-              <div className="text-xs font-bold flex items-center gap-1.5">
-                <span>Historial de Tickets Cerrados</span>
-                <span className="bg-indigo-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded-full shadow-sm">
-                  {historyTickets.length}
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400">Toca para abrir diagnósticos y soluciones</p>
-            </div>
-          </div>
-          <ChevronDown className="w-4 h-4 text-indigo-300 -rotate-90 group-hover:translate-x-1 transition-transform" />
-        </button>
-      </div>
-
       {/* Tabla de Historial Desktop */}
       <TicketHistoryTable
         historyTickets={historyTickets}
