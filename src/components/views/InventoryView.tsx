@@ -1,10 +1,8 @@
 import React from 'react';
 import { 
-  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers, FileSpreadsheet 
+  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers 
 } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
-import { exportActivosToCsv } from '@/lib/export-utils';
-import { toast } from 'sonner';
 import { 
   AssetTable, 
   AssetWorkshopBoard, 
@@ -80,7 +78,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs shrink-0">
               <Package className="w-5 h-5" />
             </div>
             <div>
@@ -120,18 +118,18 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         </div>
 
         {/* Selector de Pestañas y Botón Primario */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+          <div className="bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 flex items-center gap-1 shadow-2xs w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('CATALOGO')}
-              className={`px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'CATALOGO'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Layers className="w-4 h-4 text-indigo-500" />
+              <Layers className="w-4 h-4 text-indigo-500 shrink-0" />
               <span>Todos los Equipos</span>
               <span className={`text-[11px] px-1.5 py-0.2 rounded-full ${activeTab === 'CATALOGO' ? 'bg-slate-100 text-slate-700' : 'text-slate-400'}`}>
                 {totalActivos}
@@ -141,13 +139,13 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
             <button
               type="button"
               onClick={() => setActiveTab('TALLER')}
-              className={`px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                 activeTab === 'TALLER'
                   ? 'bg-white text-slate-900 shadow-sm'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Wrench className="w-4 h-4 text-amber-500" />
+              <Wrench className="w-4 h-4 text-amber-500 shrink-0" />
               <span>Taller y Bajas</span>
               {(countReparacion + countBaja + countRescatados) > 0 && (
                 <span className={`text-[11px] font-bold px-1.5 py-0.2 rounded-full ${
@@ -159,34 +157,12 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              try {
-                if (activos.length === 0) {
-                  toast.error('No hay equipos registrados para exportar');
-                  return;
-                }
-                const aExportar = filteredActivos.length > 0 ? filteredActivos : activos;
-                exportActivosToCsv(aExportar, 'inventario-hardware');
-                toast.success(`Se exportaron ${aExportar.length} equipos a Excel`);
-              } catch (err: any) {
-                toast.error(err?.message || 'Error al exportar inventario');
-              }
-            }}
-            className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs hover:shadow active:scale-95 transition-all cursor-pointer"
-            title="Descargar inventario patrimonial a Excel / CSV"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span className="hidden sm:inline">Exportar Excel</span>
-          </button>
-
           <button 
             type="button"
             onClick={handleAbrirCrear}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer"
+            className="w-full sm:w-auto justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4" /> Registrar Equipo
+            <Plus className="w-4 h-4 shrink-0" /> Registrar Equipo
           </button>
         </div>
       </div>
