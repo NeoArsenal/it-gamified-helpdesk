@@ -1,74 +1,74 @@
 /**
- * Utilidades para exportación de datos a formato CSV compatible con Microsoft Excel.
- * Incluye Byte Order Mark (BOM) UTF-8 (\uFEFF) para garantizar la correcta visualización
- * de caracteres en español (tildes, eñes, etc.) sin problemas de codificación.
+ * Utilidades profesionales para exportación de datos a hojas de cálculo nativas de Microsoft Excel (.xlsx) y CSV.
+ * Utiliza SheetJS (xlsx) para generar archivos .xlsx reales con columnas formateadas,
+ * anchos auto-ajustados y compatibilidad total con Excel en español sin problemas de delimitadores.
  */
+import * as XLSX from 'xlsx';
 
-export interface CsvColumn<T = any> {
+export interface ExportColumn<T = any> {
   header: string;
   accessor: (item: T) => string | number | null | undefined;
 }
 
 /**
- * Escapa un valor para formato CSV estándar (RFC 4180).
+ * Genera y descarga un archivo nativo de Microsoft Excel (.xlsx) con columnas auto-ajustadas.
  */
-function escapeCsvValue(val: any): string {
-  if (val === null || val === undefined) return '';
-  const str = String(val).trim();
-  // Si contiene comas, comillas dobles, o saltos de línea, se encierra entre comillas y se duplican las comillas internas
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes(';')) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
-
-/**
- * Genera y descarga un archivo CSV con soporte UTF-8.
- */
-export function exportToCsv<T = any>(
+export function exportToExcel<T = any>(
   filename: string,
-  columns: CsvColumn<T>[],
-  data: T[]
+  columns: ExportColumn<T>[],
+  data: T[],
+  sheetName = 'Reporte'
 ) {
   if (!data || data.length === 0) {
     throw new Error('No hay datos disponibles para exportar');
   }
 
-  // Cabecera CSV
-  const headerRow = columns.map(c => escapeCsvValue(c.header)).join(',');
+  // 1. Cabeceras
+  const headers = columns.map(c => c.header);
 
-  // Filas de datos
-  const dataRows = data.map(item => {
-    return columns.map(col => escapeCsvValue(col.accessor(item))).join(',');
+  // 2. Filas de datos
+  const rows = data.map(item =>
+    columns.map(col => {
+      const val = col.accessor(item);
+      return val === null || val === undefined ? '' : val;
+    })
+  );
+
+  // 3. Crear hoja de cálculo
+  const worksheetData = [headers, ...rows];
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+
+  // 4. Calcular y ajustar automáticamente el ancho de cada columna
+  worksheet['!cols'] = headers.map((header, colIndex) => {
+    let maxLen = header.length;
+    for (const row of rows) {
+      const cellText = String(row[colIndex] ?? '');
+      // Para descripciones largas limitamos el ancho visual inicial
+      if (cellText.length > maxLen) {
+        maxLen = Math.min(cellText.length, 55);
+      }
+    }
+    return { wch: Math.max(maxLen + 4, 14) };
   });
 
-  // Unir con saltos de línea CRLF estándar
-  const csvContent = '\uFEFF' + [headerRow, ...dataRows].join('\r\n');
+  // 5. Crear libro de trabajo (Workbook) y anexar la hoja
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-  // Crear Blob y forzar descarga
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.setAttribute('href', url);
-  
-  // Agregar fecha al nombre de archivo si no la tiene
+  // 6. Generar nombre con fecha
   const dateStr = new Date().toISOString().split('T')[0];
-  const finalFilename = filename.endsWith('.csv') 
-    ? filename.replace('.csv', `_${dateStr}.csv`)
-    : `${filename}_${dateStr}.csv`;
+  const cleanFilename = filename.replace(/\.xlsx$/i, '').replace(/\.csv$/i, '');
+  const finalFilename = `${cleanFilename}_${dateStr}.xlsx`;
 
-  link.setAttribute('download', finalFilename);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // 7. Descargar archivo .xlsx nativo
+  XLSX.writeFile(workbook, finalFilename);
 }
 
 /**
- * Exportador especializado para Tickets de Soporte
+ * Exportador especializado para Tickets de Soporte en formato nativo Excel (.xlsx)
  */
-export function exportTicketsToCsv(tickets: any[], filenamePrefix = 'reporte-tickets') {
-  const columns: CsvColumn[] = [
+export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-tickets') {
+  const columns: ExportColumn[] = [
     { header: 'N° Ticket', accessor: t => t.id ? `#${t.id.slice(0, 8).toUpperCase()}` : '' },
     { header: 'Título', accessor: t => t.titulo || '' },
     { header: 'Descripción', accessor: t => t.descripcion || '' },
@@ -86,14 +86,14 @@ export function exportTicketsToCsv(tickets: any[], filenamePrefix = 'reporte-tic
     { header: 'Diagnóstico / Solución Técnica', accessor: t => t.solucion || t.notasDiagnostico || '' },
   ];
 
-  exportToCsv(filenamePrefix, columns, tickets);
+  exportToExcel(filenamePrefix, columns, tickets, 'Tickets TI');
 }
 
 /**
- * Exportador especializado para Inventario de Equipos (Hardware)
+ * Exportador especializado para Inventario de Equipos (Hardware) en formato nativo Excel (.xlsx)
  */
-export function exportActivosToCsv(activos: any[], filenamePrefix = 'inventario-hardware') {
-  const columns: CsvColumn[] = [
+export function exportActivosToExcel(activos: any[], filenamePrefix = 'inventario-hardware') {
+  const columns: ExportColumn[] = [
     { header: 'Código Patrimonial', accessor: a => a.codigo || '' },
     { header: 'Tipo de Equipo', accessor: a => a.tipo || '' },
     { header: 'Marca / Modelo', accessor: a => a.modelo || '' },
@@ -106,5 +106,9 @@ export function exportActivosToCsv(activos: any[], filenamePrefix = 'inventario-
     { header: 'Fecha de Registro', accessor: a => a.createdAt ? new Date(a.createdAt).toLocaleString('es-PE') : '' },
   ];
 
-  exportToCsv(filenamePrefix, columns, activos);
+  exportToExcel(filenamePrefix, columns, activos, 'Equipos TI');
 }
+
+// Re-exportadores de compatibilidad
+export const exportTicketsToCsv = exportTicketsToExcel;
+export const exportActivosToCsv = exportActivosToExcel;

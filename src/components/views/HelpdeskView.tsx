@@ -262,8 +262,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
 
   return (
     <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Cabecera Principal */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between shrink-0 gap-4">
+      {/* Cabecera Principal: Título a la izquierda, Acciones principales a la derecha */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between shrink-0 gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Tickets de Soporte</h1>
@@ -276,16 +276,39 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
           </p>
         </div>
 
-        {/* Buscador y Botones de Acción */}
-        <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full lg:w-auto">
-          <div className="relative flex-1 sm:flex-none">
+        {/* Botones de Acción Principales */}
+        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={handleExportarReporte}
+            className="bg-white hover:bg-emerald-50/80 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+            title="Descargar reporte de tickets en Excel (.xlsx)"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Exportar Excel</span>
+          </button>
+
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Nuevo Ticket
+          </button>
+        </div>
+      </div>
+
+      {/* Barra de Filtros y Búsqueda Dedicada */}
+      <div className="bg-slate-50/90 p-2 md:p-2.5 rounded-2xl border border-slate-200/90 flex flex-wrap items-center justify-between gap-2.5 shrink-0 shadow-2xs">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 w-full sm:w-auto">
+          {/* Buscador */}
+          <div className="relative flex-1 min-w-[200px] sm:max-w-xs">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por título, sede, autor..."
-              className="pl-9.5 pr-8 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 w-full sm:w-64 shadow-xs transition-all placeholder:text-slate-400"
+              className="pl-9.5 pr-8 py-2 bg-white border border-slate-300 rounded-xl text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full shadow-2xs transition-all placeholder:text-slate-400 font-medium text-slate-800"
             />
             {searchQuery && (
               <button
@@ -307,7 +330,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 setIsBoardEmergencyOpen(!isBoardEmergencyOpen);
                 setIsBoardSedeOpen(false);
               }}
-              className={`px-3 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+              className={`px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
                 filterBoardEmergency !== 'TODAS'
                   ? filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
                     ? 'bg-red-50 border-red-300 text-red-700 ring-2 ring-red-500/20 shadow-red-100'
@@ -350,7 +373,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             {isBoardEmergencyOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsBoardEmergencyOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                <div className="absolute left-0 sm:right-0 sm:left-auto mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
                   <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
                     <span>Nivel de Emergencia</span>
                     {filterBoardEmergency !== 'TODAS' && (
@@ -368,38 +391,34 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   </div>
                   <div className="py-1 space-y-0.5">
                     {[
-                      { id: 'TODAS', label: 'Todas las prioridades', icon: <Filter className="w-3.5 h-3.5 text-slate-400" />, color: 'text-slate-700' },
-                      { id: 'EMERGENCIAS', label: '🚨 Solo Emergencias (Crítica / Alta)', icon: null, color: 'text-red-700 font-bold' },
-                      { id: 'CRITICA', label: '🚨 Crítica (Emergencia Total)', icon: null, color: 'text-red-700' },
-                      { id: 'ALTA', label: '⚠️ Alta (Muy Importante)', icon: null, color: 'text-orange-700' },
-                      { id: 'MEDIA', label: '⏱️ Media (Atención Normal)', icon: null, color: 'text-yellow-700' },
-                      { id: 'BAJA', label: '🟢 Baja (Rutinaria / Menor)', icon: null, color: 'text-green-700' },
-                    ].map((opt) => {
-                      const isSelected = filterBoardEmergency === opt.id;
-                      const count = countBoardEmergency(opt.id);
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => {
-                            setFilterBoardEmergency(opt.id);
-                            setIsBoardEmergencyOpen(false);
-                          }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl transition-colors cursor-pointer ${
-                            isSelected ? 'bg-blue-50 text-blue-700 font-bold' : `${opt.color} hover:bg-slate-100 font-medium`
-                          }`}
-                        >
-                          <span className="truncate">{opt.label}</span>
-                          <span
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                              isSelected ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            {count}
-                          </span>
-                        </button>
-                      );
-                    })}
+                      { id: 'TODAS', label: 'Todas las prioridades', icon: <Filter className="w-3.5 h-3.5 text-slate-400" /> },
+                      { id: 'EMERGENCIAS', label: '🚨 Emergencias y Altas', desc: 'Atención inmediata' },
+                      { id: 'CRITICA', label: '🚨 Crítica', desc: 'Bloqueo total de operaciones' },
+                      { id: 'ALTA', label: '⚠️ Alta / Importante', desc: 'Afecta áreas operativas' },
+                      { id: 'MEDIA', label: '⏱️ Media / Normal', desc: 'Incidencias regulares' },
+                      { id: 'BAJA', label: '🟢 Baja', desc: 'Consultas o mejoras menores' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardEmergency(opt.id);
+                          setIsBoardEmergencyOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                          filterBoardEmergency === opt.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {opt.icon || null}
+                          <div className="text-left">
+                            <p className="font-bold">{opt.label}</p>
+                            {opt.desc && <p className="text-[10px] text-slate-400 font-normal">{opt.desc}</p>}
+                          </div>
+                        </div>
+                        {filterBoardEmergency === opt.id && <span className="text-xs text-blue-600 font-bold">✓</span>}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </>
@@ -414,7 +433,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 setIsBoardSedeOpen(!isBoardSedeOpen);
                 setIsBoardEmergencyOpen(false);
               }}
-              className={`px-3 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
+              className={`px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
                 filterBoardSede !== 'TODAS'
                   ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20 shadow-indigo-100'
                   : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
@@ -438,7 +457,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             {isBoardSedeOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setIsBoardSedeOpen(false)} />
-                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                <div className="absolute left-0 sm:right-0 sm:left-auto mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
                   <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Building2 className="w-3.5 h-3.5 text-slate-400" /> Sede del Tablero
@@ -476,12 +495,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                           filterBoardSede === 'TODAS' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
                         }`}
                       >
-                        {countBoardSede('TODAS')}
+                        {countPorSede('TODAS')}
                       </span>
                     </button>
+                    <div className="h-px bg-slate-100 my-1" />
                     {sedesDisponibles.map((sede) => {
+                      const count = countPorSede(sede);
                       const isSelected = filterBoardSede.toLowerCase().trim() === sede.toLowerCase().trim();
-                      const count = countBoardSede(sede);
                       return (
                         <button
                           key={sede}
@@ -513,24 +533,19 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               </>
             )}
           </div>
+        </div>
 
+        {/* Botón Reset de Filtros si hay alguno activo */}
+        {hasActiveFilters && (
           <button
             type="button"
-            onClick={handleExportarReporte}
-            className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
-            title="Descargar reporte de tickets en Excel / CSV"
+            onClick={handleResetFilters}
+            className="text-xs font-bold text-slate-500 hover:text-indigo-600 hover:underline px-2 py-1 cursor-pointer flex items-center gap-1.5 transition-colors shrink-0"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            <span className="hidden sm:inline">Exportar Excel</span>
+            <X className="w-3.5 h-3.5 text-slate-400" />
+            <span>Restablecer Filtros</span>
           </button>
-
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Nuevo Ticket
-          </button>
-        </div>
+        )}
       </div>
 
       {/* Indicador de Filtros Activos exclusivos para las Cajas */}

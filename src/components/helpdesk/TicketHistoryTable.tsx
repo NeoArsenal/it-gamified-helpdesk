@@ -34,6 +34,9 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
           <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
             {historyTickets.length} {historyTickets.length === 1 ? 'ticket' : 'tickets'}
           </span>
+          <span className="text-xs text-slate-400 font-normal hidden xl:inline">
+            · Clic en una fila para ver diagnóstico
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -164,10 +167,6 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
             <span>Exportar Excel</span>
           </button>
-
-          <span className="text-xs text-slate-400 font-medium hidden xl:inline">
-            Haz clic en cualquier fila para ver la solución
-          </span>
         </div>
       </div>
 
