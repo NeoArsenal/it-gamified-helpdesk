@@ -90,8 +90,17 @@ function formatFecha(val: any): string {
 export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-tickets') {
   const columns: ExportColumn[] = [
     { header: 'N° Ticket', accessor: t => t.ticketCode || (t.id ? `#${t.id.slice(0, 8).toUpperCase()}` : '') },
-    { header: 'Título', accessor: t => t.titulo || '' },
-    { header: 'Descripción', accessor: t => t.descripcion || '' },
+    { 
+      header: 'Incidencia', 
+      accessor: t => {
+        const titulo = (t.titulo || '').trim();
+        const desc = (t.descripcion || '').trim();
+        if (titulo && desc && titulo.toLowerCase() !== desc.toLowerCase()) {
+          return `${titulo} - ${desc}`;
+        }
+        return titulo || desc || '';
+      }
+    },
     { header: 'Prioridad', accessor: t => t.prioridad || 'NORMAL' },
     { header: 'Estado', accessor: t => t.estado || 'ABIERTO' },
     { header: 'Categoría / Tipo', accessor: t => t.tipo || t.categoria || 'General' },
