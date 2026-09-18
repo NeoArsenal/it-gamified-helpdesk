@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Clock, X, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
 import { exportTicketsToCsv } from '@/lib/export-utils';
 import { toast } from 'sonner';
@@ -26,24 +26,85 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
   handleAbrirDetalle,
   searchQuery,
 }) => {
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startYRef = useRef(0);
+  const currentYRef = useRef(0);
+
   if (!isOpen) return null;
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    startYRef.current = e.touches[0].clientY;
+    currentYRef.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    currentYRef.current = e.touches[0].clientY;
+    const diff = currentYRef.current - startYRef.current;
+    if (diff > 0) {
+      setDragOffsetY(diff);
+    } else {
+      setDragOffsetY(0);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    const diff = currentYRef.current - startYRef.current;
+    if (diff > 80) {
+      // Umbral superado: animar hacia abajo y cerrar
+      setDragOffsetY(500);
+      setTimeout(() => {
+        onClose();
+        setDragOffsetY(0);
+      }, 180);
+    } else {
+      // Rebotar a posición original
+      setDragOffsetY(0);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex flex-col justify-end md:hidden animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex flex-col justify-end md:hidden animate-in fade-in duration-200 overscroll-contain">
       <div className="fixed inset-0" onClick={onClose} />
-      <div className="relative z-10 bg-white w-full rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300 border-t border-slate-200">
-        {/* Grab Handle */}
-        <div className="pt-3 pb-1 flex justify-center">
-          <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
+      <div 
+        className="relative z-10 bg-white w-full rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col border-t border-slate-200 overscroll-contain"
+        style={{
+          transform: `translateY(${dragOffsetY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+        }}
+      >
+        {/* Grab Handle interactivo (Touch Swipe Down to Close) */}
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => {
+            setDragOffsetY(500);
+            setTimeout(() => {
+              onClose();
+              setDragOffsetY(0);
+            }, 180);
+          }}
+          className="pt-3 pb-1 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none w-full group"
+          title="Desliza hacia abajo o toca para cerrar"
+        >
+          <div className="w-12 h-1.5 bg-slate-300 group-hover:bg-slate-400 group-active:bg-indigo-500 rounded-full transition-colors" />
         </div>
 
-        {/* Header del Drawer */}
-        <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+        {/* Header del Drawer (también sensible al arrastre hacia abajo) */}
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="px-5 py-2.5 border-b border-slate-100 flex items-center justify-between touch-none select-none"
+        >
           <div>
             <h3 className="font-bold text-slate-800 text-base flex items-center gap-2">
               <Clock className="w-4 h-4 text-indigo-600" /> Historial de Tickets Cerrados
             </h3>
-            <p className="text-[11px] text-slate-400">Toca un ticket para ver la solución y detalles</p>
+            <p className="text-[11px] text-slate-400">Desliza hacia abajo para cerrar o toca un ticket</p>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -125,7 +186,7 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
         </div>
 
         {/* Lista de Tickets Cerrados en Drawer */}
-        <div className="overflow-y-auto p-4 space-y-2.5 flex-1">
+        <div className="overflow-y-auto p-4 space-y-2.5 flex-1 overscroll-contain custom-scrollbar">
           {historyTickets.length > 0 ? (
             historyTickets.map((ticket) => {
               const shortId = `TIC-${ticket.id.substring(0, 5).toUpperCase()}`;
