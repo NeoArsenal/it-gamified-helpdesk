@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, User, Gamepad2, Monitor, Layers, MapPin, Save } from 'lucide-react';
+import { Settings, User, Gamepad2, Monitor, Layers, MapPin, Save, Check } from 'lucide-react';
 import {
   getPerfilUsuario,
   actualizarPreferenciasUsuario,
@@ -116,7 +116,8 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             if (user.preferencias.musicaNivel !== undefined) setMusicaNivel(user.preferencias.musicaNivel);
             if (user.preferencias.alertasCriticas !== undefined) setAlertasCriticas(user.preferencias.alertasCriticas);
             if (user.preferencias.temaOscuro !== undefined) {
-              const isDark = Boolean(user.preferencias.temaOscuro);
+              const localTheme = safeStorage.getItem('app_theme');
+              const isDark = localTheme !== null ? localTheme === 'dark' : Boolean(user.preferencias.temaOscuro);
               setTheme(isDark ? 'dark' : 'light');
               if (isDark) {
                 document.documentElement.classList.add('dark-mode');
@@ -344,20 +345,33 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   const toggleTheme = (newTheme: 'light' | 'dark') => {
     setTheme(newTheme);
-    if (newTheme === 'dark') {
+    const isDark = newTheme === 'dark';
+    if (isDark) {
       document.documentElement.classList.add('dark-mode');
       safeStorage.setItem('app_theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark-mode');
       safeStorage.setItem('app_theme', 'light');
     }
+
+    // Persistir de inmediato en la base de datos para que nunca se revierta al navegar
+    if (userId && userId.length > 5) {
+      actualizarPreferenciasUsuario(userId, {
+        preferencias: {
+          musicaNivel,
+          alertasCriticas,
+          temaOscuro: isDark,
+        },
+      }).catch((err) => console.error('Error auto-guardando tema en servidor:', err));
+    }
+    toast.success(`Tema ${isDark ? 'Oscuro' : 'Claro'} aplicado y guardado`);
   };
 
   const handleSavePortalPin = async () => {
     setIsSaving(true);
     try {
       await setPortalPin(portalPin);
-      toast.success('PIN del portal actualizado');
+      toast.success('PIN del portal actualizado exitosamente');
     } catch (e) {
       console.error(e);
       toast.error('Error al guardar el PIN del portal');
@@ -389,6 +403,10 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
       await handleSaveGamificacion();
       return;
     }
+    if (activeTab === 'portal') {
+      await handleSavePortalPin();
+      return;
+    }
 
     setIsSaving(true);
 
@@ -404,7 +422,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           },
         });
         safeStorage.setItem('app_theme', theme);
-        toast.success('¡Preferencias y tema guardados correctamente!');
+        toast.success('¡Perfil y preferencias guardados correctamente!');
         if (onPreferencesSaved) onPreferencesSaved();
       } catch (error) {
         console.error('Error al guardar preferencias', error);
@@ -422,7 +440,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
 
   return (
     <div className="p-4 md:p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-500">
-      {/* Cabecera */}
+      {/* Cabecera con Botón de Acción Inteligente */}
       <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6 md:mb-8 shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -430,14 +448,50 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           </h1>
           <p className="text-slate-500 text-sm mt-1">Ajusta tus preferencias personales y administra las reglas de gamificación de TI.</p>
         </div>
-        <button
-          onClick={savePreferences}
-          disabled={isSaving}
-          className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 w-full md:w-auto rounded-lg text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
-        >
-          <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-          {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-        </button>
+
+        {/* Botón de Acción Contextual Inteligente */}
+        {activeTab === 'perfil' && (
+          <button
+            type="button"
+            onClick={savePreferences}
+            disabled={isSaving}
+            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white px-5 py-2.5 w-full md:w-auto rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? 'Guardando...' : 'Guardar Perfil'}
+          </button>
+        )}
+
+        {activeTab === 'gamificacion' && (
+          <button
+            type="button"
+            onClick={handleSaveGamificacion}
+            disabled={isSavingGamificacion}
+            className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white px-5 py-2.5 w-full md:w-auto rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Save className={`w-4 h-4 ${isSavingGamificacion ? 'animate-spin' : ''}`} />
+            {isSavingGamificacion ? 'Guardando...' : 'Guardar Reglas'}
+          </button>
+        )}
+
+        {activeTab === 'portal' && (
+          <button
+            type="button"
+            onClick={handleSavePortalPin}
+            disabled={isSaving || portalPin.length < 4}
+            className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white px-5 py-2.5 w-full md:w-auto rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? 'Guardando...' : 'Guardar PIN'}
+          </button>
+        )}
+
+        {activeTab === 'sistema' && (
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-200 shadow-2xs">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>Guardado automático activo</span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 md:gap-8">
