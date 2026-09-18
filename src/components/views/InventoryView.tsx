@@ -1,8 +1,10 @@
 import React from 'react';
 import { 
-  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers 
+  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers, FileSpreadsheet 
 } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
+import { exportActivosToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 import { 
   AssetTable, 
   AssetWorkshopBoard, 
@@ -156,6 +158,28 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
               )}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                if (activos.length === 0) {
+                  toast.error('No hay equipos registrados para exportar');
+                  return;
+                }
+                const aExportar = filteredActivos.length > 0 ? filteredActivos : activos;
+                exportActivosToCsv(aExportar, 'inventario-hardware');
+                toast.success(`Se exportaron ${aExportar.length} equipos a Excel`);
+              } catch (err: any) {
+                toast.error(err?.message || 'Error al exportar inventario');
+              }
+            }}
+            className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs hover:shadow active:scale-95 transition-all cursor-pointer"
+            title="Descargar inventario patrimonial a Excel / CSV"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span className="hidden sm:inline">Exportar Excel</span>
+          </button>
 
           <button 
             type="button"

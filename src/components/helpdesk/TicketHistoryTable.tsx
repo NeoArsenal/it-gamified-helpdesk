@@ -1,5 +1,7 @@
 import React from 'react';
-import { Clock, Filter, ChevronDown, Building2, MapPin, User, Check } from 'lucide-react';
+import { Clock, Filter, ChevronDown, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
+import { exportTicketsToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 
 interface TicketHistoryTableProps {
   historyTickets: any[];
@@ -140,7 +142,30 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
             )}
           </div>
 
-          <span className="text-xs text-slate-400 font-medium hidden lg:inline">
+          {/* Botón Exportar Historial a Excel */}
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                if (historyTickets.length === 0) {
+                  toast.error('No hay tickets en el historial para exportar');
+                  return;
+                }
+                const sedeLabel = filterHistorySede === 'TODAS' ? 'todas-sedes' : filterHistorySede.toLowerCase().replace(/\s+/g, '-');
+                exportTicketsToCsv(historyTickets, `historial-tickets_${sedeLabel}`);
+                toast.success(`Se exportaron ${historyTickets.length} tickets a Excel`);
+              } catch (err: any) {
+                toast.error(err?.message || 'Error al exportar tickets');
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-all cursor-pointer shadow-2xs active:scale-95"
+            title="Descargar historial de tickets filtrados en Excel / CSV"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Exportar Excel</span>
+          </button>
+
+          <span className="text-xs text-slate-400 font-medium hidden xl:inline">
             Haz clic en cualquier fila para ver la solución
           </span>
         </div>

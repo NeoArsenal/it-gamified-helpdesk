@@ -1,5 +1,7 @@
 import React from 'react';
-import { Clock, X, Building2, MapPin, User, Check } from 'lucide-react';
+import { Clock, X, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
+import { exportTicketsToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 
 interface TicketHistoryDrawerProps {
   isOpen: boolean;
@@ -43,12 +45,34 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
             </h3>
             <p className="text-[11px] text-slate-400">Toca un ticket para ver la solución y detalles</p>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  if (historyTickets.length === 0) {
+                    toast.error('No hay tickets para exportar');
+                    return;
+                  }
+                  const sedeLabel = filterHistorySede === 'TODAS' ? 'todas' : filterHistorySede.toLowerCase().replace(/\s+/g, '-');
+                  exportTicketsToCsv(historyTickets, `historial-tickets_${sedeLabel}`);
+                  toast.success(`Se exportaron ${historyTickets.length} tickets a Excel`);
+                } catch (err: any) {
+                  toast.error(err?.message || 'Error al exportar tickets');
+                }
+              }}
+              className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors cursor-pointer"
+              title="Exportar a Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Barra de Filtro de Sedes en Drawer Móvil */}

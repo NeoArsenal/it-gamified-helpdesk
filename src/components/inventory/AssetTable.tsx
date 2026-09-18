@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, X, ChevronDown, Check, QrCode, MapPin, User, 
-  Wrench, Edit3, Trash2, Package 
+  Wrench, Edit3, Trash2, Package, FileSpreadsheet 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeviceIcon, getEstadoBadge } from './inventory.utils';
+import { exportActivosToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 
 interface AssetTableProps {
   searchQuery: string;
@@ -55,6 +57,21 @@ export function AssetTable({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleExportar = () => {
+    try {
+      if (filteredActivos.length === 0) {
+        toast.error('No hay equipos para exportar con los filtros actuales');
+        return;
+      }
+      const sedeLabel = filterSede === 'TODAS' ? 'todas' : filterSede.toLowerCase().replace(/\s+/g, '-');
+      const estadoLabel = filterEstado === 'TODOS' ? 'todos' : filterEstado.toLowerCase();
+      exportActivosToCsv(filteredActivos, `inventario_${sedeLabel}_${estadoLabel}`);
+      toast.success(`Se exportaron ${filteredActivos.length} equipos a Excel exitosamente`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al exportar inventario');
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-visible flex flex-col space-y-4 p-4 md:p-6 animate-in fade-in">
@@ -201,6 +218,17 @@ export function AssetTable({
               </div>
             )}
           </div>
+
+          {/* Botón Exportar CSV / Excel */}
+          <button
+            type="button"
+            onClick={handleExportar}
+            className="px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 bg-white hover:bg-emerald-50/60 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 shadow-2xs hover:shadow transition-all cursor-pointer active:scale-95 shrink-0"
+            title="Exportar equipos filtrados a Excel / CSV"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span className="hidden sm:inline">Exportar Excel</span>
+          </button>
         </div>
       </div>
 

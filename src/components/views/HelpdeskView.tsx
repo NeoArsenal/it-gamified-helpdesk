@@ -14,8 +14,11 @@ import {
   Building2,
   Inbox,
   Wrench,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
+import { exportTicketsToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 import {
   TicketKanbanBoard,
   TicketHistoryTable,
@@ -229,6 +232,28 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     setSearchQuery('');
     setFilterBoardEmergency('TODAS');
     setFilterBoardSede('TODAS');
+  };
+
+  const handleExportarReporte = () => {
+    try {
+      const ticketsAExportar = hasActiveFilters
+        ? tickets.filter(filterActiveTicket)
+        : tickets;
+
+      if (ticketsAExportar.length === 0) {
+        toast.error('No se encontraron tickets con los criterios actuales');
+        return;
+      }
+
+      const prefijo = filterBoardSede !== 'TODAS'
+        ? `tickets_${filterBoardSede.toLowerCase().replace(/\s+/g, '-')}`
+        : 'reporte-tickets-general';
+
+      exportTicketsToCsv(ticketsAExportar, prefijo);
+      toast.success(`Se exportaron ${ticketsAExportar.length} tickets a Excel exitosamente`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al exportar tickets');
+    }
   };
 
   if (loading) {
@@ -488,6 +513,16 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               </>
             )}
           </div>
+
+          <button
+            type="button"
+            onClick={handleExportarReporte}
+            className="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+            title="Descargar reporte de tickets en Excel / CSV"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span className="hidden sm:inline">Exportar Excel</span>
+          </button>
 
           <button
             onClick={() => setIsModalOpen(true)}
