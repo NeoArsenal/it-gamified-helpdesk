@@ -41,7 +41,7 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
               {activo.codigo}
             </h4>
 
-            <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="bg-white qr-canvas-white p-2 rounded-xl border border-slate-200 shadow-2xs">
               <QRCodeSVG
                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/activo/${activo.id}`}
                 size={170}

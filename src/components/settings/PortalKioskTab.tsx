@@ -104,7 +104,7 @@ export const PortalKioskTab: React.FC<PortalKioskTabProps> = ({
             <h4>Código QR Inteligente</h4>
           </div>
           {portalUrl && (
-            <div className="bg-white p-3 rounded-2xl shadow-md border-2 border-indigo-100">
+            <div className="bg-white qr-canvas-white p-3 rounded-2xl shadow-md border-2 border-indigo-100">
               <QRCodeSVG value={portalUrl} size={160} level="M" />
             </div>
           )}

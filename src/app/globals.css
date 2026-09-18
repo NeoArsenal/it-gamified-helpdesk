@@ -33,138 +33,318 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* --- REAL DARK MODE PALETTE --- */
+/* --- REAL CYBER-OBSIDIAN & DEEP MIDNIGHT DARK MODE PALETTE --- */
 html.dark-mode {
-  background: #020617; /* slate-950 */
+  background: #060913;
+  color-scheme: dark;
 }
 
 .dark-mode body {
-  background: #020617;
-  color: #f8fafc;
+  background: #060913;
+  color: #f1f5f9;
 }
 
-/* Backgrounds */
-.dark-mode .bg-white { background-color: #0f172a !important; } /* slate-900 */
-.dark-mode .bg-slate-50 { background-color: #1e293b !important; } /* slate-800 */
-.dark-mode .bg-slate-50\/50 { background-color: #1e293b !important; } 
-.dark-mode .bg-slate-100 { background-color: #334155 !important; } /* slate-700 */
-.dark-mode .bg-slate-200 { background-color: #475569 !important; } 
-.dark-mode .bg-slate-800 { background-color: #020617 !important; } 
+/* 1. Universal Card, Panel & Container Overrides (Elimina todos los cuadros blancos) */
+.dark-mode .bg-white,
+.dark-mode [class*="bg-white"]:not(.qr-canvas-white):not(.qr-canvas-white *) {
+  background-color: #0d1527 !important;
+}
 
-/* Status Backgrounds (Kanban Columns & Badges) */
-.dark-mode .bg-blue-50, .dark-mode .bg-blue-100 { background-color: #0c4a6e !important; } /* sky-900 */
-.dark-mode .bg-emerald-50, .dark-mode .bg-green-50, .dark-mode .bg-emerald-100, .dark-mode .bg-green-100 { background-color: #064e3b !important; } /* emerald-900 */
-.dark-mode .bg-amber-50, .dark-mode .bg-amber-100 { background-color: #78350f !important; } /* amber-900 */
-.dark-mode .bg-red-50, .dark-mode .bg-red-100 { background-color: #7f1d1d !important; } /* red-900 */
-.dark-mode .bg-orange-50, .dark-mode .bg-orange-100 { background-color: #7c2d12 !important; } /* orange-900 */
-.dark-mode .bg-yellow-50, .dark-mode .bg-yellow-100 { background-color: #713f12 !important; } /* yellow-900 */
-.dark-mode .bg-purple-50, .dark-mode .bg-purple-100 { background-color: #581c87 !important; } /* purple-900 */
+.dark-mode [class*="bg-slate-50"] {
+  background-color: #111a2e !important;
+}
 
-/* Translucent Status Backgrounds */
-.dark-mode .bg-blue-50\/50 { background-color: rgba(12, 74, 110, 0.5) !important; }
-.dark-mode .bg-emerald-50\/50 { background-color: rgba(6, 78, 59, 0.5) !important; }
-.dark-mode .bg-amber-50\/50, .dark-mode .bg-amber-50\/30 { background-color: rgba(120, 53, 15, 0.5) !important; }
+.dark-mode [class*="bg-slate-100"] {
+  background-color: #16223b !important;
+}
 
-/* Texts */
-.dark-mode .text-slate-800 { color: #f8fafc !important; } /* slate-50 */
-.dark-mode .text-slate-700 { color: #e2e8f0 !important; } /* slate-200 */
-.dark-mode .text-slate-600 { color: #cbd5e1 !important; } /* slate-300 */
-.dark-mode .text-slate-500 { color: #94a3b8 !important; } /* slate-400 */
-.dark-mode .text-slate-400 { color: #64748b !important; } /* slate-500 */
+.dark-mode [class*="bg-slate-200"] {
+  background-color: #1e2e4f !important;
+}
 
-/* Status Texts */
-.dark-mode .text-blue-700, .dark-mode .text-blue-600, .dark-mode .text-blue-500 { color: #7dd3fc !important; } /* sky-300 */
-.dark-mode .text-emerald-700, .dark-mode .text-emerald-600, .dark-mode .text-green-700 { color: #6ee7b7 !important; } /* emerald-300 */
-.dark-mode .text-amber-700, .dark-mode .text-amber-600, .dark-mode .text-amber-500 { color: #fcd34d !important; } /* amber-300 */
-.dark-mode .text-red-700, .dark-mode .text-red-600, .dark-mode .text-red-500 { color: #fca5a5 !important; } /* red-300 */
-.dark-mode .text-orange-700, .dark-mode .text-orange-600 { color: #fdba74 !important; } /* orange-300 */
-.dark-mode .text-yellow-700, .dark-mode .text-yellow-600 { color: #fde047 !important; } /* yellow-300 */
-.dark-mode .text-purple-700, .dark-mode .text-purple-600 { color: #d8b4fe !important; } /* purple-300 */
+.dark-mode [class*="bg-slate-800"] {
+  background-color: #070c18 !important;
+}
 
-/* Borders */
-.dark-mode .border-slate-100 { border-color: #1e293b !important; } /* slate-800 */
-.dark-mode .border-slate-200 { border-color: #334155 !important; } /* slate-700 */
-.dark-mode .border-slate-300 { border-color: #475569 !important; } /* slate-600 */
-.dark-mode .border-transparent { border-color: transparent !important; }
+.dark-mode [class*="bg-slate-900"] {
+  background-color: #050811 !important;
+}
 
-/* Dividers */
-.dark-mode .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b !important; }
+/* Excepción obligatoria para que el Código QR SVG pueda escanearse con cámara */
+.dark-mode .qr-canvas-white,
+.dark-mode .qr-canvas-white * {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
 
-/* Specific Overrides for better contrast */
-.dark-mode .hover\:bg-slate-50:hover { background-color: #1e293b !important; }
-.dark-mode .hover\:bg-slate-100:hover { background-color: #334155 !important; }
-.dark-mode .shadow-sm { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.5) !important; }
+/* 2. Interactive Hover States (Evita destellos blancos al pasar el cursor) */
+.dark-mode [class*="hover:bg-slate-50"]:hover {
+  background-color: #17233c !important;
+}
+
+.dark-mode [class*="hover:bg-slate-100"]:hover {
+  background-color: #1d2c4b !important;
+}
+
+.dark-mode [class*="hover:bg-white"]:hover {
+  background-color: #152037 !important;
+}
+
+.dark-mode [class*="focus:bg-white"]:focus {
+  background-color: #0d1527 !important;
+}
+
+/* Corrección de gradientes blancos en tarjetas al hacer hover */
+.dark-mode [class*="from-white"] {
+  --tw-gradient-from: rgba(99, 102, 241, 0.12) !important;
+}
+.dark-mode [class*="to-blue-50/50"],
+.dark-mode [class*="to-red-50/50"],
+.dark-mode [class*="to-slate-50/50"] {
+  --tw-gradient-to: rgba(99, 102, 241, 0.04) !important;
+}
+
+/* 3. Form Controls (Inputs, Textareas, Selects) */
+.dark-mode input:not([type="checkbox"]):not([type="radio"]),
+.dark-mode textarea,
+.dark-mode select {
+  background-color: #090e1c !important;
+  border-color: #1e2c47 !important;
+  color: #f8fafc !important;
+}
+
+.dark-mode input:focus,
+.dark-mode textarea:focus,
+.dark-mode select:focus {
+  background-color: #0d1527 !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25) !important;
+}
+
+.dark-mode input::placeholder,
+.dark-mode textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* 4. Translucent Neon Accents & Status Badges (Estética Vibrante y Moderna) */
+
+/* Indigo / Azul (Primario, Info, General) */
+.dark-mode [class*="bg-indigo-50"],
+.dark-mode [class*="bg-blue-50"],
+.dark-mode [class*="bg-indigo-100"],
+.dark-mode [class*="bg-blue-100"] {
+  background-color: rgba(99, 102, 241, 0.12) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+.dark-mode [class*="text-indigo-600"],
+.dark-mode [class*="text-indigo-700"],
+.dark-mode [class*="text-blue-600"],
+.dark-mode [class*="text-blue-700"] {
+  color: #818cf8 !important;
+}
+.dark-mode [class*="text-indigo-500"],
+.dark-mode [class*="text-blue-500"] {
+  color: #a5b4fc !important;
+}
+
+/* Esmeralda / Verde (Operativo, Resuelto, Éxito) */
+.dark-mode [class*="bg-emerald-50"],
+.dark-mode [class*="bg-green-50"],
+.dark-mode [class*="bg-emerald-100"],
+.dark-mode [class*="bg-green-100"] {
+  background-color: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+.dark-mode [class*="text-emerald-600"],
+.dark-mode [class*="text-emerald-700"],
+.dark-mode [class*="text-green-600"],
+.dark-mode [class*="text-green-700"] {
+  color: #34d399 !important;
+}
+
+/* Ámbar / Naranja / Amarillo (Taller, En Progreso, XP, Alertas) */
+.dark-mode [class*="bg-amber-50"],
+.dark-mode [class*="bg-yellow-50"],
+.dark-mode [class*="bg-orange-50"],
+.dark-mode [class*="bg-amber-100"],
+.dark-mode [class*="bg-yellow-100"],
+.dark-mode [class*="bg-orange-100"] {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+}
+.dark-mode [class*="text-amber-600"],
+.dark-mode [class*="text-amber-700"],
+.dark-mode [class*="text-amber-800"],
+.dark-mode [class*="text-yellow-600"],
+.dark-mode [class*="text-orange-600"] {
+  color: #fbbf24 !important;
+}
+
+/* Rosa / Rojo (Bajas, Crítico, Chatarra, Emergencias) */
+.dark-mode [class*="bg-rose-50"],
+.dark-mode [class*="bg-red-50"],
+.dark-mode [class*="bg-rose-100"],
+.dark-mode [class*="bg-red-100"] {
+  background-color: rgba(244, 63, 94, 0.12) !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+.dark-mode [class*="text-rose-600"],
+.dark-mode [class*="text-rose-700"],
+.dark-mode [class*="text-red-600"],
+.dark-mode [class*="text-red-700"] {
+  color: #f87171 !important;
+}
+
+/* Púrpura / Violeta */
+.dark-mode [class*="bg-purple-50"],
+.dark-mode [class*="bg-purple-100"] {
+  background-color: rgba(168, 85, 247, 0.12) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+}
+.dark-mode [class*="text-purple-600"],
+.dark-mode [class*="text-purple-700"] {
+  color: #c084fc !important;
+}
+
+/* Teal / Cyan */
+.dark-mode [class*="bg-teal-50"],
+.dark-mode [class*="bg-cyan-50"],
+.dark-mode [class*="bg-teal-100"] {
+  background-color: rgba(20, 184, 166, 0.12) !important;
+  border-color: rgba(20, 184, 166, 0.3) !important;
+}
+.dark-mode [class*="text-teal-600"],
+.dark-mode [class*="text-teal-700"] {
+  color: #2dd4bf !important;
+}
+
+/* 5. Typography Hierarchy */
+.dark-mode .text-slate-900,
+.dark-mode .text-slate-800 {
+  color: #f8fafc !important;
+}
+.dark-mode .text-slate-700 {
+  color: #e2e8f0 !important;
+}
+.dark-mode .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+.dark-mode .text-slate-500 {
+  color: #94a3b8 !important;
+}
+.dark-mode .text-slate-400 {
+  color: #64748b !important;
+}
+
+/* 6. Precision Borders & Shadows */
+.dark-mode [class*="border-slate-100"],
+.dark-mode [class*="border-slate-200"],
+.dark-mode [class*="border-slate-300"] {
+  border-color: #1e2c47 !important;
+}
+.dark-mode [class*="divide-slate-100"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e2c47 !important;
+}
+
+.dark-mode .shadow-sm,
+.dark-mode .shadow-2xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.dark-mode .shadow-md,
+.dark-mode .shadow-lg,
+.dark-mode .shadow-xl,
+.dark-mode .shadow-2xl {
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+/* 7. Header, Navigation & Modals */
+.dark-mode header {
+  background-color: #090e1c !important;
+  border-color: #18243b !important;
+}
+.dark-mode aside {
+  background-color: #050811 !important;
+  border-color: #141e33 !important;
+}
+
+/* Modals & Dropdown Popups */
+.dark-mode [class*="rounded-2xl"][class*="shadow-xl"],
+.dark-mode [class*="rounded-3xl"][class*="shadow-2xl"],
+.dark-mode [class*="rounded-2xl"][class*="shadow-2xl"] {
+  background-color: #0d1527 !important;
+  border-color: #223354 !important;
+}
+
+/* Tables in Dark Mode */
+.dark-mode table thead tr {
+  background-color: #111a2e !important;
+}
+.dark-mode table th {
+  color: #94a3b8 !important;
+  border-color: #1e2c47 !important;
+}
+.dark-mode table td {
+  border-color: #18243b !important;
+}
 
 /* Fix Quill Editor in Dark Mode */
 .dark-mode .ql-toolbar, .dark-mode .ql-container {
-  border-color: #334155 !important;
-  background-color: #0f172a !important;
+  border-color: #1e2c47 !important;
+  background-color: #090e1c !important;
 }
 .dark-mode .ql-editor { color: #f8fafc !important; }
 .dark-mode .ql-stroke { stroke: #cbd5e1 !important; }
 .dark-mode .ql-fill { fill: #cbd5e1 !important; }
 
-/* Fix Sidebar / Header Specifics if they need borders */
-.dark-mode header, .dark-mode aside {
-  border-color: #1e293b !important;
-}
-
 /* --- KANBAN BOARD DARK MODE ENHANCEMENTS --- */
 .dark-mode .kanban-col-abierto {
-  background: rgba(15, 23, 42, 0.65) !important;
-  border-color: rgba(51, 65, 85, 0.7) !important;
+  background: rgba(17, 26, 46, 0.7) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
 }
 .dark-mode .kanban-col-progreso {
-  background: rgba(12, 74, 110, 0.18) !important;
-  border-color: rgba(14, 116, 144, 0.45) !important;
+  background: rgba(15, 25, 48, 0.7) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
 }
 .dark-mode .kanban-col-resuelto {
-  background: rgba(6, 78, 59, 0.18) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
+  background: rgba(14, 28, 44, 0.7) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
 }
 .dark-mode .kanban-col-header {
-  background: rgba(15, 23, 42, 0.9) !important;
-  border-color: rgba(51, 65, 85, 0.7) !important;
+  background: rgba(13, 21, 39, 0.95) !important;
+  border-color: #1e2c47 !important;
 }
 .dark-mode .kanban-empty-card {
-  background: rgba(15, 23, 42, 0.45) !important;
-  border-color: rgba(51, 65, 85, 0.6) !important;
+  background: rgba(13, 21, 39, 0.5) !important;
+  border-color: rgba(30, 44, 71, 0.8) !important;
 }
 .dark-mode .kanban-empty-card:hover {
-  background: rgba(30, 41, 59, 0.5) !important;
+  background: rgba(22, 34, 59, 0.6) !important;
 }
 .dark-mode .kanban-empty-icon-box {
-  background: rgba(30, 41, 59, 0.85) !important;
-  border-color: rgba(71, 85, 105, 0.6) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  background: rgba(22, 34, 59, 0.9) !important;
+  border-color: rgba(99, 102, 241, 0.3) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
 }
 .dark-mode .kanban-empty-pill {
-  background: rgba(30, 41, 59, 0.9) !important;
+  background: rgba(22, 34, 59, 0.9) !important;
   color: #94a3b8 !important;
-  border-color: rgba(71, 85, 105, 0.7) !important;
+  border-color: #27395c !important;
 }
 .dark-mode .kanban-badge-abierto {
-  background-color: rgba(120, 53, 15, 0.6) !important;
+  background-color: rgba(245, 158, 11, 0.15) !important;
   color: #fde68a !important;
-  border-color: rgba(245, 158, 11, 0.5) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
 }
 .dark-mode .kanban-badge-progreso {
-  background-color: rgba(12, 74, 110, 0.6) !important;
-  color: #bae6fd !important;
-  border-color: rgba(56, 189, 248, 0.5) !important;
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
 }
 .dark-mode .kanban-badge-resuelto {
-  background-color: rgba(6, 78, 59, 0.6) !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
   color: #a7f3d0 !important;
-  border-color: rgba(52, 211, 153, 0.5) !important;
-}
-
-/* Inputs, Textareas, Selects in Dark Mode */
-.dark-mode input, .dark-mode textarea, .dark-mode select {
-  color: #f8fafc !important;
-}
-.dark-mode input::placeholder, .dark-mode textarea::placeholder {
-  color: #64748b !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
 /* --- Estilos para Impresión de Etiquetas QR --- */
