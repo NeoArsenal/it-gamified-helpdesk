@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Clock, X, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
 import { exportTicketsToCsv } from '@/lib/export-utils';
 import { toast } from 'sonner';
@@ -26,67 +26,96 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
   handleAbrirDetalle,
   searchQuery,
 }) => {
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
   const startYRef = useRef(0);
   const currentYRef = useRef(0);
+  const isDraggingRef = useRef(false);
+
+  // Restablecer posición limpia cuando se abre
+  useEffect(() => {
+    if (isOpen && drawerRef.current) {
+      drawerRef.current.style.transition = 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)';
+      drawerRef.current.style.transform = 'translate3d(0, 0, 0)';
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     startYRef.current = e.touches[0].clientY;
     currentYRef.current = e.touches[0].clientY;
-    setIsDragging(true);
+    isDraggingRef.current = true;
+    if (drawerRef.current) {
+      drawerRef.current.style.transition = 'none';
+      drawerRef.current.style.willChange = 'transform';
+    }
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingRef.current) return;
     currentYRef.current = e.touches[0].clientY;
     const diff = currentYRef.current - startYRef.current;
-    if (diff > 0) {
-      setDragOffsetY(diff);
-    } else {
-      setDragOffsetY(0);
+    if (diff > 0 && drawerRef.current) {
+      // Movimiento nativo acelerado por GPU sin re-renderizar React
+      drawerRef.current.style.transform = `translate3d(0, ${diff}px, 0)`;
     }
   };
 
   const handleTouchEnd = () => {
-    setIsDragging(false);
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
     const diff = currentYRef.current - startYRef.current;
-    if (diff > 80) {
-      // Umbral superado: animar hacia abajo y cerrar
-      setDragOffsetY(500);
+
+    if (!drawerRef.current) return;
+
+    if (diff > 90) {
+      // Deslizado suficiente: animación nativa de salida
+      drawerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+      drawerRef.current.style.transform = 'translate3d(0, 100%, 0)';
       setTimeout(() => {
         onClose();
-        setDragOffsetY(0);
-      }, 180);
+        if (drawerRef.current) {
+          drawerRef.current.style.willChange = 'auto';
+        }
+      }, 190);
     } else {
-      // Rebotar a posición original
-      setDragOffsetY(0);
+      // Rebotar elásticamente a su posición original
+      drawerRef.current.style.transition = 'transform 0.24s cubic-bezier(0.16, 1, 0.3, 1)';
+      drawerRef.current.style.transform = 'translate3d(0, 0, 0)';
+      setTimeout(() => {
+        if (drawerRef.current) {
+          drawerRef.current.style.willChange = 'auto';
+        }
+      }, 250);
     }
   };
 
+  const triggerClose = () => {
+    if (drawerRef.current) {
+      drawerRef.current.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+      drawerRef.current.style.transform = 'translate3d(0, 100%, 0)';
+    }
+    setTimeout(() => {
+      onClose();
+    }, 190);
+  };
+
   return (
-    <div className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-sm flex flex-col justify-end md:hidden animate-in fade-in duration-200 overscroll-contain">
-      <div className="fixed inset-0" onClick={onClose} />
+    <div className="fixed inset-0 z-40 bg-slate-950/70 flex flex-col justify-end md:hidden animate-in fade-in duration-200 overscroll-contain">
+      <div className="fixed inset-0" onClick={triggerClose} />
       <div 
-        className="relative z-10 bg-white w-full rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col border-t border-slate-200 overscroll-contain"
+        ref={drawerRef}
+        className="relative z-10 bg-white w-full rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col border-t border-slate-200 overscroll-contain pb-[max(1rem,env(safe-area-inset-bottom))]"
         style={{
-          transform: `translateY(${dragOffsetY}px)`,
-          transition: isDragging ? 'none' : 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: 'translate3d(0, 0, 0)',
         }}
       >
-        {/* Grab Handle interactivo (Touch Swipe Down to Close) */}
+        {/* Grab Handle interactivo (Touch Swipe Down to Close con Física Nativa) */}
         <div 
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          onClick={() => {
-            setDragOffsetY(500);
-            setTimeout(() => {
-              onClose();
-              setDragOffsetY(0);
-            }, 180);
-          }}
+          onClick={triggerClose}
           className="pt-3 pb-1 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none select-none w-full group"
           title="Desliza hacia abajo o toca para cerrar"
         >
@@ -128,7 +157,7 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
               <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             </button>
             <button
-              onClick={onClose}
+              onClick={triggerClose}
               className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
