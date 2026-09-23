@@ -175,7 +175,7 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
         {historyTickets.length > 0 ? (
           <div className="min-w-[700px]">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-500 sticky top-0 border-b border-slate-200">
+              <thead className="bg-slate-50 text-slate-500 sticky top-0 z-10 border-b border-slate-200 shadow-2xs">
                 <tr>
                   <th className="px-5 py-2.5 font-bold text-xs">Ticket</th>
                   <th className="px-5 py-2.5 font-bold text-xs">Sede</th>
@@ -219,21 +219,23 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
                         <span className="text-slate-400 italic text-xs">General</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-600 flex items-center gap-2">
-                      {ticket.asignadoA ? (
-                        <UserAvatar
-                          avatar={ticket.asignadoA.avatar}
-                          name={ticket.asignadoA.nombre}
-                          size="xs"
-                        />
-                      ) : (
-                        <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
-                          <User className="w-3 h-3" />
-                        </div>
-                      )}
-                      <span className="truncate max-w-[120px] font-medium">
-                        {ticket.asignadoA?.nombre || 'Desconocido'}
-                      </span>
+                    <td className="px-5 py-3 text-xs text-slate-600">
+                      <div className="flex items-center gap-2">
+                        {ticket.asignadoA ? (
+                          <UserAvatar
+                            avatar={ticket.asignadoA.avatar}
+                            name={ticket.asignadoA.nombre}
+                            size="xs"
+                          />
+                        ) : (
+                          <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
+                            <User className="w-3 h-3" />
+                          </div>
+                        )}
+                        <span className="truncate max-w-[120px] font-medium">
+                          {ticket.asignadoA?.nombre || 'Desconocido'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-xs text-slate-500">
                       <div>{ticket.creadoEn ? new Date(ticket.creadoEn).toLocaleDateString() : '-'}</div>

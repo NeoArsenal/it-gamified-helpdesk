@@ -214,7 +214,7 @@ export const LocationsTab: React.FC<LocationsTabProps> = ({
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="max-h-[400px] overflow-y-auto">
               <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600 sticky top-0 border-b border-slate-200 shadow-sm">
+                <thead className="bg-slate-50 text-slate-600 sticky top-0 z-10 border-b border-slate-200 shadow-sm">
                   <tr>
                     <th className="px-4 py-3 font-semibold text-xs">Sede</th>
                     <th className="px-4 py-3 font-semibold text-xs">Departamento</th>
