@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Trash2 } from 'lucide-react';
+import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2 } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
 import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
@@ -94,24 +94,8 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
      avatarSeed.startsWith('/'))
   );
 
-  const handlePhotoDelete = async () => {
-    if (!targetUserId) return;
-    try {
-      setIsUploadingPhoto(true);
-      await actualizarPreferenciasUsuario(targetUserId, { avatar: '' });
-      setPerfil((prev: any) => ({ ...prev, avatar: '' }));
-      updateUser({ avatar: '' });
-      toast.success('Foto eliminada del perfil y de Supabase Storage.');
-    } catch (err: any) {
-      console.error('Error al eliminar foto desde header:', err);
-      toast.error('No se pudo eliminar la foto de perfil.');
-    } finally {
-      setIsUploadingPhoto(false);
-    }
-  };
-
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30">
+    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-50">
       <div className="flex items-center gap-3">
         {/* Hamburger para móviles */}
         <button 
@@ -179,7 +163,7 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
 
         {/* Dropdown del Perfil */}
         {dropdownOpen && (
-          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-[60] animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
             {/* Cabecera Info Usuario con Avatar */}
             <div className="px-3 py-3 border-b border-slate-100 flex items-center gap-3">
               <div className="relative group shrink-0">
@@ -237,19 +221,6 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                   </>
                 )}
               </button>
-
-              {hasCustomPhoto && (
-                <button
-                  type="button"
-                  disabled={isUploadingPhoto}
-                  onClick={handlePhotoDelete}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-                  title="Eliminar foto de perfil del sistema y del almacenamiento"
-                >
-                  <Trash2 className="w-4 h-4 text-rose-500" />
-                  <span>Eliminar Foto de Perfil</span>
-                </button>
-              )}
 
               {onNavigateSettings && (
                 <button
