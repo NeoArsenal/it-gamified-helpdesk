@@ -81,7 +81,6 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     getUbicacionesSedes()
       .then((data) => {
         setSedesList(data);
-        if (data.length > 0 && !sede) setSede(data[0]);
       })
       .catch(console.error);
   }, []);
@@ -91,9 +90,10 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
       getUbicacionesDepartamentos(sede)
         .then((data) => {
           setDepartamentosList(data);
-          if (data.length > 0 && !departamento) setDepartamento(data[0]);
         })
         .catch(console.error);
+    } else {
+      setDepartamentosList([]);
     }
   }, [sede]);
 
@@ -102,7 +102,6 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
       getUbicacionesAreas(sede, departamento)
         .then((data) => {
           setAreasList(data);
-          if (data.length > 0 && !ubicacion) setUbicacion(data[0]);
         })
         .catch(console.error);
     } else {
@@ -130,7 +129,7 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setMarca('');
     setModelo('');
     setNumeroSerie('');
-    setSede(sedesList[0] || '');
+    setSede('');
     setDepartamento('');
     setUbicacion('');
     setResponsable('');

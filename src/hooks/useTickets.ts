@@ -112,10 +112,15 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
   // Cargar sedes cuando se abre el modal
   useEffect(() => {
     if (isModalOpen) {
+      setNuevoTitulo('');
+      setNuevaSede('');
+      setNuevoDepartamento('');
+      setNuevaArea('');
+      setDepartamentosList([]);
+      setAreasList([]);
       getUbicacionesSedes()
         .then((data) => {
           setSedesList(data);
-          if (data.length > 0) setNuevaSede(data[0]);
         })
         .catch(console.error);
     }
@@ -127,10 +132,16 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
       getUbicacionesDepartamentos(nuevaSede)
         .then((data) => {
           setDepartamentosList(data);
-          if (data.length > 0) setNuevoDepartamento(data[0]);
-          else setNuevoDepartamento('');
+          setNuevoDepartamento('');
+          setAreasList([]);
+          setNuevaArea('');
         })
         .catch(console.error);
+    } else {
+      setDepartamentosList([]);
+      setNuevoDepartamento('');
+      setAreasList([]);
+      setNuevaArea('');
     }
   }, [nuevaSede]);
 
@@ -140,8 +151,7 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
       getUbicacionesAreas(nuevaSede, nuevoDepartamento)
         .then((data) => {
           setAreasList(data);
-          if (data.length > 0) setNuevaArea(data[0]);
-          else setNuevaArea('');
+          setNuevaArea('');
         })
         .catch(console.error);
     } else {

@@ -84,7 +84,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
   const handleSubirGuia = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevoTitulo) return;
-    
+
     if (creationMode === 'PDF' && !selectedFile) return;
     if (creationMode === 'NATIVO' && !contenidoNativo) return;
 
@@ -109,7 +109,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         peso,
         autorId: userId || undefined, // Evitar enviar un UUID hardcodeado
       });
-      
+
       setIsModalOpen(false);
       setSelectedFile(null);
       setNuevoTitulo('');
@@ -146,15 +146,15 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Búsqueda semántica..." 
+            <input
+              type="text"
+              placeholder="Búsqueda semántica..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-400 transition-all shadow-sm"
             />
           </div>
-          <button 
+          <button
             onClick={() => {
               setSelectedFile(null);
               setNuevoTitulo('');
@@ -175,84 +175,84 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {guides.map((guide) => (
-          <div key={guide.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden">
-            {/* Efecto hover brillante */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-white to-red-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+          {guides.map((guide) => (
+            <div key={guide.id} className="bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-5 flex flex-col group relative overflow-hidden">
+              {/* Efecto hover brillante */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-white to-red-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
 
-            <div className="flex items-start gap-4 mb-4 relative z-10">
-              <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center shrink-0 border border-red-100 group-hover:bg-red-500 group-hover:scale-105 transition-all duration-300">
-                {guide.contenidoRichText ? (
-                  <FileCode className="w-6 h-6 text-red-500 group-hover:text-white transition-colors" />
-                ) : (
-                  <FileText className="w-6 h-6 text-red-500 group-hover:text-white transition-colors" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 group-hover:text-red-700 transition-colors" title={guide.titulo}>{guide.titulo}</h3>
-                <p className="text-xs font-mono text-slate-400 mt-1">{guide.peso || 'N/A'}</p>
-              </div>
-            </div>
-            
-            <div className="mt-auto border-t border-slate-100 pt-4 flex items-center justify-between relative z-10">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-xs font-bold text-slate-600 shadow-sm overflow-hidden">
-                  {guide.autor?.avatar && guide.autor.avatar.length > 2 ? (
-                    <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${guide.autor.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="flex items-start gap-4 mb-4 relative z-10">
+                <div className="w-12 h-12 rounded-lg bg-red-50 flex items-center justify-center shrink-0 border border-red-100 group-hover:bg-red-500 group-hover:scale-105 transition-all duration-300">
+                  {guide.contenidoRichText ? (
+                    <FileCode className="w-6 h-6 text-red-500 group-hover:text-white transition-colors" />
                   ) : (
-                    guide.autor?.avatar || 'TI'
+                    <FileText className="w-6 h-6 text-red-500 group-hover:text-white transition-colors" />
                   )}
                 </div>
-                <div className="flex flex-col">
-                  <p className="text-[10px] font-bold text-slate-600 leading-none mb-0.5">{guide.autor?.nombre?.split(' ')[0] || 'Desconocido'}</p>
-                  <p className="text-[9px] text-slate-400 leading-none">{guide.fechaSubida ? new Date(guide.fechaSubida).toLocaleDateString() : 'Reciente'}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 group-hover:text-red-700 transition-colors" title={guide.titulo}>{guide.titulo}</h3>
+                  <p className="text-xs font-mono text-slate-400 mt-1">{guide.peso || 'N/A'}</p>
                 </div>
               </div>
 
-              <div className="flex gap-1 items-center">
-                {guide.urlPdf && (
-                  <a 
-                    href={guide.urlPdf} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    download 
-                    className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all active:scale-95" 
-                    title="Descargar PDF"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all active:scale-95" title="Eliminar" onClick={() => setGuideToDelete(guide.id)}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-                <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95" title="Ver Documento" onClick={() => setViewingGuide(guide)}>
-                  <Eye className="w-3.5 h-3.5" />
-                </button>
+              <div className="mt-auto border-t border-slate-100 pt-4 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-xs font-bold text-slate-600 shadow-sm overflow-hidden">
+                    {guide.autor?.avatar && guide.autor.avatar.length > 2 ? (
+                      <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${guide.autor.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      guide.autor?.avatar || 'TI'
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-[10px] font-bold text-slate-600 leading-none mb-0.5">{guide.autor?.nombre?.split(' ')[0] || 'Desconocido'}</p>
+                    <p className="text-[9px] text-slate-400 leading-none">{guide.fechaSubida ? new Date(guide.fechaSubida).toLocaleDateString() : 'Reciente'}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-1 items-center">
+                  {guide.urlPdf && (
+                    <a
+                      href={guide.urlPdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download
+                      className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-all active:scale-95"
+                      title="Descargar PDF"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all active:scale-95" title="Eliminar" onClick={() => setGuideToDelete(guide.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all active:scale-95" title="Ver Documento" onClick={() => setViewingGuide(guide)}>
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {guides.length === 0 && !loading && (
-          <div className="col-span-full p-12 text-center flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-            <ShieldAlert className="w-12 h-12 text-slate-300 mb-3" />
-            <h3 className="text-slate-600 font-bold text-lg mb-1">No se encontraron guías</h3>
-            <p className="text-slate-400 text-sm max-w-md">Prueba con otra palabra clave o crea el primer manual para ganar puntos de experiencia.</p>
-          </div>
-        )}
-      </div>
+          ))}
+          {guides.length === 0 && !loading && (
+            <div className="col-span-full p-12 text-center flex flex-col items-center justify-center bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
+              <ShieldAlert className="w-12 h-12 text-slate-300 mb-3" />
+              <h3 className="text-slate-600 font-bold text-lg mb-1">No se encontraron guías</h3>
+              <p className="text-slate-400 text-sm max-w-md">Prueba con otra palabra clave o crea el primer manual para ganar puntos de experiencia.</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Modal Interactivo de Creación */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 relative animate-in zoom-in-95 duration-200">
-            <button 
+            <button
               onClick={() => setIsModalOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-            
+
             <h2 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
               <UploadCloud className="w-5 h-5 text-red-600" /> Nueva Guía de TI
             </h2>
@@ -278,8 +278,8 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
             <form onSubmit={handleSubirGuia}>
               <div className="mb-4">
                 <label className="block text-sm font-bold text-slate-700 mb-1">Título de la Guía <span className="text-red-500">*</span></label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   value={nuevoTitulo}
                   onChange={(e) => setNuevoTitulo(e.target.value)}
@@ -290,9 +290,9 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
               {creationMode === 'NATIVO' ? (
                 <div className="h-64 mb-12">
-                  <ReactQuill 
-                    theme="snow" 
-                    value={contenidoNativo} 
+                  <ReactQuill
+                    theme="snow"
+                    value={contenidoNativo}
                     onChange={setContenidoNativo}
                     className="h-full bg-white rounded-b-lg"
                     placeholder="Escribe el paso a paso de la solución..."
@@ -300,7 +300,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                 </div>
               ) : (
                 !selectedFile ? (
-                  <div 
+                  <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -317,10 +317,10 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                       {isDragging ? '¡Suelta el PDF aquí!' : 'Haz clic o arrastra tu PDF aquí'}
                     </h3>
                     <p className="text-xs text-slate-500 mt-2 max-w-xs">Máximo 10MB</p>
-                    <input 
-                      type="file" 
-                      accept="application/pdf" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
                       ref={fileInputRef}
                       onChange={handleFileSelect}
                     />
@@ -342,14 +342,14 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
               )}
 
               <div className="mt-8 pt-4 border-t border-slate-100 flex justify-end gap-3">
-                <button 
+                <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   type="submit"
                   disabled={(!nuevoTitulo) || (creationMode === 'PDF' && !selectedFile) || (creationMode === 'NATIVO' && !contenidoNativo)}
                   className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm transition-all active:scale-95 flex items-center gap-2
@@ -376,15 +376,15 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
               <p className="text-sm text-slate-500 mb-6">
                 Esta acción no se puede deshacer. El documento será borrado permanentemente de la base de conocimiento.
               </p>
-              
+
               <div className="flex w-full gap-3">
-                <button 
+                <button
                   onClick={() => setGuideToDelete(null)}
                   className="flex-1 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleEliminarGuia}
                   className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-all active:scale-95 flex items-center justify-center gap-2"
                 >
@@ -409,22 +409,22 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
               <div className="flex items-center gap-2 shrink-0">
                 {viewingGuide.urlPdf && (
                   <>
-                    <a 
-                      href={viewingGuide.urlPdf} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
+                    <a
+                      href={viewingGuide.urlPdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
                       title="Abrir en pestaña nueva"
                     >
                       <ExternalLink className="w-4 h-4" />
                       <span className="hidden sm:inline">Nueva pestaña</span>
                     </a>
-                    <a 
-                      href={viewingGuide.urlPdf} 
-                      download 
-                      target="_blank" 
+                    <a
+                      href={viewingGuide.urlPdf}
+                      download
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold" 
+                      className="p-2 hover:bg-slate-700 rounded-lg transition-colors text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-semibold"
                       title="Descargar archivo"
                     >
                       <Download className="w-4 h-4" />
@@ -433,7 +433,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                   </>
                 )}
                 <div className="w-px h-5 bg-slate-700 mx-1"></div>
-                <button 
+                <button
                   onClick={() => setViewingGuide(null)}
                   className="p-2 hover:bg-slate-700 hover:text-white rounded-lg transition-colors text-slate-400"
                   title="Cerrar visor"
@@ -446,8 +446,8 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
             {/* Contenido: PDF real embebido o Documento de texto */}
             <div className="flex-1 w-full h-full overflow-hidden bg-slate-950 flex flex-col">
               {viewingGuide.urlPdf ? (
-                <iframe 
-                  src={`${viewingGuide.urlPdf}#toolbar=1&navpanes=0`} 
+                <iframe
+                  src={`${viewingGuide.urlPdf}#toolbar=1&navpanes=0`}
                   className="w-full h-full border-0 bg-white"
                   title={viewingGuide.titulo}
                 />
@@ -458,7 +458,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                       {viewingGuide.titulo}
                     </h1>
                     <div className="ql-snow">
-                      <div 
+                      <div
                         className="ql-editor max-w-none text-slate-700"
                         style={{ padding: 0 }}
                         dangerouslySetInnerHTML={{ __html: viewingGuide.contenidoRichText }}

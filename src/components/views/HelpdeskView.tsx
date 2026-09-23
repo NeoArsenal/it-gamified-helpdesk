@@ -343,28 +343,26 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 setIsBoardEmergencyOpen(!isBoardEmergencyOpen);
                 setIsBoardSedeOpen(false);
               }}
-              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
-                filterBoardEmergency !== 'TODAS'
-                  ? filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
-                    ? 'bg-red-50 border-red-300 text-red-700 ring-2 ring-red-500/20 shadow-red-100'
-                    : filterBoardEmergency === 'ALTA'
+              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${filterBoardEmergency !== 'TODAS'
+                ? filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
+                  ? 'bg-red-50 border-red-300 text-red-700 ring-2 ring-red-500/20 shadow-red-100'
+                  : filterBoardEmergency === 'ALTA'
                     ? 'bg-orange-50 border-orange-300 text-orange-700 ring-2 ring-orange-500/20 shadow-orange-100'
                     : 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
               title="Filtrar por nivel de emergencia e importancia"
             >
               <div className="flex items-center gap-1.5 truncate">
                 <ShieldAlert
-                  className={`w-4 h-4 shrink-0 ${
-                    filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
-                      ? 'text-red-600'
-                      : filterBoardEmergency === 'ALTA'
+                  className={`w-4 h-4 shrink-0 ${filterBoardEmergency === 'CRITICA' || filterBoardEmergency === 'EMERGENCIAS'
+                    ? 'text-red-600'
+                    : filterBoardEmergency === 'ALTA'
                       ? 'text-orange-600'
                       : filterBoardEmergency !== 'TODAS'
-                      ? 'text-blue-600'
-                      : 'text-slate-400'
-                  }`}
+                        ? 'text-blue-600'
+                        : 'text-slate-400'
+                    }`}
                 />
                 <span className="truncate">
                   {filterBoardEmergency === 'TODAS' && 'Urgencia'}
@@ -376,9 +374,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 </span>
               </div>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
-                  isBoardEmergencyOpen ? 'rotate-180 text-blue-600' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isBoardEmergencyOpen ? 'rotate-180 text-blue-600' : ''
+                  }`}
               />
             </button>
 
@@ -417,9 +414,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                           setFilterBoardEmergency(opt.id);
                           setIsBoardEmergencyOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
-                          filterBoardEmergency === opt.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
-                        }`}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${filterBoardEmergency === opt.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
                       >
                         <div className="flex items-center gap-2">
                           {opt.icon || null}
@@ -445,11 +441,10 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 setIsBoardSedeOpen(!isBoardSedeOpen);
                 setIsBoardEmergencyOpen(false);
               }}
-              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${
-                filterBoardSede !== 'TODAS'
-                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20 shadow-indigo-100'
-                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
-              }`}
+              className={`w-full sm:w-auto px-3 py-2 rounded-xl font-bold text-xs md:text-sm flex items-center justify-between sm:justify-start gap-1.5 shadow-2xs transition-all duration-200 hover:shadow-md active:scale-95 border cursor-pointer ${filterBoardSede !== 'TODAS'
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 ring-2 ring-indigo-500/20 shadow-indigo-100'
+                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+                }`}
               title="Filtrar cajas del tablero por sede"
             >
               <div className="flex items-center gap-1.5 truncate">
@@ -459,9 +454,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 </span>
               </div>
               <ChevronDown
-                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
-                  isBoardSedeOpen ? 'rotate-180 text-indigo-600' : ''
-                }`}
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${isBoardSedeOpen ? 'rotate-180 text-indigo-600' : ''
+                  }`}
               />
             </button>
 
@@ -493,18 +487,16 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                         setFilterBoardSede('TODAS');
                         setIsBoardSedeOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
-                        filterBoardSede === 'TODAS' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
-                      }`}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${filterBoardSede === 'TODAS' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
                     >
                       <span className="flex items-center gap-2">
                         <Building2 className={`w-3.5 h-3.5 ${filterBoardSede === 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
                         <span>Todas las Sedes</span>
                       </span>
                       <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                          filterBoardSede === 'TODAS' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                        }`}
+                        className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${filterBoardSede === 'TODAS' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                          }`}
                       >
                         {countPorSede('TODAS')}
                       </span>
@@ -521,18 +513,16 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                             setFilterBoardSede(sede);
                             setIsBoardSedeOpen(false);
                           }}
-                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
-                            isSelected ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
-                          }`}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${isSelected ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                            }`}
                         >
                           <span className="flex items-center gap-2 truncate">
                             <MapPin className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-indigo-600' : 'text-slate-400'}`} />
                             <span className="truncate">{sede}</span>
                           </span>
                           <span
-                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
-                              isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
-                            }`}
+                            className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${isSelected ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'
+                              }`}
                           >
                             {count}
                           </span>
@@ -571,12 +561,12 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               {filterBoardEmergency === 'EMERGENCIAS'
                 ? '🚨 Emergencias'
                 : filterBoardEmergency === 'CRITICA'
-                ? '🚨 Crítica'
-                : filterBoardEmergency === 'ALTA'
-                ? '⚠️ Alta'
-                : filterBoardEmergency === 'MEDIA'
-                ? '⏱️ Media'
-                : '🟢 Baja'}
+                  ? '🚨 Crítica'
+                  : filterBoardEmergency === 'ALTA'
+                    ? '⚠️ Alta'
+                    : filterBoardEmergency === 'MEDIA'
+                      ? '⏱️ Media'
+                      : '🟢 Baja'}
               <button
                 type="button"
                 onClick={() => setFilterBoardEmergency('TODAS')}
