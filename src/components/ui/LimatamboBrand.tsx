@@ -37,10 +37,10 @@ export function LimatamboBrand({
 
           <div className="space-y-0.5 font-brand">
             <div className="flex flex-col items-center">
-              <span className="text-[11px] sm:text-xs font-bold tracking-[0.18em] text-[#d81e28] uppercase leading-tight">
+              <span className="text-[11px] sm:text-xs font-extrabold tracking-[0.18em] text-[#d81e28] uppercase leading-tight">
                 CLINICAS
               </span>
-              <h1 className={`font-bold tracking-[0.05em] text-[#d81e28] uppercase leading-none mt-0.5 ${isCompact ? 'text-lg' : 'text-xl sm:text-[22px]'}`}>
+              <h1 className={`font-extrabold tracking-[0.05em] text-[#d81e28] uppercase leading-none mt-0.5 ${isCompact ? 'text-lg' : 'text-xl sm:text-[22px]'}`}>
                 LIMATAMBO
               </h1>
             </div>
@@ -68,10 +68,10 @@ export function LimatamboBrand({
           </div>
 
           <div className="text-left flex flex-col justify-center font-brand">
-            <span className="text-[10px] sm:text-[11px] font-bold tracking-[0.18em] text-[#d81e28] uppercase leading-none">
+            <span className="text-[10px] sm:text-[11px] font-extrabold tracking-[0.18em] text-[#d81e28] uppercase leading-none">
               CLINICAS
             </span>
-            <span className={`font-bold tracking-[0.05em] text-[#d81e28] uppercase leading-none mt-1 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
+            <span className={`font-extrabold tracking-[0.05em] text-[#d81e28] uppercase leading-none mt-1 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
               LIMATAMBO
             </span>
             <span className="font-sans text-xs sm:text-[13px] font-bold text-[#134685] tracking-wide mt-1 leading-tight">

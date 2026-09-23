@@ -44,10 +44,10 @@ export function Sidebar({ activeView, setActiveView, isOpen }: SidebarProps) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-brand select-none">
-              <span className="block text-[11px] font-bold text-[#e11d48] uppercase tracking-[0.16em] leading-none">
+              <span className="block text-[11px] font-extrabold text-[#e11d48] uppercase tracking-[0.16em] leading-none">
                 CLINICAS
               </span>
-              <span className="block text-[14px] font-bold text-[#e11d48] uppercase tracking-[0.04em] leading-none mt-1">
+              <span className="block text-[15px] font-extrabold text-[#e11d48] uppercase tracking-[0.04em] leading-none mt-1">
                 LIMATAMBO
               </span>
             </div>
