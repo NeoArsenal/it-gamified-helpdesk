@@ -14,6 +14,7 @@ import {
   Play,
   Archive,
 } from 'lucide-react';
+import { UserAvatar } from '@/components/common/UserAvatar';
 
 interface TicketDetailModalProps {
   selectedTicket: any | null;
@@ -213,21 +214,17 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[9px] font-bold overflow-hidden">
-                    {selectedTicket.asignadoA?.avatar ? (
-                      selectedTicket.asignadoA.avatar.length > 2 ? (
-                        <img
-                          src={`https://api.dicebear.com/7.x/bottts/svg?seed=${selectedTicket.asignadoA.avatar}&backgroundColor=e2e8f0`}
-                          alt="Avatar"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        selectedTicket.asignadoA.avatar
-                      )
-                    ) : (
-                      <User className="w-3 h-3 text-slate-500" />
-                    )}
-                  </div>
+                  {selectedTicket.asignadoA ? (
+                    <UserAvatar
+                      avatar={selectedTicket.asignadoA.avatar}
+                      name={selectedTicket.asignadoA.nombre}
+                      size="sm"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-xl bg-slate-200 flex items-center justify-center text-slate-500">
+                      <User className="w-4 h-4" />
+                    </div>
+                  )}
                   <span className="font-bold text-slate-800 text-sm">
                     {selectedTicket.asignadoA?.nombre || 'Sin asignar'}
                   </span>

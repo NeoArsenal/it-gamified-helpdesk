@@ -1,6 +1,7 @@
 import { Ticket, Clock, Network, CheckCircle2, ShieldAlert, Users, MapPin } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getStats, getEstadisticasRed, getTickets, getUsuarios } from '@/services/api/api-client';
+import { UserAvatar } from '@/components/common/UserAvatar';
 
 export function DashboardView() {
   const [stats, setStats] = useState<any>(null);
@@ -173,16 +174,12 @@ export function DashboardView() {
             {usuarios.length > 0 ? usuarios.map((user) => (
               <div key={user.id} className="flex items-center justify-between p-3.5 hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-sm overflow-hidden">
-                      {user.avatar && user.avatar.length > 2 ? (
-                        <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${user.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover bg-slate-100" />
-                      ) : (
-                        user.avatar || (user.nombre || 'TI').substring(0, 2).toUpperCase()
-                      )}
-                    </div>
-                    <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" title="Activo"></span>
-                  </div>
+                  <UserAvatar
+                    avatar={user.avatar}
+                    name={user.nombre}
+                    size="md"
+                    indicator="online"
+                  />
                   <div className="min-w-0">
                     <h4 className="font-bold text-slate-800 text-sm truncate">{user.nombre}</h4>
                     <p className="text-xs text-slate-500 truncate">{user.email || 'tecnico@empresa.com'}</p>

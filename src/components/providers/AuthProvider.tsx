@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   token: string | null;
   login: (token: string, user: User) => void;
+  updateUser: (updatedFields: Partial<User>) => void;
   logout: () => void;
   isLoading: boolean;
 };
@@ -63,6 +64,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     socket.connect();
   };
 
+  const updateUser = (updatedFields: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const updated = { ...prev, ...updatedFields };
+      safeStorage.setItem('auth_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const logout = () => {
     setToken(null);
     setUser(null);
@@ -73,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

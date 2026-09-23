@@ -25,7 +25,7 @@ import {
 } from '@/components/settings';
 
 export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: string; onPreferencesSaved?: () => void }) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const isAdmin = user?.rol === 'ADMIN';
   const [activeTab, setActiveTab] = useState<'perfil' | 'sistema' | 'catalogos' | 'ubicaciones' | 'portal'>('perfil');
   const [isSaving, setIsSaving] = useState(false);
@@ -35,7 +35,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [tituloRPG, setTituloRPG] = useState('Técnico Novato');
   const [musicaNivel, setMusicaNivel] = useState(true);
   const [alertasCriticas, setAlertasCriticas] = useState(true);
-  const [avatarSeed, setAvatarSeed] = useState(userId || 'tech');
+  const [avatarSeed, setAvatarSeed] = useState(user?.avatar || '');
   const [userLevel, setUserLevel] = useState(1);
 
   // Ubicaciones State
@@ -348,6 +348,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             temaOscuro: theme === 'dark',
           },
         });
+        updateUser({ avatar: avatarSeed });
         safeStorage.setItem('app_theme', theme);
         toast.success('¡Perfil y preferencias guardados correctamente!');
         if (onPreferencesSaved) onPreferencesSaved();
@@ -466,6 +467,8 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             <ProfileTab
               avatarSeed={avatarSeed}
               setAvatarSeed={setAvatarSeed}
+              userName={user?.nombre}
+              userEmail={user?.email}
               tituloRPG={tituloRPG}
               setTituloRPG={setTituloRPG}
               userLevel={userLevel}

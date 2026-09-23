@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield } from 'lucide-react';
+import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2 } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
-import { getPerfilUsuario } from '@/services/api/api-client';
+import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -14,10 +16,12 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [perfil, setPerfil] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const targetUserId = userId || user?.id;
 
@@ -50,6 +54,38 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
   const rolUsuario = perfil?.rol || user?.rol || 'USER';
   const emailUsuario = perfil?.email || user?.email || '';
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !targetUserId) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Por favor selecciona una imagen válida.');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('La imagen no debe superar los 5MB.');
+      return;
+    }
+
+    try {
+      setIsUploadingPhoto(true);
+      const res = await uploadFileToStorage(file);
+      if (res && res.url) {
+        await actualizarPreferenciasUsuario(targetUserId, { avatar: res.url });
+        setPerfil((prev: any) => ({ ...prev, avatar: res.url }));
+        updateUser({ avatar: res.url });
+        toast.success('¡Foto de perfil actualizada correctamente!');
+      }
+    } catch (err: any) {
+      console.error('Error al subir foto desde header:', err);
+      toast.error(err.message || 'No se pudo actualizar la foto de perfil.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30">
       <div className="flex items-center gap-3">
@@ -64,6 +100,15 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
         </button>
       </div>
 
+      {/* Input oculto para subida rápida de foto */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        className="hidden"
+        onChange={handlePhotoUpload}
+      />
+
       {/* Perfil del Usuario en el Header */}
       <div ref={dropdownRef} className="relative">
         <button
@@ -77,22 +122,13 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
           )}
           title="Opciones de cuenta"
         >
-          {/* Avatar con Indicador En Línea */}
-          <div className="relative shrink-0">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-indigo-600 flex items-center justify-center border border-indigo-400/40 shadow-xs overflow-hidden text-white font-bold text-xs sm:text-sm">
-              {avatarSeed && avatarSeed.length > 2 ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img 
-                  src={`https://api.dicebear.com/7.x/bottts/svg?seed=${avatarSeed}&backgroundColor=e2e8f0`} 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover bg-slate-100" 
-                />
-              ) : (
-                <span>{avatarSeed || nombreUsuario.substring(0, 2).toUpperCase()}</span>
-              )}
-            </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" title="En línea" />
-          </div>
+          {/* Avatar Profesional con Indicador En Línea */}
+          <UserAvatar
+            avatar={avatarSeed}
+            name={nombreUsuario}
+            size="sm"
+            indicator="online"
+          />
 
           {/* Información: Nombre y Rol */}
           <div className="hidden sm:flex flex-col text-left min-w-0">
@@ -119,27 +155,65 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
 
         {/* Dropdown del Perfil */}
         {dropdownOpen && (
-          <div className="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
-            {/* Cabecera Info Usuario */}
-            <div className="px-3 py-2.5 border-b border-slate-100">
-              <p className="font-bold text-slate-800 text-xs truncate" title={nombreUsuario}>
-                {nombreUsuario}
-              </p>
-              {emailUsuario && (
-                <p className="text-[11px] text-slate-400 truncate mt-0.5" title={emailUsuario}>
-                  {emailUsuario}
+          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+            {/* Cabecera Info Usuario con Avatar */}
+            <div className="px-3 py-3 border-b border-slate-100 flex items-center gap-3">
+              <div className="relative group shrink-0">
+                <UserAvatar
+                  avatar={avatarSeed}
+                  name={nombreUsuario}
+                  size="md"
+                />
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/40 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                  title="Cambiar foto de perfil"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-slate-800 text-xs truncate" title={nombreUsuario}>
+                  {nombreUsuario}
                 </p>
-              )}
-              <div className="mt-1.5">
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                  <Shield className="w-3 h-3 text-indigo-600" />
-                  {rolUsuario === 'ADMIN' ? 'Administrador TI' : 'Técnico de Soporte'}
-                </span>
+                {emailUsuario && (
+                  <p className="text-[11px] text-slate-400 truncate mt-0.5" title={emailUsuario}>
+                    {emailUsuario}
+                  </p>
+                )}
+                <div className="mt-1">
+                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                    <Shield className="w-2.5 h-2.5 text-indigo-600" />
+                    {rolUsuario === 'ADMIN' ? 'Administrador TI' : 'Técnico de Soporte'}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Acciones */}
             <div className="pt-1.5 space-y-1">
+              <button
+                type="button"
+                disabled={isUploadingPhoto}
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                {isUploadingPhoto ? (
+                  <>
+                    <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
+                    <span>Subiendo foto...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 text-slate-400" />
+                    <span>Cambiar Foto de Perfil</span>
+                  </>
+                )}
+              </button>
+
               {onNavigateSettings && (
                 <button
                   type="button"
@@ -150,7 +224,7 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                   className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all cursor-pointer"
                 >
                   <Settings className="w-4 h-4 text-slate-400" />
-                  <span>Configuración y Perfil</span>
+                  <span>Configuración y Preferencias</span>
                 </button>
               )}
 

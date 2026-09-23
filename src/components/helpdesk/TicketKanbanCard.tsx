@@ -13,6 +13,7 @@ import {
   Check,
   Trash2,
 } from 'lucide-react';
+import { UserAvatar } from '@/components/common/UserAvatar';
 
 interface TicketKanbanCardProps {
   ticket: any;
@@ -203,24 +204,18 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-100 relative z-10">
         <div className="flex items-center gap-2 min-w-0">
-          <div
-            className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-500 overflow-hidden shrink-0 group-hover:ring-2 group-hover:ring-blue-100 transition-all duration-300"
-            title={ticket.asignadoA?.nombre || 'Sin asignar'}
-          >
-            {ticket.asignadoA?.avatar ? (
-              ticket.asignadoA.avatar.length > 2 ? (
-                <img
-                  src={`https://api.dicebear.com/7.x/bottts/svg?seed=${ticket.asignadoA.avatar}&backgroundColor=e2e8f0`}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-[10px] font-bold">{ticket.asignadoA.avatar}</span>
-              )
-            ) : (
-              <User className="w-3.5 h-3.5 group-hover:text-blue-500 transition-colors" />
-            )}
-          </div>
+          {ticket.asignadoA ? (
+            <UserAvatar
+              avatar={ticket.asignadoA.avatar}
+              name={ticket.asignadoA.nombre}
+              size="xs"
+              title={ticket.asignadoA.nombre}
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
+              <User className="w-3.5 h-3.5" />
+            </div>
+          )}
           <span className="text-xs text-slate-500 font-medium truncate max-w-[120px]">
             {ticket.asignadoA?.nombre || 'Sin asignar'}
           </span>

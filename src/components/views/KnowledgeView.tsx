@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode, ExternalLink } from 'lucide-react';
 import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/services/api/api-client';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
@@ -196,13 +197,11 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
               <div className="mt-auto border-t border-slate-100 pt-4 flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-xs font-bold text-slate-600 shadow-sm overflow-hidden">
-                    {guide.autor?.avatar && guide.autor.avatar.length > 2 ? (
-                      <img src={`https://api.dicebear.com/7.x/bottts/svg?seed=${guide.autor.avatar}&backgroundColor=e2e8f0`} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      guide.autor?.avatar || 'TI'
-                    )}
-                  </div>
+                  <UserAvatar
+                    avatar={guide.autor?.avatar}
+                    name={guide.autor?.nombre}
+                    size="xs"
+                  />
                   <div className="flex flex-col">
                     <p className="text-[10px] font-bold text-slate-600 leading-none mb-0.5">{guide.autor?.nombre?.split(' ')[0] || 'Desconocido'}</p>
                     <p className="text-[9px] text-slate-400 leading-none">{guide.fechaSubida ? new Date(guide.fechaSubida).toLocaleDateString() : 'Reciente'}</p>

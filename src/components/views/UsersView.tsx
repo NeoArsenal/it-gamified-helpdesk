@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Users, Shield, ShieldAlert, Plus, Edit, X, Save, Check, Trash2, AlertTriangle } from 'lucide-react';
 import { getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario } from '@/services/api/api-client';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 
 const MODULOS_DISPONIBLES = [
@@ -157,9 +158,11 @@ export const UsersView = () => {
                 <tr key={user.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600">
-                        {user.avatar || user.nombre.substring(0, 2).toUpperCase()}
-                      </div>
+                      <UserAvatar
+                        avatar={user.avatar}
+                        name={user.nombre}
+                        size="md"
+                      />
                       <div>
                         <p className="font-bold text-slate-800">{user.nombre}</p>
                         <p className="text-xs text-slate-500">{user.email}</p>

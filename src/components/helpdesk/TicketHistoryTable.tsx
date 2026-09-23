@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock, Filter, ChevronDown, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
 import { exportTicketsToCsv } from '@/lib/export-utils';
+import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 
 interface TicketHistoryTableProps {
@@ -219,21 +220,17 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
                       )}
                     </td>
                     <td className="px-5 py-3 text-xs text-slate-600 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold overflow-hidden shrink-0">
-                        {ticket.asignadoA?.avatar ? (
-                          ticket.asignadoA.avatar.length > 2 ? (
-                            <img
-                              src={`https://api.dicebear.com/7.x/bottts/svg?seed=${ticket.asignadoA.avatar}&backgroundColor=e2e8f0`}
-                              alt="Avatar"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            ticket.asignadoA.avatar
-                          )
-                        ) : (
+                      {ticket.asignadoA ? (
+                        <UserAvatar
+                          avatar={ticket.asignadoA.avatar}
+                          name={ticket.asignadoA.nombre}
+                          size="xs"
+                        />
+                      ) : (
+                        <div className="w-6 h-6 rounded-lg bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-400 shrink-0">
                           <User className="w-3 h-3" />
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <span className="truncate max-w-[120px] font-medium">
                         {ticket.asignadoA?.nombre || 'Desconocido'}
                       </span>
