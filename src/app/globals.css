@@ -10,6 +10,11 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-brand: var(--font-michroma), 'Eurostile', 'Microgramma', 'Square 721', 'Rajdhani', sans-serif;
+}
+
+.font-brand {
+  font-family: var(--font-michroma), 'Eurostile', 'Microgramma', 'Square 721', 'Rajdhani', sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {

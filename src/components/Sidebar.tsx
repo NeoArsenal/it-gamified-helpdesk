@@ -34,7 +34,7 @@ export function Sidebar({ activeView, setActiveView, isOpen }: SidebarProps) {
       {/* Cabecera del Sidebar: Logo Institucional & Soporte TI */}
       <div className="p-4 sm:p-5 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-white p-1 flex items-center justify-center shrink-0 shadow-md shadow-black/20 border border-slate-700/60 transition-transform duration-200 hover:scale-105">
+          <div className="w-11 h-11 rounded-2xl bg-white p-1.5 flex items-center justify-center shrink-0 shadow-md shadow-black/20 border border-slate-700/60 transition-transform duration-200 hover:scale-105">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/emblem.svg" 
@@ -43,15 +43,15 @@ export function Sidebar({ activeView, setActiveView, isOpen }: SidebarProps) {
             />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-black uppercase tracking-[0.16em] text-red-500 leading-none">
-                CLÍNICAS
+            <div className="font-brand select-none">
+              <span className="block text-[11px] font-bold text-[#e11d48] uppercase tracking-[0.16em] leading-none">
+                CLINICAS
+              </span>
+              <span className="block text-[14px] font-bold text-[#e11d48] uppercase tracking-[0.04em] leading-none mt-1">
+                LIMATAMBO
               </span>
             </div>
-            <h1 className="font-black text-sm text-white tracking-tight leading-tight truncate mt-0.5">
-              LIMATAMBO
-            </h1>
-            <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1.5 mt-1.5">
               <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                 Soporte TI
               </span>
