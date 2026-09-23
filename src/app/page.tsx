@@ -77,9 +77,13 @@ export default function Home() {
         refreshTrigger={refreshProfile} 
         isOpen={isMobileMenuOpen}
       />
-      
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Header onMenuClick={() => setIsMobileMenuOpen(true)} />
+        <Header 
+          onMenuClick={() => setIsMobileMenuOpen(true)} 
+          userId={user.id}
+          refreshTrigger={refreshProfile}
+          onNavigateSettings={() => setActiveView('settings')}
+        />
         
         <main className="flex-1 overflow-y-auto">
           {renderView()}
