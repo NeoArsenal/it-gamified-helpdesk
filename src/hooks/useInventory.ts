@@ -37,7 +37,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   // Estados del Formulario (Crear / Editar)
   const [codigo, setCodigo] = useState('');
   const [tipo, setTipo] = useState('PC');
+  const [marca, setMarca] = useState('');
   const [modelo, setModelo] = useState('');
+  const [numeroSerie, setNumeroSerie] = useState('');
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [ubicacion, setUbicacion] = useState('');
@@ -125,7 +127,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setEditingActivo(null);
     setCodigo('');
     setTipo(tiposDisponibles[0] || 'PC');
+    setMarca('');
     setModelo('');
+    setNumeroSerie('');
     setSede(sedesList[0] || '');
     setDepartamento('');
     setUbicacion('');
@@ -139,7 +143,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setEditingActivo(activo);
     setCodigo(activo.codigo || '');
     setTipo(activo.tipo || 'PC');
+    setMarca(activo.marca || '');
     setModelo(activo.modelo || '');
+    setNumeroSerie(activo.numeroSerie || '');
     setSede(activo.sede || '');
     setDepartamento(activo.departamento || '');
     setUbicacion(activo.ubicacion || '');
@@ -155,7 +161,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
       const payload = {
         codigo: codigo.trim().toUpperCase(),
         tipo,
+        marca: marca.trim(),
         modelo: modelo.trim(),
+        numeroSerie: numeroSerie.trim(),
         sede,
         departamento,
         ubicacion,
@@ -257,11 +265,13 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     if (q) {
       const mCod = a.codigo?.toLowerCase().includes(q);
       const mTipo = a.tipo?.toLowerCase().includes(q);
+      const mMarca = a.marca?.toLowerCase().includes(q);
       const mMod = a.modelo?.toLowerCase().includes(q);
+      const mSerial = a.numeroSerie?.toLowerCase().includes(q);
       const mSede = a.sede?.toLowerCase().includes(q);
       const mDept = a.departamento?.toLowerCase().includes(q);
       const mResp = a.responsable?.toLowerCase().includes(q);
-      if (!Boolean(mCod || mTipo || mMod || mSede || mDept || mResp)) return false;
+      if (!Boolean(mCod || mTipo || mMarca || mMod || mSerial || mSede || mDept || mResp)) return false;
     }
 
     if (filterSede !== 'TODAS') {
@@ -301,8 +311,12 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setCodigo,
     tipo,
     setTipo,
+    marca,
+    setMarca,
     modelo,
     setModelo,
+    numeroSerie,
+    setNumeroSerie,
     sede,
     setSede,
     departamento,

@@ -51,7 +51,16 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
             </div>
 
             <div className="w-full text-center border-t border-slate-200 pt-2 text-xs space-y-0.5">
-              <p className="font-bold text-slate-800">{activo.tipo} {activo.modelo ? `· ${activo.modelo}` : ''}</p>
+              <p className="font-bold text-slate-800">
+                {activo.tipo}
+                {activo.marca ? ` · ${activo.marca}` : ''}
+                {activo.modelo ? ` · ${activo.modelo}` : ''}
+              </p>
+              {activo.numeroSerie && (
+                <p className="font-mono text-[11px] text-slate-700 font-semibold">
+                  S/N: {activo.numeroSerie}
+                </p>
+              )}
               <p className="text-slate-500 font-medium">{activo.sede || 'Sede General'} {activo.departamento ? `- ${activo.departamento}` : ''}</p>
               <p className="text-[10px] text-slate-400 font-mono">ID: {activo.id?.substring(0, 8)}</p>
             </div>

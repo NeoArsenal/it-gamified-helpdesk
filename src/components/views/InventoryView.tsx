@@ -36,8 +36,12 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     setCodigo,
     tipo,
     setTipo,
+    marca,
+    setMarca,
     modelo,
     setModelo,
+    numeroSerie,
+    setNumeroSerie,
     sede,
     setSede,
     departamento,
@@ -208,8 +212,12 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         setCodigo={setCodigo}
         tipo={tipo}
         setTipo={setTipo}
+        marca={marca}
+        setMarca={setMarca}
         modelo={modelo}
         setModelo={setModelo}
+        numeroSerie={numeroSerie}
+        setNumeroSerie={setNumeroSerie}
         sede={sede}
         setSede={setSede}
         departamento={departamento}
