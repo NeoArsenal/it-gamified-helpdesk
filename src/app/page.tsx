@@ -62,7 +62,7 @@ export default function Home() {
       {/* Overlay para móviles */}
       {isMobileMenuOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden animate-in fade-in"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden animate-in fade-in duration-200"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -76,6 +76,7 @@ export default function Home() {
         userId={user.id} 
         refreshTrigger={refreshProfile} 
         isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Header 

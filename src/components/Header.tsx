@@ -95,7 +95,7 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
   );
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-50">
+    <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30">
       <div className="flex items-center gap-3">
         {/* Hamburger para móviles */}
         <button 
