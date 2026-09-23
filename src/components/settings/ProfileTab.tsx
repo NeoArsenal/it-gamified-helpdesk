@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { User, Volume2, ShieldAlert, Upload, Loader2, Camera } from 'lucide-react';
+import { User, Volume2, ShieldAlert, Upload, Loader2, Camera, Trash2 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { uploadFileToStorage } from '@/services/api';
 import { toast } from 'sonner';
@@ -51,7 +51,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       const res = await uploadFileToStorage(file);
       if (res && res.url) {
         setAvatarSeed(res.url);
-        toast.success('¡Foto de perfil cargada! Recuerda presionar "Guardar Cambios".');
+        toast.success('¡Foto cargada! Presiona "Guardar Cambios" para confirmar.');
       }
     } catch (err: any) {
       console.error('Error al subir foto:', err);
@@ -60,6 +60,11 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  const handleQuitarFoto = () => {
+    setAvatarSeed('');
+    toast.info('Foto retirada. Presiona "Guardar Cambios" para eliminarla permanentemente de Supabase.');
   };
 
   const hasCustomPhoto = Boolean(
@@ -138,6 +143,19 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
                       </>
                     )}
                   </button>
+
+                  {hasCustomPhoto && (
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={handleQuitarFoto}
+                      className="px-3 py-2 bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+                      title="Eliminar foto y volver a iniciales profesionales"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar Foto</span>
+                    </button>
+                  )}
                 </div>
 
                 <p className="text-[11px] text-slate-400">

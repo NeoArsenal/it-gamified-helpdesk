@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2 } from 'lucide-react';
+import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Trash2 } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
 import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
@@ -83,6 +83,30 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
     } finally {
       setIsUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const hasCustomPhoto = Boolean(
+    avatarSeed &&
+    (avatarSeed.startsWith('http://') ||
+     avatarSeed.startsWith('https://') ||
+     avatarSeed.startsWith('data:image/') ||
+     avatarSeed.startsWith('/'))
+  );
+
+  const handlePhotoDelete = async () => {
+    if (!targetUserId) return;
+    try {
+      setIsUploadingPhoto(true);
+      await actualizarPreferenciasUsuario(targetUserId, { avatar: '' });
+      setPerfil((prev: any) => ({ ...prev, avatar: '' }));
+      updateUser({ avatar: '' });
+      toast.success('Foto eliminada del perfil y de Supabase Storage.');
+    } catch (err: any) {
+      console.error('Error al eliminar foto desde header:', err);
+      toast.error('No se pudo eliminar la foto de perfil.');
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -209,10 +233,23 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                 ) : (
                   <>
                     <Camera className="w-4 h-4 text-slate-400" />
-                    <span>Cambiar Foto de Perfil</span>
+                    <span>{hasCustomPhoto ? 'Cambiar Foto de Perfil' : 'Subir Foto de Perfil'}</span>
                   </>
                 )}
               </button>
+
+              {hasCustomPhoto && (
+                <button
+                  type="button"
+                  disabled={isUploadingPhoto}
+                  onClick={handlePhotoDelete}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-all cursor-pointer disabled:opacity-50"
+                  title="Eliminar foto de perfil del sistema y del almacenamiento"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-500" />
+                  <span>Eliminar Foto de Perfil</span>
+                </button>
+              )}
 
               {onNavigateSettings && (
                 <button
