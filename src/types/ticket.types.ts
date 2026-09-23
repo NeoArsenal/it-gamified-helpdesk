@@ -15,7 +15,6 @@ export interface Ticket {
   descripcion?: string;
   estado: EstadoTicket;
   prioridad: PrioridadTicket;
-  xpRecompensa?: number;
   asignadoAId?: string | null;
   asignadoA?: TicketTecnicoAsignado | null;
   tecnicoAsignado?: TicketTecnicoAsignado | null;

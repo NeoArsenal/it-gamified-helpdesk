@@ -1,5 +1,4 @@
 import { BASE_URL, apiClientFetch as fetch, getAuthHeaders } from './http';
-import { ReglasGamificacion } from '@/types';
 
 export const verifyPortalAccess = async ({ pin, token }: { pin?: string; token?: string }) => {
   const res = await fetch(`${BASE_URL}/configuracion/verify-access`, {
@@ -59,22 +58,5 @@ export const actualizarCatalogo = async (tipo: 'departamentos' | 'categoriasActi
     body: JSON.stringify({ items }),
   });
   if (!res.ok) throw new Error('Error al actualizar catálogo');
-  return res.json();
-};
-
-// --- Reglas de Gamificación y Niveles ---
-export const getReglasGamificacion = async (): Promise<ReglasGamificacion> => {
-  const res = await fetch(`${BASE_URL}/configuracion/gamificacion`);
-  if (!res.ok) throw new Error('Error al obtener reglas de gamificación');
-  return res.json();
-};
-
-export const guardarReglasGamificacion = async (reglas: Partial<ReglasGamificacion>): Promise<ReglasGamificacion> => {
-  const res = await fetch(`${BASE_URL}/configuracion/gamificacion`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(reglas),
-  });
-  if (!res.ok) throw new Error('Error al guardar reglas de gamificación');
   return res.json();
 };

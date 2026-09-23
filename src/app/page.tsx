@@ -22,7 +22,7 @@ export default function Home() {
   
   const { user, isLoading } = useAuth();
 
-  // Trigger para recargar el sidebar cuando ganamos XP
+  // Trigger para recargar perfil cuando se actualizan datos
   const [refreshProfile, setRefreshProfile] = useState(0);
   const triggerRefresh = () => setRefreshProfile(prev => prev + 1);
 

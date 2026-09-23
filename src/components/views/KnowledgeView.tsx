@@ -141,7 +141,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <FileText className="w-6 h-6 text-red-500" /> Base de Conocimiento
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Guías, manuales y protocolos de TI. ¡Colabora y gana XP!</p>
+          <p className="text-slate-500 text-sm mt-1">Guías, manuales y protocolos de TI.</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">

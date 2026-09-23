@@ -209,7 +209,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
 
             <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
               <div className="text-slate-400 font-medium flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Técnico Asignado & XP
+                <User className="w-3.5 h-3.5 text-indigo-500" /> Técnico Asignado
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

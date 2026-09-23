@@ -272,7 +272,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             </span>
           </div>
           <p className="text-slate-500 text-xs md:text-sm mt-1">
-            Arrastra las tarjetas para cambiar su estado. ¡Gana XP al resolver incidencias!
+            Arrastra las tarjetas para cambiar su estado.
           </p>
         </div>
 
