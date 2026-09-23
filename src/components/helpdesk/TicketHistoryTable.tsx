@@ -182,7 +182,7 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
                   <th className="px-5 py-2.5 font-bold text-xs">Registrado</th>
                   <th className="px-5 py-2.5 font-bold text-xs">Resuelto</th>
                   <th className="px-5 py-2.5 font-bold text-xs">Diagnóstico / Solución</th>
-                  <th className="px-5 py-2.5 font-bold text-xs">Recompensa</th>
+                  <th className="px-5 py-2.5 font-bold text-xs">Prioridad</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -272,8 +272,16 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className="text-amber-500 font-bold text-xs bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
-                        +{ticket.xpRecompensa} XP
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                        ticket.prioridad === 'CRITICA'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : ticket.prioridad === 'ALTA'
+                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                          : ticket.prioridad === 'MEDIA'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {ticket.prioridad || 'NORMAL'}
                       </span>
                     </td>
                   </tr>

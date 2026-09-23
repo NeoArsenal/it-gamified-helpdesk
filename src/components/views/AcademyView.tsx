@@ -137,7 +137,7 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
                 </div>
               </div>
               <p className="text-slate-400 text-sm max-w-md mt-2 leading-relaxed">
-                Completa cada nivel para desbloquear el siguiente. Responde correctamente las preguntas y gana XP para subir de rango.
+                Completa cada módulo para desbloquear el siguiente y evaluar tus competencias técnicas en redes y soporte.
               </p>
             </div>
 
@@ -148,14 +148,14 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
                   <Target className="w-4 h-4 text-indigo-400" />
                   <span className="text-2xl font-black text-white">{completados}/{totalNiveles}</span>
                 </div>
-                <span className="text-xs text-slate-400 font-medium">Niveles</span>
+                <span className="text-xs text-slate-400 font-medium">Módulos</span>
               </div>
               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl px-5 py-4 min-w-[120px] text-center">
                 <div className="flex items-center justify-center gap-1.5 mb-1">
-                  <Zap className="w-4 h-4 text-amber-400" />
+                  <Trophy className="w-4 h-4 text-amber-400" />
                   <span className="text-2xl font-black text-white">{xpGanado}</span>
                 </div>
-                <span className="text-xs text-slate-400 font-medium">XP Ganado</span>
+                <span className="text-xs text-slate-400 font-medium">Puntos Curso</span>
               </div>
             </div>
           </div>

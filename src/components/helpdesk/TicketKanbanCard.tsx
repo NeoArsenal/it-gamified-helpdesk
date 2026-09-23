@@ -5,7 +5,6 @@ import {
   MapPin,
   Clock,
   User,
-  Zap,
   Play,
   CheckCircle2,
   RotateCcw,
@@ -203,9 +202,9 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
       </div>
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-100 relative z-10">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <div
-            className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-500 overflow-hidden group-hover:ring-2 group-hover:ring-blue-100 transition-all duration-300"
+            className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 text-slate-500 overflow-hidden shrink-0 group-hover:ring-2 group-hover:ring-blue-100 transition-all duration-300"
             title={ticket.asignadoA?.nombre || 'Sin asignar'}
           >
             {ticket.asignadoA?.avatar ? (
@@ -222,10 +221,13 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
               <User className="w-3.5 h-3.5 group-hover:text-blue-500 transition-colors" />
             )}
           </div>
+          <span className="text-xs text-slate-500 font-medium truncate max-w-[120px]">
+            {ticket.asignadoA?.nombre || 'Sin asignar'}
+          </span>
         </div>
-        <div className="flex items-center gap-1 font-bold text-amber-500 text-xs bg-amber-50 px-2 py-1 rounded-md border border-amber-100 shadow-sm group-hover:shadow-amber-200 group-hover:bg-amber-100 group-hover:-translate-y-0.5 transition-all duration-300">
-          <Zap className="w-3 h-3 fill-amber-500 group-hover:animate-bounce" /> {ticket.xpRecompensa} XP
-        </div>
+        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/80 shrink-0">
+          {ticket.tipo || ticket.categoria || 'Incidencia'}
+        </span>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, User, Gamepad2, Monitor, Layers, MapPin, Save, Check } from 'lucide-react';
+import { Settings, User, Monitor, Layers, MapPin, Save, Check } from 'lucide-react';
 import {
   getPerfilUsuario,
   actualizarPreferenciasUsuario,
@@ -12,15 +12,12 @@ import {
   getCatalogos,
   actualizarCatalogo,
   safeStorage,
-  getReglasGamificacion,
-  guardarReglasGamificacion,
 } from '@/services/api';
-import { Ubicacion, PuntosPorArea } from '@/types';
+import { Ubicacion } from '@/types';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { toast } from 'sonner';
 import {
   ProfileTab,
-  GamificationTab,
   AppearanceTab,
   CatalogsTab,
   LocationsTab,
@@ -30,7 +27,7 @@ import {
 export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: string; onPreferencesSaved?: () => void }) {
   const { user } = useAuth();
   const isAdmin = user?.rol === 'ADMIN';
-  const [activeTab, setActiveTab] = useState<'perfil' | 'gamificacion' | 'sistema' | 'catalogos' | 'ubicaciones' | 'portal'>('perfil');
+  const [activeTab, setActiveTab] = useState<'perfil' | 'sistema' | 'catalogos' | 'ubicaciones' | 'portal'>('perfil');
   const [isSaving, setIsSaving] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -65,23 +62,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   const [isAddingDepto, setIsAddingDepto] = useState(false);
   const [isAddingCat, setIsAddingCat] = useState(false);
 
-  // Gamificación State
-  const [reglasXP, setReglasXP] = useState<PuntosPorArea>({
-    ticketBaja: 50,
-    ticketMedia: 150,
-    ticketAlta: 350,
-    ticketCritica: 750,
-    activoReparado: 250,
-    activoRescatado: 600,
-    redRestaurada: 300,
-    guiaCreada: 200,
-    academiaNivel: 100,
-  });
-  const [nivelesConfig, setNivelesConfig] = useState<number[]>([
-    0, 500, 1200, 2000, 3500, 5000, 7500, 10000, 13000, 17000,
-    22000, 28000, 35000, 43000, 52000, 62000, 73000, 85000, 100000, 120000,
-  ]);
-  const [isSavingGamificacion, setIsSavingGamificacion] = useState(false);
+
 
   // Listas consolidadas y sin duplicados para selectores
   const sedesExistentes = useMemo(() => {
@@ -103,8 +84,6 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
       setTheme('dark');
       document.documentElement.classList.add('dark-mode');
     }
-
-    fetchGamificacion();
 
     if (userId && userId.length > 5) {
       getPerfilUsuario(userId)
@@ -158,55 +137,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
     }
   };
 
-  const fetchGamificacion = async () => {
-    try {
-      const data = await getReglasGamificacion();
-      if (data.puntosPorArea) setReglasXP(data.puntosPorArea);
-      if (data.niveles && data.niveles.length > 0) setNivelesConfig(data.niveles);
-    } catch (e) {
-      console.log('Reglas de gamificación usando defaults locales', e);
-    }
-  };
 
-  const handleSaveGamificacion = async () => {
-    setIsSavingGamificacion(true);
-    try {
-      await guardarReglasGamificacion({
-        puntosPorArea: reglasXP,
-        niveles: nivelesConfig,
-      });
-      toast.success('¡Reglas de gamificación y niveles guardados exitosamente!');
-    } catch (e: any) {
-      toast.error(e.message || 'Error al guardar las reglas de gamificación');
-    } finally {
-      setIsSavingGamificacion(false);
-    }
-  };
-
-  const handleResetGamificacion = () => {
-    setReglasXP({
-      ticketBaja: 50,
-      ticketMedia: 150,
-      ticketAlta: 350,
-      ticketCritica: 750,
-      activoReparado: 250,
-      activoRescatado: 600,
-      redRestaurada: 300,
-      guiaCreada: 200,
-      academiaNivel: 100,
-    });
-    setNivelesConfig([
-      0, 500, 1200, 2000, 3500, 5000, 7500, 10000, 13000, 17000,
-      22000, 28000, 35000, 43000, 52000, 62000, 73000, 85000, 100000, 120000,
-    ]);
-    toast.info('Valores sugeridos cargados. Recuerda hacer clic en Guardar para aplicarlos.');
-  };
-
-  const handleNivelChange = (index: number, val: number) => {
-    const updated = [...nivelesConfig];
-    updated[index] = Math.max(0, val);
-    setNivelesConfig(updated);
-  };
 
   const handleAddDepartamento = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -399,10 +330,6 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
   };
 
   const savePreferences = async () => {
-    if (activeTab === 'gamificacion') {
-      await handleSaveGamificacion();
-      return;
-    }
     if (activeTab === 'portal') {
       await handleSavePortalPin();
       return;
@@ -446,7 +373,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Settings className="w-6 h-6 text-slate-600" /> Configuración del Sistema
           </h1>
-          <p className="text-slate-500 text-sm mt-1">Ajusta tus preferencias personales y administra las reglas de gamificación de TI.</p>
+          <p className="text-slate-500 text-sm mt-1">Ajusta tus preferencias personales y administra la plataforma de TI.</p>
         </div>
 
         {/* Botón de Acción Contextual Inteligente */}
@@ -462,17 +389,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           </button>
         )}
 
-        {activeTab === 'gamificacion' && (
-          <button
-            type="button"
-            onClick={handleSaveGamificacion}
-            disabled={isSavingGamificacion}
-            className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white px-5 py-2.5 w-full md:w-auto rounded-xl text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
-          >
-            <Save className={`w-4 h-4 ${isSavingGamificacion ? 'animate-spin' : ''}`} />
-            {isSavingGamificacion ? 'Guardando...' : 'Guardar Reglas'}
-          </button>
-        )}
+
 
         {activeTab === 'portal' && (
           <button
@@ -505,17 +422,6 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
           >
             <User className="w-5 h-5" /> Perfil y Cuenta
           </button>
-
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab('gamificacion')}
-              className={`flex-none md:w-full flex items-center whitespace-nowrap snap-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
-                activeTab === 'gamificacion' ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100' : 'text-slate-600 hover:bg-slate-50 border border-transparent'
-              }`}
-            >
-              <Gamepad2 className="w-5 h-5" /> Reglas de Gamificación
-            </button>
-          )}
 
           <button
             onClick={() => setActiveTab('sistema')}
@@ -570,17 +476,7 @@ export function SettingsView({ userId = 'JD', onPreferencesSaved }: { userId?: s
             />
           )}
 
-          {activeTab === 'gamificacion' && (
-            <GamificationTab
-              reglasXP={reglasXP}
-              setReglasXP={setReglasXP}
-              nivelesConfig={nivelesConfig}
-              isSavingGamificacion={isSavingGamificacion}
-              handleResetGamificacion={handleResetGamificacion}
-              handleSaveGamificacion={handleSaveGamificacion}
-              handleNivelChange={handleNivelChange}
-            />
-          )}
+
 
           {activeTab === 'sistema' && (
             <AppearanceTab theme={theme} toggleTheme={toggleTheme} />

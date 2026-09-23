@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { getTicketsAnalytics, getHistorialXP, getActivos } from '@/services/api/api-client';
+import { getTicketsAnalytics, getActivos } from '@/services/api/api-client';
 import { 
   Activity, Clock, Download, Ticket, BarChart3, PieChart as PieChartIcon, 
-  Grid, Zap, Building2, Globe, CheckCircle2, ChevronRight, Laptop, 
+  Grid, Building2, Globe, CheckCircle2, ChevronRight, Laptop, 
   Layers, ArrowUpRight, TrendingUp, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 import { 
@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 export function AnalyticsView({ userId }: { userId?: string }) {
   const [data, setData] = useState<any>(null);
   const [activos, setActivos] = useState<any[]>([]);
-  const [xpHistory, setXpHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedSede, setSelectedSede] = useState<string>('TODAS');
@@ -24,28 +23,12 @@ export function AnalyticsView({ userId }: { userId?: string }) {
   const fetchAnalytics = async (sede: string = selectedSede) => {
     setIsUpdating(true);
     try {
-      const [res, xpRes, activosRes] = await Promise.all([
+      const [res, activosRes] = await Promise.all([
         getTicketsAnalytics(sede),
-        userId ? getHistorialXP(userId) : Promise.resolve([]),
         getActivos().catch(() => [])
       ]);
       setData(res);
       setActivos(activosRes || []);
-      
-      // Transformar historial para el gráfico (orden cronológico)
-      if (xpRes && xpRes.length > 0) {
-        let acumulado = 0;
-        const chartData = [...xpRes].reverse().map((item: any) => {
-          acumulado += item.xpOtorgado;
-          return {
-            fecha: new Date(item.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-            xp: item.xpOtorgado,
-            total: acumulado,
-            accion: item.accion
-          };
-        });
-        setXpHistory(chartData);
-      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -558,43 +541,39 @@ export function AnalyticsView({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* 6. Gráfico de Crecimiento de XP (Gamificación) */}
+        {/* 6. Gráfico de Comparativa y Eficiencia de Resolución por Sede */}
         <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-500 fill-amber-500" /> Evolución de Experiencia (XP)
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Comparativa de Resolución y Carga por Sede
               </h3>
               <p className="text-xs md:text-sm text-slate-500 mt-0.5">
-                Crecimiento de tu puntaje técnico a través de tus resoluciones y actividades heroicas.
+                Volumen de tickets resueltos frente a tickets abiertos en cada sede corporativa.
               </p>
             </div>
           </div>
 
-          {xpHistory.length > 0 ? (
+          {data?.porSede && data.porSede.length > 0 ? (
             <div className="h-72 w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={xpHistory} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
+                <BarChart data={data.porSede} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="fecha" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                  <XAxis dataKey="sede" tick={{ fontSize: 11 }} stroke="#94a3b8" />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
                   <Tooltip 
                     contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
-                  <Area type="monotone" dataKey="total" stroke="#f59e0b" strokeWidth={3} fillOpacity={1} fill="url(#colorXp)" name="XP Acumulado" />
-                </AreaChart>
+                  <Legend wrapperStyle={{ paddingTop: '10px' }} />
+                  <Bar dataKey="resueltos" name="Tickets Resueltos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="abiertos" name="Tickets Abiertos" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           ) : (
             <div className="h-44 flex flex-col items-center justify-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              <Zap className="w-8 h-8 mb-2 text-slate-300" />
-              <p className="text-xs md:text-sm font-medium">Aún no tienes historial de XP registrado.</p>
+              <Activity className="w-8 h-8 mb-2 text-slate-300" />
+              <p className="text-xs md:text-sm font-medium">No hay datos suficientes de sedes para comparar.</p>
             </div>
           )}
         </div>

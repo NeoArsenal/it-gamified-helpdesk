@@ -232,8 +232,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     {selectedTicket.asignadoA?.nombre || 'Sin asignar'}
                   </span>
                 </div>
-                <span className="font-black text-amber-600 bg-amber-100/70 border border-amber-200 px-2 py-0.5 rounded-md text-xs">
-                  +{selectedTicket.xpRecompensa} XP
+                <span className="font-semibold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md text-xs">
+                  {selectedTicket.asignadoA ? 'Técnico Asignado' : 'Pendiente'}
                 </span>
               </div>
             </div>

@@ -237,8 +237,16 @@ export const TicketHistoryDrawer: React.FC<TicketHistoryDrawerProps> = ({
                       ) : (
                         <span className="text-[10px] text-slate-400 italic">Sin nota</span>
                       )}
-                      <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
-                        +{ticket.xpRecompensa} XP
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                        ticket.prioridad === 'CRITICA'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : ticket.prioridad === 'ALTA'
+                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                          : ticket.prioridad === 'MEDIA'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {ticket.prioridad || 'NORMAL'}
                       </span>
                     </div>
                   </div>

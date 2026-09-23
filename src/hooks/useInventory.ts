@@ -214,7 +214,7 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
         tecnicoId: userId,
         observaciones: `Reparado con éxito: ${new Date().toLocaleDateString()}`,
       });
-      toast.success(`¡Equipo ${activo.codigo} reparado y operativo! (+250 XP)`);
+      toast.success(`¡Equipo ${activo.codigo} reparado y operativo!`);
       fetchActivos();
     } catch {
       toast.error('Error al marcar reparado');
@@ -241,7 +241,7 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
       try {
         await updateActivo(id, { estado: 'RESCATADO', tecnicoId: userId });
         if (onActivoRescatado) onActivoRescatado();
-        toast.success(`¡Piezas del equipo ${cod} rescatadas! (+1000 XP)`);
+        toast.success(`¡Piezas del equipo ${cod} rescatadas para repuestos!`);
         fetchActivos();
       } catch {
         toast.error('Error al rescatar');

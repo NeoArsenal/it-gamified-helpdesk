@@ -111,7 +111,6 @@ export function exportTicketsToExcel(tickets: any[], filenamePrefix = 'reporte-t
     { header: 'Técnico Asignado', accessor: t => t.asignadoA?.nombre || t.tecnicoAsignado?.nombre || (typeof t.asignadoA === 'string' ? t.asignadoA : '') || t.tecnicoAsignadoNombre || t.tecnicoNombre || 'Sin asignar' },
     { header: 'Fecha Creación', accessor: t => formatFecha(t.creadoEn || t.createdAt) },
     { header: 'Fecha Resolución', accessor: t => formatFecha(t.resueltoEn || t.resolvedAt || ((t.estado === 'RESUELTO' || t.estado === 'CERRADO') ? (t.actualizadoEn || t.updatedAt) : '')) },
-    { header: 'Puntos XP', accessor: t => t.xpRecompensa ?? t.xpOtorgados ?? t.xp ?? 0 },
     { header: 'Diagnóstico / Solución Técnica', accessor: t => t.solucion || t.notasDiagnostico || '' },
   ];
 

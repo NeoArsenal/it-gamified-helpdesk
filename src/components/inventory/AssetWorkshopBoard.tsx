@@ -87,7 +87,7 @@ export function AssetWorkshopBoard({
                   onClick={() => onMarcarReparado(a)}
                   className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer"
                 >
-                  <Check className="w-3.5 h-3.5" /> Reparado (+250 XP)
+                  <Check className="w-3.5 h-3.5" /> Marcar Reparado
                 </button>
                 <button
                   type="button"
@@ -172,7 +172,7 @@ export function AssetWorkshopBoard({
                 className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all group cursor-pointer"
               >
                 <Recycle className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500 text-emerald-600" />
-                Rescatar Piezas (+1000 XP)
+                Rescatar Piezas
               </button>
             </div>
           ))}

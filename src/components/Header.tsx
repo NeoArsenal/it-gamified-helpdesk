@@ -1,4 +1,4 @@
-import { Bell, Zap, Menu } from 'lucide-react';
+import { Bell, Menu, ShieldCheck } from 'lucide-react';
 
 export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
@@ -15,10 +15,10 @@ export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
       {/* Acciones del Top Header */}
       <div className="flex items-center gap-3 md:gap-6 shrink-0">
-        {/* Puntos de la semana */}
-        <div className="flex items-center gap-2 bg-amber-50 text-amber-600 px-2 py-1 md:px-3 md:py-1.5 rounded-full border border-amber-200">
-          <Zap className="w-4 h-4 fill-amber-500" />
-          <span className="text-xs md:text-sm font-bold">1,250 pts <span className="hidden md:inline">esta semana</span></span>
+        {/* Estado Operativo */}
+        <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-2.5 py-1 md:px-3 md:py-1.5 rounded-full border border-emerald-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="text-xs md:text-sm font-semibold">Sistemas Operativos</span>
         </div>
 
         {/* Notificaciones SLA */}
