@@ -1,4 +1,4 @@
-import { LayoutDashboard, Ticket, Network, BookOpen, Settings, Box, BarChart3, GraduationCap, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Ticket, Network, BookOpen, Box, BarChart3, GraduationCap, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from './providers/AuthProvider';
 
@@ -18,11 +18,10 @@ const NAV_ITEMS = [
   { id: 'academy', label: 'Academia TI', icon: GraduationCap },
   { id: 'inventory', label: 'Inventario IT', icon: Box },
   { id: 'analytics', label: 'Analítica', icon: BarChart3 },
-  { id: 'settings', label: 'Configuración', icon: Settings },
 ];
 
 export function Sidebar({ activeView, setActiveView, isOpen }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <aside className={`
@@ -104,16 +103,6 @@ export function Sidebar({ activeView, setActiveView, isOpen }: SidebarProps) {
           </button>
         )}
       </nav>
-
-      <div className="p-4 border-t border-slate-800">
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left text-red-400 hover:bg-red-500/10 hover:text-red-300"
-        >
-          <LogOut className="w-5 h-5" />
-          Cerrar Sesión
-        </button>
-      </div>
     </aside>
   );
 }
