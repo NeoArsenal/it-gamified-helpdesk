@@ -152,20 +152,9 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
 
       {/* Hub de Conocimiento TI (Academia en Morado, PDFs y Manuales en Rojo) */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm sm:text-base font-bold text-slate-800">Hub de Conocimiento TI</h2>
-            <p className="text-xs text-slate-500 hidden sm:block">Recursos normativos, manuales operativos y formación continua</p>
-          </div>
-          {onNavigate && (
-            <button 
-              type="button" 
-              onClick={() => onNavigate('knowledge')}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors"
-            >
-              Ver todo
-            </button>
-          )}
+        <div>
+          <h2 className="text-sm sm:text-base font-bold text-slate-800">Hub de Conocimiento TI</h2>
+          <p className="text-xs text-slate-500 hidden sm:block">Recursos normativos, manuales operativos y formación continua</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 sm:gap-6">
