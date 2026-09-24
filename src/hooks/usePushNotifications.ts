@@ -20,6 +20,8 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+const DEFAULT_VAPID_PUBLIC_KEY = 'BEBWWjLDPLE1DJaY7MHN6Y63viz5QCP7YmKa0j7JLOjQcuhuNGP9r_y2Bm1RyxfZ140bzIIgbBWyAjCp9eo95bs';
+
 export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -102,10 +104,15 @@ export function usePushNotifications() {
         return false;
       }
 
-      // 2. Obtener clave pública VAPID del backend
-      const { publicKey } = await getPushPublicKey();
-      if (!publicKey) {
-        throw new Error('El servidor no proporcionó la clave pública VAPID.');
+      // 2. Obtener clave pública VAPID del backend (con fallback directo)
+      let publicKey = DEFAULT_VAPID_PUBLIC_KEY;
+      try {
+        const res = await getPushPublicKey();
+        if (res?.publicKey) {
+          publicKey = res.publicKey;
+        }
+      } catch (e) {
+        console.warn('Utilizando clave pública VAPID por defecto:', e);
       }
 
       // 3. Obtener registro del Service Worker
