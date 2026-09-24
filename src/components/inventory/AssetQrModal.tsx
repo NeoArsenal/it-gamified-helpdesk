@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { QrCode, X, ShieldCheck, Printer, Download, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import html2canvas from 'html2canvas';
 import { toast } from 'sonner';
 
 interface AssetQrModalProps {
@@ -180,27 +179,156 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
   };
 
   const handleDescargarPng = async () => {
-    const stickerEl = document.getElementById('qr-sticker-card');
-    if (!stickerEl) return;
-
     try {
       setIsDownloading(true);
-      // Usar html2canvas para renderizar la tarjeta física completa con QR, textos y bordes
-      const canvas = await html2canvas(stickerEl, {
-        scale: 3, // Calidad ultra alta (300 DPI) para imprimir o pegar
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        logging: false,
+
+      const qrSvg = document.getElementById('qr-code-svg') as SVGSVGElement | null;
+      if (!qrSvg) {
+        toast.error('No se pudo encontrar el código QR');
+        return;
+      }
+
+      // Convertir el SVG del QR a una imagen para estampar en Canvas
+      const svgData = new XMLSerializer().serializeToString(qrSvg);
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+      const URL = window.URL || window.webkitURL || window;
+      const blobURL = URL.createObjectURL(svgBlob);
+
+      const qrImg = new Image();
+      qrImg.crossOrigin = 'anonymous';
+
+      await new Promise((resolve, reject) => {
+        qrImg.onload = () => resolve(true);
+        qrImg.onerror = reject;
+        qrImg.src = blobURL;
       });
+
+      // Crear Canvas de Alta Resolución (640 x 820 px a 300 DPI)
+      const width = 640;
+      const height = 820;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) throw new Error('No se pudo inicializar canvas 2D');
+
+      // 1. Fondo Blanco Total
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Borde Redondeado de la Etiqueta (Estilo tarjeta física)
+      const pad = 24;
+      const cardW = width - pad * 2;
+      const cardH = height - pad * 2;
+      const radius = 24;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(pad, pad, cardW, cardH, radius);
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 3.5;
+      ctx.setLineDash([8, 6]);
+      ctx.stroke();
+      ctx.restore();
+
+      // 3. Cabecera Institucional
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#4f46e5'; // Indigo
+      ctx.font = '900 15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText('🛡️ SOPORTE TI · CONTROL PATRIMONIAL', width / 2, 70);
+
+      // 4. Código Patrimonial
+      ctx.fillStyle = '#0f172a'; // Slate 900
+      ctx.font = '900 36px monospace';
+      ctx.fillText(activo.codigo || 'SIN CÓDIGO', width / 2, 125);
+
+      // 5. Contenedor y QR Code
+      const qrBoxSize = 340;
+      const qrBoxX = (width - qrBoxSize) / 2;
+      const qrBoxY = 150;
+
+      // Marco del QR
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.restore();
+
+      // Dibujar QR SVG adentro
+      const qrPadding = 15;
+      ctx.drawImage(
+        qrImg, 
+        qrBoxX + qrPadding, 
+        qrBoxY + qrPadding, 
+        qrBoxSize - qrPadding * 2, 
+        qrBoxSize - qrPadding * 2
+      );
+
+      // 6. Línea divisoria
+      ctx.beginPath();
+      ctx.moveTo(pad + 20, 520);
+      ctx.lineTo(width - pad - 20, 520);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([]);
+      ctx.stroke();
+
+      // 7. Datos de Hardware y Ubicación
+      let curY = 555;
+
+      // Dispositivo: Tipo · Marca · Modelo
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const deviceTitle = `${activo.tipo || ''}${activo.marca ? ` · ${activo.marca}` : ''}${activo.modelo ? ` · ${activo.modelo}` : ''}`.trim();
+      ctx.fillText(deviceTitle || 'Equipo TI', width / 2, curY);
+
+      // S/N (Número de Serie)
+      if (activo.numeroSerie) {
+        curY += 30;
+        ctx.fillStyle = '#334155';
+        ctx.font = '700 17px monospace';
+        ctx.fillText(`S/N: ${activo.numeroSerie}`, width / 2, curY);
+      }
+
+      // Código de Factura
+      if (activo.codigoFactura) {
+        curY += 28;
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = '800 16px monospace';
+        ctx.fillText(`FAC: ${activo.codigoFactura}`, width / 2, curY);
+      }
+
+      // Sede y Departamento
+      curY += 28;
+      ctx.fillStyle = '#475569';
+      ctx.font = '600 16px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const locText = `${activo.sede || 'Sede General'}${activo.departamento ? ` - ${activo.departamento}` : ''}`;
+      ctx.fillText(locText, width / 2, curY);
+
+      // ID del activo
+      curY += 26;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 13px monospace';
+      ctx.fillText(`ID: ${(activo.id || '').substring(0, 8)}`, width / 2, curY);
+
+      // 8. Disparar Descarga del Archivo PNG
+      URL.revokeObjectURL(blobURL);
 
       const a = document.createElement('a');
       a.download = `Etiqueta_${activo.codigo}.png`;
-      a.href = canvas.toDataURL('image/png');
+      a.href = canvas.toDataURL('image/png', 1.0);
       a.click();
-      toast.success('Etiqueta descargada exitosamente en PNG');
-    } catch (err) {
-      console.error('Error al descargar PNG:', err);
-      toast.error('Error al generar la imagen PNG');
+
+      toast.success('Etiqueta descargada en alta resolución');
+    } catch (err: any) {
+      console.error('Error al generar PNG:', err);
+      toast.error('No se pudo generar el archivo PNG');
     } finally {
       setIsDownloading(false);
     }
