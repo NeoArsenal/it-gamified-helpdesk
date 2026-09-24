@@ -1,5 +1,7 @@
 import React from 'react';
 import { Monitor, Palette, Sun, Moon, Bell } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { PushNotificationModal } from '@/components/notifications/PushNotificationModal';
 
 interface AppearanceTabProps {
   theme: 'light' | 'dark';
@@ -62,6 +64,16 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
           </div>
         </div>
 
+        <div className="pt-6 border-t border-slate-100 space-y-3">
+          <label className="block text-sm font-bold text-slate-700 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-indigo-600" /> Notificaciones en Celular (Push)
+          </label>
+          <p className="text-xs text-slate-500">
+            Configura las alertas con sonido y vibración que llegan a la bandeja de tu teléfono fuera de la app.
+          </p>
+          <PushNotificationSettingsCard />
+        </div>
+
         <div className="pt-6 border-t border-slate-100">
           <label className="block text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
             <Bell className="w-4 h-4" /> Integraciones Externas
@@ -74,3 +86,47 @@ export const AppearanceTab: React.FC<AppearanceTabProps> = ({
     </div>
   );
 };
+
+function PushNotificationSettingsCard() {
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const { isSubscribed } = usePushNotifications();
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        className="w-full p-4 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 transition-all flex items-center justify-between gap-3 text-left cursor-pointer group"
+      >
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-xl ${isSubscribed ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+            <Bell className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-800">Alertas en este Dispositivo</span>
+              {isSubscribed ? (
+                <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Activas
+                </span>
+              ) : (
+                <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200">
+                  Desactivadas
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">Toca para gestionar o enviar una prueba</p>
+          </div>
+        </div>
+        <span className="text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+          Configurar &rarr;
+        </span>
+      </button>
+
+      <PushNotificationModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+    </>
+  );
+}

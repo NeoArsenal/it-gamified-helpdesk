@@ -8,3 +8,4 @@ export * from './network.api';
 export * from './academy.api';
 export * from './users.api';
 export * from './auth.api';
+export * from './notifications.api';

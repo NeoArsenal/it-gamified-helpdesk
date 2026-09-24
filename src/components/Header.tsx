@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Users } from 'lucide-react';
+import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Users, Bell } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
 import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
+import { PushNotificationBellButton } from '@/components/notifications/PushNotificationModal';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -118,19 +119,24 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
         onChange={handlePhotoUpload}
       />
 
-      {/* Perfil del Usuario en el Header */}
-      <div ref={dropdownRef} className="relative">
-        <button
-          type="button"
-          onClick={() => setDropdownOpen(prev => !prev)}
-          className={cn(
-            "flex items-center gap-2.5 sm:gap-3 p-1.5 sm:px-3 sm:py-1.5 rounded-2xl border transition-all cursor-pointer select-none",
-            dropdownOpen
-              ? "bg-slate-50 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
-              : "bg-white hover:bg-slate-50 border-slate-200/90 shadow-2xs hover:border-slate-300"
-          )}
-          title="Opciones de cuenta"
-        >
+      {/* Acciones de Cabecera: Notificaciones Push Celular + Perfil */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Botón de Campana / Alertas en el Celular */}
+        <PushNotificationBellButton />
+
+        {/* Perfil del Usuario en el Header */}
+        <div ref={dropdownRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen(prev => !prev)}
+            className={cn(
+              "flex items-center gap-2.5 sm:gap-3 p-1.5 sm:px-3 sm:py-1.5 rounded-2xl border transition-all cursor-pointer select-none",
+              dropdownOpen
+                ? "bg-slate-50 border-indigo-300 ring-2 ring-indigo-500/20 shadow-xs"
+                : "bg-white hover:bg-slate-50 border-slate-200/90 shadow-2xs hover:border-slate-300"
+            )}
+            title="Opciones de cuenta"
+          >
           {/* Avatar Profesional con Indicador En Línea */}
           <UserAvatar
             avatar={avatarSeed}
@@ -265,6 +271,7 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
             </div>
           </div>
         )}
+        </div>
       </div>
     </header>
   );
