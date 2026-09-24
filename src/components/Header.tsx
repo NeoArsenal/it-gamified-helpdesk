@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2 } from 'lucide-react';
+import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Users } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
 import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
@@ -13,9 +13,10 @@ interface HeaderProps {
   userId?: string;
   refreshTrigger?: number;
   onNavigateSettings?: () => void;
+  onNavigateUsers?: () => void;
 }
 
-export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings }: HeaderProps) {
+export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings, onNavigateUsers }: HeaderProps) {
   const { user, logout, updateUser } = useAuth();
   const [perfil, setPerfil] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -233,6 +234,20 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                 >
                   <Settings className="w-4 h-4 text-slate-400" />
                   <span>Configuración y Preferencias</span>
+                </button>
+              )}
+
+              {rolUsuario === 'ADMIN' && onNavigateUsers && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    onNavigateUsers();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50/60 hover:bg-indigo-100/80 rounded-xl transition-all cursor-pointer"
+                >
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <span>Gestión de Usuarios</span>
                 </button>
               )}
 

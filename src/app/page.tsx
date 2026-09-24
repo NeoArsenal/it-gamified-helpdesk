@@ -12,6 +12,7 @@ import { AnalyticsView } from '@/components/views/AnalyticsView';
 import { SettingsView } from '@/components/views/SettingsView';
 import { AcademyView } from '@/components/views/AcademyView';
 import { UsersView } from '@/components/views/UsersView';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import { LoginView } from '@/components/views/LoginView';
 import { useAuth } from '@/components/providers/AuthProvider';
@@ -32,11 +33,11 @@ export default function Home() {
     // Si no es admin y el modulo no está en sus permitidos, forzamos dashboard
     if (user.rol !== 'ADMIN' && activeView !== 'dashboard' && activeView !== 'users' && !user.modulosAccesibles?.includes(activeView)) {
       setTimeout(() => setActiveView('dashboard'), 0);
-      return <DashboardView />;
+      return <DashboardView onNavigate={(view) => setActiveView(view)} />;
     }
 
     switch (activeView) {
-      case 'dashboard': return <DashboardView />;
+      case 'dashboard': return <DashboardView onNavigate={(view) => setActiveView(view)} />;
       case 'tickets': return <HelpdeskView userId={user.id} onTicketResolved={triggerRefresh} />;
       case 'network': return <NetworkView />;
       case 'knowledge': return <KnowledgeView />;
@@ -44,8 +45,8 @@ export default function Home() {
       case 'analytics': return <AnalyticsView userId={user.id} />;
       case 'academy': return <AcademyView userId={user.id} onXPGained={triggerRefresh} />;
       case 'settings': return <SettingsView userId={user.id} onPreferencesSaved={triggerRefresh} />;
-      case 'users': return user.rol === 'ADMIN' ? <UsersView /> : <DashboardView />;
-      default: return <DashboardView />;
+      case 'users': return user.rol === 'ADMIN' ? <UsersView /> : <DashboardView onNavigate={(view) => setActiveView(view)} />;
+      default: return <DashboardView onNavigate={(view) => setActiveView(view)} />;
     }
   };
 
@@ -84,11 +85,15 @@ export default function Home() {
           userId={user.id}
           refreshTrigger={refreshProfile}
           onNavigateSettings={() => setActiveView('settings')}
+          onNavigateUsers={() => setActiveView('users')}
         />
         
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
           {renderView()}
         </main>
+
+        {/* Barra de navegación inferior móvil */}
+        <MobileBottomNav activeView={activeView} setActiveView={setActiveView} />
       </div>
     </div>
   );
