@@ -46,9 +46,9 @@ export function MobileBottomNav({ activeView, setActiveView }: MobileBottomNavPr
   return (
     <nav 
       aria-label="Navegación móvil inferior"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-[0_-4px_20px_rgba(0,0,0,0.06)] md:hidden px-2 py-1.5"
+      className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200/90 shadow-[0_-4px_25px_rgba(0,0,0,0.08)] md:hidden h-16 px-2 flex items-center"
     >
-      <div className="flex items-center justify-around max-w-lg mx-auto">
+      <div className="flex items-center justify-around w-full max-w-lg mx-auto">
         {items.map((item) => {
           const isActive = activeView === item.id;
           const Icon = item.icon;
@@ -59,23 +59,23 @@ export function MobileBottomNav({ activeView, setActiveView }: MobileBottomNavPr
                 key={item.id}
                 type="button"
                 onClick={() => setActiveView(item.id)}
-                className="flex flex-col items-center justify-center -mt-4 relative group cursor-pointer"
+                className="flex-1 flex flex-col items-center justify-center py-1 cursor-pointer select-none group active:scale-95 transition-transform"
                 title={item.label}
               >
                 <div
                   className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-200 active:scale-95",
+                    "w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200",
                     isActive
-                      ? "bg-slate-900 text-white shadow-slate-900/30 ring-4 ring-white"
-                      : "bg-indigo-600 text-white shadow-indigo-600/30 ring-4 ring-white hover:bg-indigo-700"
+                      ? "bg-slate-900 text-white shadow-md shadow-slate-900/25"
+                      : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
                   )}
                 >
                   <Icon className="w-5 h-5" />
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-bold mt-1 tracking-tight transition-colors",
-                    isActive ? "text-slate-900 font-extrabold" : "text-slate-500"
+                    "text-[10px] mt-0.5 tracking-tight transition-colors",
+                    isActive ? "text-slate-900 font-extrabold" : "text-slate-500 font-semibold"
                   )}
                 >
                   {item.label}
@@ -90,7 +90,7 @@ export function MobileBottomNav({ activeView, setActiveView }: MobileBottomNavPr
               type="button"
               onClick={() => setActiveView(item.id)}
               className={cn(
-                "flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all duration-150 cursor-pointer active:scale-95 select-none min-w-[56px]",
+                "flex-1 flex flex-col items-center justify-center py-1 rounded-xl transition-all duration-150 cursor-pointer active:scale-95 select-none",
                 isActive
                   ? "text-slate-900 font-bold"
                   : "text-slate-400 hover:text-slate-600 font-medium"

@@ -633,7 +633,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       />
 
       {/* Botón Flotante Fijo para Historial Móvil (FAB) - Siempre visible y accesible con el pulgar */}
-      <div className="fixed bottom-6 right-4 z-40 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fixed bottom-20 right-4 z-40 md:hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           type="button"
           onClick={() => setIsHistoryDrawerOpen(true)}
