@@ -15,6 +15,7 @@ import {
   Inbox,
   Wrench,
   FileSpreadsheet,
+  ArrowDownToLine,
 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { exportTicketsToCsv } from '@/lib/export-utils';
@@ -261,13 +262,246 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   }
 
   return (
-    <div className="p-4 md:p-8 h-full flex flex-col space-y-4 md:space-y-5 animate-in fade-in duration-500 overflow-hidden">
-      {/* Cabecera Principal: Título a la izquierda, Acciones principales a la derecha */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between shrink-0 gap-4">
+    <div className="p-3 sm:p-4 md:p-8 h-full flex flex-col space-y-3.5 md:space-y-5 animate-in fade-in duration-500 overflow-hidden">
+      
+      {/* ========================================================
+          1. VISTA MÓVIL: Cabecera Minimalista (Estilo App Nativa)
+         ======================================================== */}
+      <div className="block md:hidden space-y-3 shrink-0">
+        {/* Fila 1: Título y Acciones Rápidas */}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-tight">
+              Tickets de Soporte
+            </h1>
+            <p className="text-slate-500 text-xs mt-0.5 font-medium">
+              Gestión y atención en tiempo real
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleExportarReporte}
+              className="w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer"
+              title="Descargar reporte en Excel (.xlsx)"
+            >
+              <ArrowDownToLine className="w-4 h-4 text-slate-700" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="h-10 px-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+              title="Crear nuevo ticket"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Nuevo Ticket</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Fila 2: Buscador */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por título, sede, autor..."
+            className="w-full h-11 pl-9.5 pr-8 bg-white border border-slate-200/90 rounded-2xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 shadow-2xs transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              title="Limpiar búsqueda"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Fila 3: Filtros de Urgencia y Sede */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Dropdown Emergencia Móvil */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsBoardEmergencyOpen(!isBoardEmergencyOpen);
+                setIsBoardSedeOpen(false);
+              }}
+              className={`w-full h-10 px-3 rounded-2xl border text-xs font-bold flex items-center justify-between gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer ${
+                filterBoardEmergency !== 'TODAS'
+                  ? 'bg-red-50 border-red-200 text-red-700'
+                  : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <ShieldAlert className={`w-3.5 h-3.5 shrink-0 ${filterBoardEmergency !== 'TODAS' ? 'text-red-600' : 'text-slate-400'}`} />
+                <span className="truncate">
+                  {filterBoardEmergency === 'TODAS' && 'Urgencia'}
+                  {filterBoardEmergency === 'EMERGENCIAS' && '🚨 Altas'}
+                  {filterBoardEmergency === 'CRITICA' && '🚨 Crítica'}
+                  {filterBoardEmergency === 'ALTA' && '⚠️ Alta'}
+                  {filterBoardEmergency === 'MEDIA' && '⏱️ Normal'}
+                  {filterBoardEmergency === 'BAJA' && '🟢 Baja'}
+                </span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 ${isBoardEmergencyOpen ? 'rotate-180 text-blue-600' : ''}`} />
+            </button>
+
+            {isBoardEmergencyOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardEmergencyOpen(false)} />
+                <div className="absolute left-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Prioridad</span>
+                    {filterBoardEmergency !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardEmergency('TODAS');
+                          setIsBoardEmergencyOpen(false);
+                        }}
+                        className="text-blue-600 hover:underline font-bold text-[10px] cursor-pointer"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 space-y-0.5 max-h-56 overflow-y-auto">
+                    {[
+                      { id: 'TODAS', label: 'Todas las prioridades' },
+                      { id: 'EMERGENCIAS', label: '🚨 Emergencias y Altas' },
+                      { id: 'CRITICA', label: '🚨 Crítica' },
+                      { id: 'ALTA', label: '⚠️ Alta / Importante' },
+                      { id: 'MEDIA', label: '⏱️ Media / Normal' },
+                      { id: 'BAJA', label: '🟢 Baja' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardEmergency(opt.id);
+                          setIsBoardEmergencyOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                          filterBoardEmergency === opt.id ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{opt.label}</span>
+                        {filterBoardEmergency === opt.id && <span className="text-blue-600 font-bold">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dropdown Sede Móvil */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsBoardSedeOpen(!isBoardSedeOpen);
+                setIsBoardEmergencyOpen(false);
+              }}
+              className={`w-full h-10 px-3 rounded-2xl border text-xs font-bold flex items-center justify-between gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer ${
+                filterBoardSede !== 'TODAS'
+                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                  : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <MapPin className={`w-3.5 h-3.5 shrink-0 ${filterBoardSede !== 'TODAS' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                <span className="truncate">
+                  {filterBoardSede === 'TODAS' ? 'Todas las Sedes' : filterBoardSede}
+                </span>
+              </div>
+              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 ${isBoardSedeOpen ? 'rotate-180 text-indigo-600' : ''}`} />
+            </button>
+
+            {isBoardSedeOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardSedeOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-60 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Sedes</span>
+                    {filterBoardSede !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardSede('TODAS');
+                          setIsBoardSedeOpen(false);
+                        }}
+                        className="text-indigo-600 hover:underline font-bold text-[10px] cursor-pointer"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 space-y-0.5 max-h-56 overflow-y-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterBoardSede('TODAS');
+                        setIsBoardSedeOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                        filterBoardSede === 'TODAS' ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>Todas las Sedes</span>
+                      {filterBoardSede === 'TODAS' && <span className="text-indigo-600 font-bold">✓</span>}
+                    </button>
+                    {sedesDisponibles.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardSede(s);
+                          setIsBoardSedeOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                          filterBoardSede === s ? 'bg-indigo-50 text-indigo-700 font-bold' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="truncate">{s}</span>
+                        {filterBoardSede === s && <span className="text-indigo-600 font-bold">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Botón Reset de Filtros en móvil si hay alguno activo */}
+        {hasActiveFilters && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="text-[11px] font-bold text-slate-500 hover:text-indigo-600 px-2 py-0.5 flex items-center gap-1 transition-colors cursor-pointer"
+            >
+              <X className="w-3 h-3 text-slate-400" />
+              <span>Limpiar filtros activos</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ========================================================
+          2. VISTA DESKTOP: Cabecera Completa (Intacta para PC)
+         ======================================================== */}
+      <div className="hidden md:flex flex-row items-center justify-between shrink-0 gap-4">
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Tickets de Soporte</h1>
-            <span className="hidden sm:inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-200/70 shadow-xs">
+            <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-200/70 shadow-xs">
               <Zap className="w-3 h-3 fill-indigo-500 text-indigo-500" /> Tablero Vivo
             </span>
           </div>
@@ -276,32 +510,21 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
           </p>
         </div>
 
-        {/* Botones de Acción Principales */}
-        <div className="flex items-center gap-2 shrink-0 self-stretch sm:self-auto flex-wrap sm:flex-nowrap">
+        {/* Botones de Acción Principales Desktop */}
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={handleExportarReporte}
-            className="flex-1 sm:flex-none bg-white hover:bg-emerald-50/80 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-2xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
+            className="bg-white hover:bg-emerald-50/80 border border-slate-300 hover:border-emerald-300 text-slate-700 hover:text-emerald-800 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-2xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95"
             title="Descargar reporte de tickets en Excel (.xlsx)"
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
             <span className="truncate">Exportar Excel</span>
           </button>
 
-          {/* Botón Historial visible directamente en la cabecera en móvil */}
-          <button
-            type="button"
-            onClick={() => setIsHistoryDrawerOpen(true)}
-            className="md:hidden flex-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 px-3 py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
-            title="Abrir Historial de Tickets Cerrados"
-          >
-            <Clock className="w-4 h-4 text-indigo-600 shrink-0" />
-            <span className="truncate">Historial ({historyTickets.length})</span>
-          </button>
-
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
+            className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:-translate-y-0.5 active:scale-95 transition-all duration-200 cursor-pointer"
           >
             <Plus className="w-4 h-4 shrink-0" />
             <span className="truncate">Nuevo Ticket</span>
@@ -309,8 +532,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         </div>
       </div>
 
-      {/* Barra de Filtros y Búsqueda Dedicada */}
-      <div className="bg-slate-50/90 p-2 md:p-2.5 rounded-2xl border border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shrink-0 shadow-2xs">
+      {/* Barra de Filtros y Búsqueda Desktop */}
+      <div className="hidden md:flex bg-slate-50/90 p-2.5 rounded-2xl border border-slate-200/90 flex-row items-center justify-between gap-2.5 shrink-0 shadow-2xs">
         {/* Buscador */}
         <div className="relative w-full sm:w-64 md:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
