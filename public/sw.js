@@ -51,7 +51,19 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || '/';
+  let targetUrl = event.notification.data?.url || '/';
+
+  // Medida de seguridad: Validar que la URL pertenezca estrictamente al mismo origen (Anti-Phishing/Open-Redirect)
+  try {
+    const parsed = new URL(targetUrl, self.location.origin);
+    if (parsed.origin !== self.location.origin) {
+      targetUrl = '/';
+    } else {
+      targetUrl = parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch (e) {
+    targetUrl = '/';
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

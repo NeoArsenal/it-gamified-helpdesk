@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { socket, safeStorage } from '@/services/api/api-client';
+import { unsubscribePushSubscription } from '@/services/api';
 
 type User = {
   id: string;
@@ -73,7 +74,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Si hay una suscripción Push activa en este navegador, desuscribirla para seguridad del usuario
+    try {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        const sub = await reg?.pushManager?.getSubscription();
+        if (sub) {
+          await unsubscribePushSubscription(sub.endpoint).catch(() => null);
+          await sub.unsubscribe().catch(() => null);
+        }
+      }
+    } catch (e) {
+      console.warn('Error limpiando suscripción push al cerrar sesión:', e);
+    }
+
     setToken(null);
     setUser(null);
     safeStorage.removeItem('auth_token');
