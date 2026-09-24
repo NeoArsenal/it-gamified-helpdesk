@@ -315,7 +315,7 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
 
       {/* ═══════════ QUIZ MODAL ═══════════ */}
       {activeNivel && (
-        <div className="fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center backdrop-blur-md p-4">
+        <div className="fixed inset-0 bg-slate-950/90 z-[100] flex items-center justify-center backdrop-blur-md p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl shadow-black/30" style={{ animation: 'modalIn 0.3s ease-out' }}>
             
             {/* Quiz Header */}

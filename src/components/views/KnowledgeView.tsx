@@ -243,7 +243,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
       {/* Modal Interactivo de Creación */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl p-6 relative animate-in zoom-in-95 duration-200">
             <button
               onClick={() => setIsModalOpen(false)}
@@ -365,7 +365,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
       {/* Modal de Confirmación de Eliminación Animado */}
       {guideToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative animate-in zoom-in-95 duration-300">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-bounce">
@@ -397,7 +397,7 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
 
       {/* Modal Visor de Documento / PDF Real */}
       {viewingGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in p-2 sm:p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm animate-in fade-in p-2 sm:p-4">
           <div className="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col relative animate-in zoom-in-95 duration-200 overflow-hidden border border-slate-700">
             {/* Toolbar del Visor */}
             <div className="bg-slate-800 text-slate-100 px-4 py-3 flex items-center justify-between shrink-0 border-b border-slate-700">

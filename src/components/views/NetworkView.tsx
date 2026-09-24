@@ -345,7 +345,7 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
 
       {/* Modal Asignar IP */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 relative animate-in zoom-in-95 duration-200">
             <button 
               onClick={() => setIsModalOpen(false)}
@@ -397,7 +397,7 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
 
       {/* Modal Registrar Nueva IP */}
       {isRegisterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
             <button 
               onClick={() => setIsRegisterModalOpen(false)}

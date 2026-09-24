@@ -53,7 +53,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   if (!selectedTicket) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-200">
       <div className="fixed inset-0" onClick={() => setSelectedTicket(null)} />
       <div
         onClick={(e) => e.stopPropagation()}
@@ -379,7 +379,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
       {/* Lightbox / Modal de Imagen a Pantalla Completa */}
       {isImageModalOpen && selectedTicket.fotoUrl && (
         <div
-          className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={() => setIsImageModalOpen(false)}
         >
           <button

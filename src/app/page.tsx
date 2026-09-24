@@ -86,7 +86,7 @@ export default function Home() {
           onNavigateSettings={() => setActiveView('settings')}
         />
         
-        <main className="flex-1 overflow-y-auto relative z-0">
+        <main className="flex-1 overflow-y-auto">
           {renderView()}
         </main>
       </div>
