@@ -218,12 +218,11 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
           <button
             type="button"
             onClick={() => {
-              setActiveTab('CATALOGO');
-              setFilterEstado('REPARACION');
+              setActiveTab('TALLER');
             }}
             className={cn(
               "flex-1 py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
-              (activeTab === 'CATALOGO' && filterEstado === 'REPARACION') || activeTab === 'TALLER'
+              activeTab === 'TALLER'
                 ? "bg-white text-slate-900 shadow-xs"
                 : "text-slate-500 hover:text-slate-800"
             )}
@@ -231,11 +230,11 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
             <span>En Taller</span>
             <span className={cn(
               "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
-              (activeTab === 'CATALOGO' && filterEstado === 'REPARACION') || activeTab === 'TALLER'
+              activeTab === 'TALLER'
                 ? "bg-amber-100 text-amber-800"
                 : "text-slate-400"
             )}>
-              {countReparacion}
+              {countReparacion + countBaja}
             </span>
           </button>
         </div>
@@ -440,7 +439,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
       {/* 3. VISTA B: Taller de Hardware y Bajas */}
       {activeTab === 'TALLER' && (
         <AssetWorkshopBoard
-          activos={activos}
+          activos={searchQuery || filterSede !== 'TODAS' ? filteredActivos : activos}
           isRescatando={isRescatando}
           onVerQr={setQrModalActivo}
           onMarcarReparado={handleMarcarReparado}
