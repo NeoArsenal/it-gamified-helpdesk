@@ -1,8 +1,10 @@
 'use client';
 
-import React from 'react';
-import { QrCode, X, ShieldCheck, Printer, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { QrCode, X, ShieldCheck, Printer, Download, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 interface AssetQrModalProps {
   activo: any | null;
@@ -10,11 +12,14 @@ interface AssetQrModalProps {
 }
 
 export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
+  const [isDownloading, setIsDownloading] = useState(false);
+
   if (!activo) return null;
 
   const handlePrint = () => {
     const stickerEl = document.getElementById('qr-sticker-card');
-    const svgEl = stickerEl?.querySelector('svg');
+    // Seleccionar específicamente el SVG del código QR, NO el icono del escudo
+    const svgEl = document.getElementById('qr-code-svg') || stickerEl?.querySelector('.qr-canvas-white svg');
     const svgHtml = svgEl ? svgEl.outerHTML : '';
 
     // Crear un iframe invisible dedicado para aislar 100% la impresión
@@ -174,31 +179,31 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
     }, 250);
   };
 
-  const handleDescargarPng = () => {
-    const svgEl = document.querySelector('#qr-sticker-card svg') as SVGSVGElement;
-    if (!svgEl) return;
+  const handleDescargarPng = async () => {
+    const stickerEl = document.getElementById('qr-sticker-card');
+    if (!stickerEl) return;
 
-    const svgData = new XMLSerializer().serializeToString(svgEl);
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-
-    canvas.width = 600;
-    canvas.height = 600;
-
-    img.onload = () => {
-      if (!ctx) return;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 50, 50, 500, 500);
+    try {
+      setIsDownloading(true);
+      // Usar html2canvas para renderizar la tarjeta física completa con QR, textos y bordes
+      const canvas = await html2canvas(stickerEl, {
+        scale: 3, // Calidad ultra alta (300 DPI) para imprimir o pegar
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        logging: false,
+      });
 
       const a = document.createElement('a');
-      a.download = `QR_${activo.codigo}.png`;
+      a.download = `Etiqueta_${activo.codigo}.png`;
       a.href = canvas.toDataURL('image/png');
       a.click();
-    };
-
-    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+      toast.success('Etiqueta descargada exitosamente en PNG');
+    } catch (err) {
+      console.error('Error al descargar PNG:', err);
+      toast.error('Error al generar la imagen PNG');
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -239,6 +244,7 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
 
             <div className="bg-white qr-canvas-white p-2 rounded-xl border border-slate-200 shadow-2xs">
               <QRCodeSVG
+                id="qr-code-svg"
                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}/activo/${activo.id}`}
                 size={170}
                 level="H"
@@ -273,10 +279,11 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
           <button
             type="button"
             onClick={handleDescargarPng}
-            className="px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-            title="Descargar imagen PNG para stickers o WhatsApp"
+            disabled={isDownloading}
+            className="px-3 py-2 text-xs font-bold text-slate-700 hover:text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+            title="Descargar imagen completa de la etiqueta"
           >
-            <Download className="w-3.5 h-3.5" />
+            {isDownloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
             <span>Descargar PNG</span>
           </button>
 
