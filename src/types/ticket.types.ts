@@ -25,6 +25,7 @@ export interface Ticket {
   departamento: string;
   ubicacionEspecifica?: string;
   solucion?: string;
+  fotoUrl?: string | null;
   creadoEn: string | Date;
   actualizadoEn?: string | Date;
   resueltoEn?: string | Date | null;
@@ -39,6 +40,7 @@ export interface CreateTicketDTO {
   ubicacionEspecifica?: string;
   solicitanteNombre?: string;
   solicitanteContacto?: string;
+  fotoUrl?: string;
   website?: string; // honeypot
 }
 
@@ -49,5 +51,6 @@ export interface UpdateTicketDTO {
   prioridad?: PrioridadTicket;
   asignadoAId?: string | null;
   solucion?: string;
+  fotoUrl?: string | null;
   resueltoEn?: string | Date | null;
 }

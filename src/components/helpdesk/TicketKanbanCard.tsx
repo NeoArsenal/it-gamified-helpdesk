@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Check,
   Trash2,
+  Camera,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
 
@@ -56,11 +57,22 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
       <div className="absolute inset-0 bg-gradient-to-tr from-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-xl overflow-hidden"></div>
 
       <div className={`flex justify-between items-start mb-2 relative ${activeDropdown === ticket.id ? 'z-50' : 'z-10'}`}>
-        <span
-          className={`flex items-center px-2 py-1 rounded-md text-[10px] font-bold border transform origin-left group-hover:scale-105 transition-transform duration-300 ${style.bg} ${style.color} ${style.border}`}
-        >
-          {style.icon} {ticket.prioridad}
-        </span>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span
+            className={`flex items-center px-2 py-1 rounded-md text-[10px] font-bold border transform origin-left group-hover:scale-105 transition-transform duration-300 ${style.bg} ${style.color} ${style.border}`}
+          >
+            {style.icon} {ticket.prioridad}
+          </span>
+          {ticket.fotoUrl && (
+            <span
+              title="Incluye fotografía de evidencia"
+              className="flex items-center gap-1 px-1.5 py-1 rounded-md text-[10px] font-bold border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-2xs"
+            >
+              <Camera className="w-3 h-3 text-indigo-600" />
+              Foto
+            </span>
+          )}
+        </div>
 
         <div className="relative">
           <button

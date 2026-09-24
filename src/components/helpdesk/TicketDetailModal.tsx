@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   X,
   ShieldAlert,
@@ -13,6 +13,9 @@ import {
   Check,
   Play,
   Archive,
+  Camera,
+  Eye,
+  ExternalLink,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
 
@@ -45,6 +48,8 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   handleCerrarTicket,
   getPriorityStyle,
 }) => {
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
   if (!selectedTicket) return null;
 
   return (
@@ -236,6 +241,31 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             </div>
           </div>
 
+          {/* EVIDENCIA FOTOGRÁFICA ADJUNTA */}
+          {selectedTicket.fotoUrl && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <Camera className="w-4 h-4 text-indigo-600" />
+                Evidencia o Captura del Problema
+              </h3>
+              <div className="relative group rounded-2xl overflow-hidden border-2 border-indigo-100 bg-slate-900/5 max-h-60 flex items-center justify-center shadow-sm">
+                <img
+                  src={selectedTicket.fotoUrl}
+                  alt="Evidencia fotográfica adjunta"
+                  className="w-full max-h-60 object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-200"
+                  onClick={() => setIsImageModalOpen(true)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsImageModalOpen(true)}
+                  className="absolute bottom-3 right-3 bg-slate-900/85 hover:bg-slate-950 text-white px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 backdrop-blur-md shadow-md transition-all cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" /> Ampliar Imagen
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* SECCIÓN DE SOLUCIÓN TÉCNICA */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -345,6 +375,29 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Lightbox / Modal de Imagen a Pantalla Completa */}
+      {isImageModalOpen && selectedTicket.fotoUrl && (
+        <div
+          className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setIsImageModalOpen(false)}
+            className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white p-2.5 rounded-full transition-all cursor-pointer z-10"
+            title="Cerrar imagen"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img
+            src={selectedTicket.fotoUrl}
+            alt="Evidencia en pantalla completa"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

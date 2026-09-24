@@ -1,4 +1,5 @@
 import React from 'react';
+import { Camera, X, Image as ImageIcon } from 'lucide-react';
 import { PortalSelect } from './PortalSelect';
 
 interface PortalReportFormProps {
@@ -24,6 +25,11 @@ interface PortalReportFormProps {
   handleNombreChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleContactoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleContactoBlur: () => void;
+  fotoFile: File | null;
+  fotoPreview: string | null;
+  handleSelectFoto: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleRemoveFoto: () => void;
+  isCompressingFoto?: boolean;
 }
 
 export const PortalReportForm: React.FC<PortalReportFormProps> = ({
@@ -47,6 +53,11 @@ export const PortalReportForm: React.FC<PortalReportFormProps> = ({
   handleContactoChange,
   handleContactoBlur,
   solicitanteContacto,
+  fotoFile,
+  fotoPreview,
+  handleSelectFoto,
+  handleRemoveFoto,
+  isCompressingFoto = false,
 }) => {
   return (
     <form onSubmit={handleSubmitTicket} className="p-6 md:p-8 space-y-6 flex-1 overflow-y-auto pb-32 md:pb-8">
@@ -142,6 +153,69 @@ export const PortalReportForm: React.FC<PortalReportFormProps> = ({
             placeholder="Ej. La impresora principal no enciende, o la computadora no abre el sistema médico..."
             className="w-full px-4 py-3 bg-white text-slate-800 border-2 border-slate-300 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none shadow-sm placeholder:text-slate-400 font-medium leading-relaxed"
           />
+        </div>
+
+        {/* Evidencia fotográfica / Captura */}
+        <div className="pt-2">
+          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Camera className="w-4 h-4 text-indigo-600" />
+              Foto o Evidencia del Problema <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+            </span>
+            {fotoFile && (
+              <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                {(fotoFile.size / 1024).toFixed(0)} KB lista
+              </span>
+            )}
+          </label>
+
+          {fotoPreview ? (
+            <div className="relative inline-block mt-1">
+              <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-200 shadow-md group max-w-xs">
+                <img
+                  src={fotoPreview}
+                  alt="Vista previa evidencia"
+                  className="w-full max-h-48 object-cover bg-slate-900"
+                />
+                <div className="absolute inset-0 bg-slate-950/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveFoto}
+                className="absolute -top-2.5 -right-2.5 bg-red-600 hover:bg-red-700 active:scale-95 text-white p-1.5 rounded-full shadow-lg transition-all cursor-pointer z-10"
+                title="Quitar foto"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <div>
+              <label className="flex items-center justify-center gap-2.5 px-4 py-3.5 bg-slate-50/80 hover:bg-indigo-50/60 active:scale-[0.99] text-indigo-700 font-bold text-sm rounded-xl border-2 border-dashed border-indigo-200 hover:border-indigo-400 transition-all cursor-pointer shadow-sm">
+                {isCompressingFoto ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <span className="text-indigo-600">Optimizando imagen...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span>Tomar foto o adjuntar imagen</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleSelectFoto}
+                  disabled={isCompressingFoto}
+                  className="hidden"
+                />
+              </label>
+              <p className="text-[11px] text-slate-400 mt-1.5 pl-1">
+                Tip: Toma foto a la pantalla del error o al equipo averiado. Se optimiza automáticamente en segundos.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

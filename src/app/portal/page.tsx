@@ -11,6 +11,7 @@ import {
   getUbicacionesDepartamentos,
   getUbicacionesAreas,
   crearTicket,
+  subirFotoIncidencia,
   getTicketsActivosPublicos,
   trackTicket,
   verifyPortalPin,
@@ -18,6 +19,7 @@ import {
   safeStorage,
   socket,
 } from '@/services/api';
+import { compressImage } from '@/lib/imageCompression';
 import {
   PortalPinScreen,
   PortalSuccessScreen,
@@ -53,6 +55,11 @@ export default function PortalPage() {
   const [sedesList, setSedesList] = useState<string[]>([]);
   const [departamentosList, setDepartamentosList] = useState<string[]>([]);
   const [areasList, setAreasList] = useState<string[]>([]);
+
+  // Foto de evidencia del problema
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
+  const [isCompressingFoto, setIsCompressingFoto] = useState(false);
 
   // Acumulado de Tickets Activos (Feed en Vivo WebSockets)
   const [activeTickets, setActiveTickets] = useState<any[]>([]);
@@ -331,6 +338,37 @@ export default function PortalPage() {
     }
   };
 
+  const handleSelectFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen (JPEG, PNG, WEBP).');
+      return;
+    }
+
+    setIsCompressingFoto(true);
+    try {
+      const compressed = await compressImage(file, { maxWidth: 1280, maxHeight: 1280, quality: 0.75 });
+      setFotoFile(compressed);
+      setFotoPreview(URL.createObjectURL(compressed));
+    } catch (err) {
+      console.error('Error optimizando foto:', err);
+      setFotoFile(file);
+      setFotoPreview(URL.createObjectURL(file));
+    } finally {
+      setIsCompressingFoto(false);
+    }
+  };
+
+  const handleRemoveFoto = () => {
+    if (fotoPreview) {
+      URL.revokeObjectURL(fotoPreview);
+    }
+    setFotoFile(null);
+    setFotoPreview(null);
+  };
+
   const handleSubmitTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!titulo || !sede || !departamento) return;
@@ -343,6 +381,16 @@ export default function PortalPage() {
 
     setIsSubmitting(true);
     try {
+      // Si el usuario adjuntó una foto, subirla primero
+      let uploadedFotoUrl: string | undefined = undefined;
+      if (fotoFile) {
+        try {
+          uploadedFotoUrl = await subirFotoIncidencia(fotoFile);
+        } catch (uploadErr) {
+          console.error('Error al subir la fotografía de evidencia:', uploadErr);
+        }
+      }
+
       const result = await crearTicket({
         titulo,
         sede,
@@ -350,6 +398,7 @@ export default function PortalPage() {
         ubicacionEspecifica: area,
         solicitanteNombre: solicitanteNombre.trim(),
         solicitanteContacto: solicitanteContacto.trim(),
+        fotoUrl: uploadedFotoUrl,
         website: honeypot,
       });
 
@@ -363,6 +412,7 @@ export default function PortalPage() {
       setSede('');
       setDepartamento('');
       setArea('');
+      handleRemoveFoto();
     } catch (error: any) {
       console.error(error);
       const msg = error?.message || '';
@@ -624,6 +674,11 @@ export default function PortalPage() {
             handleNombreChange={handleNombreChange}
             handleContactoChange={handleContactoChange}
             handleContactoBlur={handleContactoBlur}
+            fotoFile={fotoFile}
+            fotoPreview={fotoPreview}
+            handleSelectFoto={handleSelectFoto}
+            handleRemoveFoto={handleRemoveFoto}
+            isCompressingFoto={isCompressingFoto}
           />
         )}
       </div>

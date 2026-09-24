@@ -20,6 +20,24 @@ export const crearTicket = async (ticketData: CreateTicketDTO): Promise<any> => 
   return res.json().catch(() => ({ success: true }));
 };
 
+export const subirFotoIncidencia = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/tickets/upload-foto`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al subir la imagen de la incidencia');
+  }
+
+  const data = await res.json();
+  return data.url;
+};
+
 export const trackTicket = async (query: string): Promise<Ticket[]> => {
   const encoded = encodeURIComponent(query.trim());
   const res = await fetch(`${BASE_URL}/tickets/track?q=${encoded}`);
