@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2, Mail, Lock, Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react';
+import { Loader2, Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'sonner';
 import { loginUsuario } from '@/services/api/api-client';
@@ -31,15 +31,15 @@ export const LoginView = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070e24] bg-radial-[at_50%_40%] from-[#0f214d] via-[#091433] to-[#050b1d] flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-hidden select-none">
-      {/* Luces atmosféricas difusas de fondo (Glow Orbs) */}
-      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[520px] bg-blue-600/20 rounded-full blur-[130px] pointer-events-none animate-pulse duration-1000"></div>
-      <div className="absolute bottom-1/4 right-1/3 translate-x-1/2 translate-y-1/2 w-[520px] h-[520px] bg-indigo-600/15 rounded-full blur-[140px] pointer-events-none"></div>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-400/10 rounded-full blur-[90px] pointer-events-none"></div>
+    <div className="min-h-screen bg-gradient-to-br from-[#f8fafc] via-[#fdf2f8]/40 to-[#f0fdf4]/30 flex flex-col justify-center items-center p-4 sm:p-6 relative overflow-hidden select-none">
+      {/* Luces atmosféricas etéreas y suaves de fondo (Aura Pastel Glassmorphism) */}
+      <div className="absolute top-1/6 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-pink-200/40 rounded-full blur-[130px] pointer-events-none animate-pulse duration-1000"></div>
+      <div className="absolute bottom-1/6 right-1/4 translate-x-1/2 translate-y-1/2 w-[550px] h-[550px] bg-blue-200/35 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-rose-100/50 rounded-full blur-[100px] pointer-events-none"></div>
 
-      {/* Tarjeta de Inicio de Sesión con Glassmorfismo Limpio y Corporativo */}
-      <div className="w-full max-w-md bg-white/95 sm:bg-white/95 backdrop-blur-2xl rounded-3xl p-7 sm:p-9 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_0_0_1px_rgba(255,255,255,0.7)] border border-white/80 ring-1 ring-slate-900/5 relative z-10 animate-in fade-in zoom-in-95 duration-300">
-        {/* Identidad Institucional Oficial */}
+      {/* Tarjeta de Inicio de Sesión con Glassmorfismo Blanco Puro */}
+      <div className="w-full max-w-md bg-white/80 sm:bg-white/85 backdrop-blur-2xl rounded-3xl p-7 sm:p-9 shadow-[0_20px_50px_-15px_rgba(225,29,72,0.08),0_15px_35px_-10px_rgba(0,0,0,0.06),0_0_0_1px_rgba(255,255,255,0.95)] border border-white/90 ring-1 ring-slate-200/60 relative z-10 animate-in fade-in zoom-in-95 duration-300">
+        {/* Identidad Institucional Oficial (Fiel a la foto de Limatambo) */}
         <div className="mb-7">
           <LimatamboBrand layout="horizontal" subtitle="Accede a la plataforma de soporte" />
         </div>
@@ -52,14 +52,14 @@ export const LoginView = () => {
               Correo electrónico
             </label>
             <div className="relative flex items-center group">
-              <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#134685] transition-colors">
+              <div className="absolute left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#e11d48] transition-colors">
                 <Mail className="w-4 h-4" />
               </div>
               <input
                 type="email"
                 required
                 autoComplete="email"
-                className="w-full bg-slate-50/90 hover:bg-slate-50 border border-slate-200/90 focus:border-[#134685] rounded-xl pl-10 pr-4 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-2xs"
+                className="w-full bg-[#f1f5f9]/80 hover:bg-[#f1f5f9] border border-transparent focus:border-[#e11d48]/40 focus:bg-white rounded-2xl pl-11 pr-4 py-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-rose-500/10 transition-all shadow-2xs"
                 placeholder="ejemplo@correo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -73,14 +73,14 @@ export const LoginView = () => {
               Contraseña
             </label>
             <div className="relative flex items-center group">
-              <div className="absolute left-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#134685] transition-colors">
+              <div className="absolute left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#e11d48] transition-colors">
                 <Lock className="w-4 h-4" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
                 autoComplete="current-password"
-                className="w-full bg-slate-50/90 hover:bg-slate-50 border border-slate-200/90 focus:border-[#134685] rounded-xl pl-10 pr-11 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-2xs"
+                className="w-full bg-[#f1f5f9]/80 hover:bg-[#f1f5f9] border border-transparent focus:border-[#e11d48]/40 focus:bg-white rounded-2xl pl-11 pr-11 py-3.5 text-sm font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-rose-500/10 transition-all shadow-2xs"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -89,7 +89,7 @@ export const LoginView = () => {
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
-                className="absolute right-3 p-1.5 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer rounded-lg hover:bg-slate-100"
+                className="absolute right-3.5 p-1.5 text-slate-400 hover:text-slate-600 focus:outline-none transition-colors cursor-pointer rounded-lg hover:bg-slate-200/50"
                 title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -97,20 +97,20 @@ export const LoginView = () => {
             </div>
           </div>
 
-          {/* Botón de Ingreso Corporativo */}
+          {/* Botón de Ingreso Rosado/Magenta Corporativo (Fiel a la foto) */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-[#134685] to-[#1c5fb4] hover:from-[#0f3a70] hover:to-[#17529c] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-[#134685]/25 hover:shadow-xl hover:shadow-[#134685]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 mt-5 text-sm group cursor-pointer"
+            className="w-full bg-gradient-to-r from-[#e11d48] via-[#e11463] to-[#eb1b74] hover:from-[#cc103c] hover:to-[#d81567] text-white font-bold py-3.5 px-4 rounded-2xl shadow-lg shadow-[#e11d48]/30 hover:shadow-xl hover:shadow-[#e11d48]/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex justify-center items-center gap-2 mt-5 text-sm group cursor-pointer"
           >
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Accediendo al sistema...</span>
+                <span>Iniciando sesión...</span>
               </>
             ) : (
               <>
-                <LogIn className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                 <span>Iniciar Sesión</span>
               </>
             )}
@@ -118,14 +118,14 @@ export const LoginView = () => {
         </form>
 
         {/* Pie Institucional de Seguridad */}
-        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
+        <div className="mt-6 pt-5 border-t border-slate-100/80 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-400">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
           <span>Acceso seguro institucional cifrado</span>
         </div>
       </div>
 
       {/* Copyright sutil en el fondo */}
-      <p className="relative z-10 text-[11px] text-slate-400/80 mt-6 font-medium text-center">
+      <p className="relative z-10 text-[11px] text-slate-400 mt-6 font-medium text-center">
         © Clínicas Limatambo · Dirección de Tecnologías de la Información
       </p>
     </div>
