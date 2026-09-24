@@ -116,8 +116,36 @@ export const UsersView = () => {
   };
 
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300">
+      
+      {/* ========================================================
+          1. VISTA MÓVIL: Cabecera Minimalista (Estilo App Nativa)
+         ======================================================== */}
+      <div className="block md:hidden space-y-3 shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-tight">
+              Gestión de Usuarios
+            </h1>
+            <p className="text-slate-500 text-xs mt-0.5 font-medium">
+              Accesos y permisos del equipo TI
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => openModal()}
+            className="h-10 px-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Usuario</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================
+          2. VISTA DESKTOP: Cabecera Completa (Intacta para PC)
+         ======================================================== */}
+      <div className="hidden md:flex flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-black text-slate-800 flex items-center gap-3">
             <div className="bg-indigo-100 p-2 rounded-xl text-indigo-600">
@@ -132,13 +160,113 @@ export const UsersView = () => {
         
         <button 
           onClick={() => openModal()}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-2"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/40 flex items-center gap-2 cursor-pointer active:scale-95"
         >
           <Plus className="w-5 h-5" /> Nuevo Usuario
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+      {/* ========================================================
+          3. VISTA MÓVIL: Tarjetas Inteligentes (Sin scroll roto)
+         ======================================================== */}
+      <div className="block md:hidden space-y-3">
+        {loading ? (
+          <div className="p-8 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
+            Cargando usuarios...
+          </div>
+        ) : users.map(user => (
+          <div key={user.id} className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs space-y-3">
+            {/* Cabecera Tarjeta: Avatar + Rol */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                <UserAvatar
+                  avatar={user.avatar}
+                  name={user.nombre}
+                  size="md"
+                />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-slate-800 text-sm truncate">{user.nombre}</p>
+                    {currentUser?.id === user.id && (
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.2 rounded-md border border-indigo-100">
+                        Tú
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 truncate mt-0.5">{user.email}</p>
+                </div>
+              </div>
+
+              <div className="shrink-0">
+                {user.rol === 'ADMIN' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-100 shadow-2xs">
+                    <Shield className="w-3.5 h-3.5 text-indigo-600" /> Admin
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs border border-slate-200 shadow-2xs">
+                    Técnico
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Módulos accesibles */}
+            <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 space-y-1.5">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Permisos de Módulos</p>
+              {user.rol === 'ADMIN' ? (
+                <p className="text-xs font-semibold text-indigo-700 flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5 text-indigo-600" /> Acceso total a todos los módulos y ajustes
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {user.modulosAccesibles && user.modulosAccesibles.length > 0 ? (
+                    user.modulosAccesibles.map((mod: string) => (
+                      <span key={mod} className="text-[10px] font-bold bg-white text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
+                        {MODULOS_DISPONIBLES.find(m => m.id === mod)?.label || mod}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400 italic">Sin módulos asignados</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Acciones */}
+            <div className="flex items-center gap-2 pt-1 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => openModal(user)}
+                className="flex-1 py-2 px-3 bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>Editar</span>
+              </button>
+
+              {currentUser?.id !== user.id ? (
+                <button
+                  type="button"
+                  onClick={() => setUserToDelete(user)}
+                  className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                  title="Eliminar usuario"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Eliminar</span>
+                </button>
+              ) : (
+                <span className="py-2 px-3 text-[11px] font-semibold text-slate-400 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-1 select-none">
+                  Sesión activa
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ========================================================
+          4. VISTA DESKTOP: Tabla Completa Tradicional (Solo PC)
+         ======================================================== */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 text-slate-500 font-medium border-b border-slate-200 uppercase text-xs tracking-wider">
@@ -197,7 +325,7 @@ export const UsersView = () => {
                     <div className="flex items-center justify-end gap-1">
                       <button 
                         onClick={() => openModal(user)}
-                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                         title="Editar usuario"
                       >
                         <Edit className="w-5 h-5" />
@@ -205,7 +333,7 @@ export const UsersView = () => {
                       {currentUser?.id !== user.id ? (
                         <button 
                           onClick={() => setUserToDelete(user)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Eliminar usuario"
                         >
                           <Trash2 className="w-5 h-5" />
