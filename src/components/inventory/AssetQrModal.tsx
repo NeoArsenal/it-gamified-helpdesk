@@ -11,12 +11,12 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
   if (!activo) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:bg-white print:p-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:bg-white print:p-0 print:static print:z-auto print:block">
       <div 
         className="fixed inset-0 print:hidden"
         onClick={onClose}
       />
-      <div className="relative z-10 bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 print:shadow-none print:border-none print:w-full print:max-w-none">
+      <div className="relative z-10 bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 print:shadow-none print:border-none print:w-full print:max-w-none print:static print:overflow-visible">
         
         <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between no-print print:hidden">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -32,7 +32,10 @@ export function AssetQrModal({ activo, onClose }: AssetQrModalProps) {
         </div>
 
         <div className="p-6 flex flex-col items-center justify-center bg-white text-center print:p-0">
-          <div className="border-2 border-dashed border-slate-300 p-5 rounded-2xl flex flex-col items-center gap-3 bg-white w-full print:border-solid print:border-black">
+          <div 
+            id="print-section" 
+            className="border-2 border-dashed border-slate-300 p-5 rounded-2xl flex flex-col items-center gap-3 bg-white w-full print:border-solid print:border-black"
+          >
             <div className="flex items-center gap-1.5 text-indigo-600 font-black text-xs uppercase tracking-wider">
               <ShieldCheck className="w-4 h-4" /> SOPORTE TI · CONTROL PATRIMONIAL
             </div>
