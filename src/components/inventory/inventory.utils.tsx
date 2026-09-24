@@ -17,6 +17,14 @@ export const getDeviceIcon = (tipoEquipo: string) => {
 
 export const getEstadoBadge = (est: string) => {
   switch (est) {
+    case 'DISPONIBLE':
+    case 'ALMACEN':
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          En Almacén TI
+        </span>
+      );
     case 'REPARACION':
       return (
         <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">

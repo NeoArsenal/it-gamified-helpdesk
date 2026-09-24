@@ -40,12 +40,23 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const [marca, setMarca] = useState('');
   const [modelo, setModelo] = useState('');
   const [numeroSerie, setNumeroSerie] = useState('');
+  const [codigoFactura, setCodigoFactura] = useState('');
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [responsable, setResponsable] = useState('');
-  const [estado, setEstado] = useState('OPERATIVO');
+  const [estado, setEstado] = useState('DISPONIBLE');
   const [observaciones, setObservaciones] = useState('');
+
+  // Modales de Asignación, Estado y Trazabilidad
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignActivo, setAssignActivo] = useState<any | null>(null);
+
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [statusActivo, setStatusActivo] = useState<any | null>(null);
+
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [timelineActivo, setTimelineActivo] = useState<any | null>(null);
 
   // Catálogos dinámicos
   const [tiposDisponibles, setTiposDisponibles] = useState<string[]>([
@@ -125,15 +136,16 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const handleAbrirCrear = () => {
     setEditingActivo(null);
     setCodigo('');
-    setTipo(tiposDisponibles[0] || 'PC');
+    setTipo(tiposDisponibles[0] || 'Desktop / Laptop');
     setMarca('');
     setModelo('');
     setNumeroSerie('');
+    setCodigoFactura('');
     setSede('');
     setDepartamento('');
     setUbicacion('');
     setResponsable('');
-    setEstado('OPERATIVO');
+    setEstado('DISPONIBLE');
     setObservaciones('');
     setIsModalOpen(true);
   };
@@ -145,11 +157,12 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setMarca(activo.marca || '');
     setModelo(activo.modelo || '');
     setNumeroSerie(activo.numeroSerie || '');
+    setCodigoFactura(activo.codigoFactura || '');
     setSede(activo.sede || '');
     setDepartamento(activo.departamento || '');
     setUbicacion(activo.ubicacion || '');
     setResponsable(activo.responsable || '');
-    setEstado(activo.estado || 'OPERATIVO');
+    setEstado(activo.estado || 'DISPONIBLE');
     setObservaciones(activo.observaciones || '');
     setIsModalOpen(true);
   };
@@ -157,26 +170,28 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const handleGuardarActivo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = {
+      const payload: any = {
         codigo: codigo.trim().toUpperCase(),
         tipo,
         marca: marca.trim(),
         modelo: modelo.trim(),
         numeroSerie: numeroSerie.trim(),
-        sede,
-        departamento,
-        ubicacion,
-        responsable: responsable.trim(),
-        estado,
-        observaciones: observaciones.trim(),
+        codigoFactura: codigoFactura.trim().toUpperCase(),
       };
 
       if (editingActivo) {
+        payload.sede = sede;
+        payload.departamento = departamento;
+        payload.ubicacion = ubicacion;
+        payload.responsable = responsable.trim();
+        payload.estado = estado;
+        payload.observaciones = observaciones.trim();
+        payload.tecnicoId = userId;
         await updateActivo(editingActivo.id, payload);
         toast.success('Equipo actualizado exitosamente');
       } else {
         await crearActivo(payload);
-        toast.success('Nuevo equipo registrado');
+        toast.success('Nuevo equipo registrado en almacén');
       }
 
       setIsModalOpen(false);
@@ -184,6 +199,61 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     } catch (err: any) {
       toast.error(err?.message || 'Error al guardar el equipo');
     }
+  };
+
+  const handleAbrirAsignar = (activo: any) => {
+    setAssignActivo(activo);
+    setIsAssignModalOpen(true);
+  };
+
+  const handleGuardarAsignacion = async (data: {
+    sede: string;
+    departamento: string;
+    ubicacion: string;
+    responsable: string;
+  }) => {
+    if (!assignActivo) return;
+    try {
+      await updateActivo(assignActivo.id, {
+        ...data,
+        estado: 'OPERATIVO',
+        tecnicoId: userId,
+      });
+      toast.success(`Equipo ${assignActivo.codigo} asignado exitosamente a ${data.sede}`);
+      setIsAssignModalOpen(false);
+      fetchActivos();
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al asignar equipo');
+    }
+  };
+
+  const handleAbrirCambiarEstado = (activo: any) => {
+    setStatusActivo(activo);
+    setIsStatusModalOpen(true);
+  };
+
+  const handleGuardarCambioEstado = async (data: {
+    nuevoEstado: string;
+    observaciones: string;
+  }) => {
+    if (!statusActivo) return;
+    try {
+      await updateActivo(statusActivo.id, {
+        estado: data.nuevoEstado,
+        observaciones: data.observaciones,
+        tecnicoId: userId,
+      });
+      toast.success(`Estado de ${statusActivo.codigo} actualizado a ${data.nuevoEstado}`);
+      setIsStatusModalOpen(false);
+      fetchActivos();
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al cambiar estado');
+    }
+  };
+
+  const handleAbrirTimeline = (activo: any) => {
+    setTimelineActivo(activo);
+    setIsTimelineModalOpen(true);
   };
 
   const handleEliminar = async (id: string, codigoEquipo: string) => {
@@ -316,6 +386,8 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setModelo,
     numeroSerie,
     setNumeroSerie,
+    codigoFactura,
+    setCodigoFactura,
     sede,
     setSede,
     departamento,
@@ -328,6 +400,18 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setEstado,
     observaciones,
     setObservaciones,
+    isAssignModalOpen,
+    setIsAssignModalOpen,
+    assignActivo,
+    setAssignActivo,
+    isStatusModalOpen,
+    setIsStatusModalOpen,
+    statusActivo,
+    setStatusActivo,
+    isTimelineModalOpen,
+    setIsTimelineModalOpen,
+    timelineActivo,
+    setTimelineActivo,
     tiposDisponibles,
     sedesList,
     departamentosList,
@@ -343,6 +427,11 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     handleAbrirCrear,
     handleAbrirEditar,
     handleGuardarActivo,
+    handleAbrirAsignar,
+    handleGuardarAsignacion,
+    handleAbrirCambiarEstado,
+    handleGuardarCambioEstado,
+    handleAbrirTimeline,
     handleEliminar,
     handleEnviarATaller,
     handleMarcarReparado,

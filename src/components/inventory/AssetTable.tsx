@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, X, ChevronDown, Check, QrCode, MapPin, User, 
-  Wrench, Edit3, Trash2, Package, FileSpreadsheet 
+  Wrench, Edit3, Trash2, Package, FileSpreadsheet, Clock, UserPlus 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeviceIcon, getEstadoBadge } from './inventory.utils';
@@ -22,6 +22,9 @@ interface AssetTableProps {
   onMarcarReparado: (activo: any) => void;
   onEditar: (activo: any) => void;
   onEliminar: (id: string, codigo: string) => void;
+  onAsignar?: (activo: any) => void;
+  onCambiarEstado?: (activo: any) => void;
+  onVerTimeline?: (activo: any) => void;
 }
 
 export function AssetTable({
@@ -38,6 +41,9 @@ export function AssetTable({
   onMarcarReparado,
   onEditar,
   onEliminar,
+  onAsignar,
+  onCambiarEstado,
+  onVerTimeline,
 }: AssetTableProps) {
   // Control de Dropdowns Estéticos
   const [openSedeDropdown, setOpenSedeDropdown] = useState(false);
@@ -277,6 +283,12 @@ export function AssetTable({
                         <span className="truncate max-w-[120px]">{activo.numeroSerie}</span>
                       </div>
                     )}
+                    {activo.codigoFactura && (
+                      <div className="text-[10px] text-indigo-700 font-mono mt-0.5 flex items-center gap-1 font-semibold">
+                        <span className="text-[9px] uppercase tracking-wider text-indigo-600 font-bold bg-indigo-50 px-1 py-0.2 rounded border border-indigo-200">FAC</span>
+                        <span className="truncate max-w-[120px]">{activo.codigoFactura}</span>
+                      </div>
+                    )}
                   </td>
 
                   {/* Tipo, Marca & Modelo */}
@@ -296,16 +308,26 @@ export function AssetTable({
 
                   {/* Ubicación */}
                   <td className="py-3.5 px-4">
-                    <div>
-                      <div className="font-semibold text-slate-800 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-indigo-400" />
-                        <span>{activo.sede || 'Sin sede'}</span>
+                    {activo.sede ? (
+                      <div>
+                        <div className="font-semibold text-slate-800 flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-indigo-400" />
+                          <span>{activo.sede}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {activo.departamento || 'General'}
+                          {activo.ubicacion ? ` · ${activo.ubicacion}` : ''}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {activo.departamento || 'General'}
-                        {activo.ubicacion ? ` · ${activo.ubicacion}` : ''}
-                      </p>
-                    </div>
+                    ) : (
+                      <div>
+                        <div className="font-semibold text-amber-700 flex items-center gap-1">
+                          <Package className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>En Almacén TI</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Sin asignar a sede</p>
+                      </div>
+                    )}
                   </td>
 
                   {/* Responsable */}
@@ -335,15 +357,41 @@ export function AssetTable({
                   {/* Acciones */}
                   <td className="py-3.5 px-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
-                      {isOperativo && (
+                      {/* Botón Asignar / Reasignar */}
+                      {onAsignar && (
                         <button
                           type="button"
-                          onClick={() => onEnviarATaller(activo)}
-                          className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
-                          title="Enviar a taller por desperfecto"
+                          onClick={() => onAsignar(activo)}
+                          className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                          title={activo.sede ? "Reasignar de sede / responsable" : "Asignar a Sede y Responsable"}
+                        >
+                          <UserPlus className="w-3 h-3 text-indigo-600" />
+                          <span>{activo.sede ? "Reasignar" : "Asignar"}</span>
+                        </button>
+                      )}
+
+                      {/* Botón Reportar Falla o Cambiar Estado */}
+                      {onCambiarEstado && (
+                        <button
+                          type="button"
+                          onClick={() => onCambiarEstado(activo)}
+                          className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                          title="Reportar falla o cambiar estado"
                         >
                           <Wrench className="w-3 h-3 text-amber-600" />
-                          <span>Taller</span>
+                          <span>Falla / Taller</span>
+                        </button>
+                      )}
+
+                      {/* Botón Trazabilidad AliExpress Timeline */}
+                      {onVerTimeline && (
+                        <button
+                          type="button"
+                          onClick={() => onVerTimeline(activo)}
+                          className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                          title="Ver Trazabilidad Completa (Historial)"
+                        >
+                          <Clock className="w-4 h-4 text-indigo-500" />
                         </button>
                       )}
 
@@ -351,7 +399,7 @@ export function AssetTable({
                         <button
                           type="button"
                           onClick={() => onMarcarReparado(activo)}
-                          className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
+                          className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-all flex items-center gap-1 active:scale-95 cursor-pointer"
                           title="Marcar reparado y devolver a operativo"
                         >
                           <Check className="w-3 h-3 text-emerald-600" />

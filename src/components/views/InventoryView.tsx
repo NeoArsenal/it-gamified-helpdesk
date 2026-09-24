@@ -7,7 +7,10 @@ import {
   AssetTable, 
   AssetWorkshopBoard, 
   AssetFormModal, 
-  AssetQrModal 
+  AssetQrModal,
+  AssetAssignModal,
+  AssetStatusModal,
+  AssetTimelineModal,
 } from '@/components/inventory';
 
 interface InventoryViewProps {
@@ -42,6 +45,8 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     setModelo,
     numeroSerie,
     setNumeroSerie,
+    codigoFactura,
+    setCodigoFactura,
     sede,
     setSede,
     departamento,
@@ -54,6 +59,15 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     setEstado,
     observaciones,
     setObservaciones,
+    isAssignModalOpen,
+    setIsAssignModalOpen,
+    assignActivo,
+    isStatusModalOpen,
+    setIsStatusModalOpen,
+    statusActivo,
+    isTimelineModalOpen,
+    setIsTimelineModalOpen,
+    timelineActivo,
     tiposDisponibles,
     sedesList,
     departamentosList,
@@ -68,6 +82,11 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     handleAbrirCrear,
     handleAbrirEditar,
     handleGuardarActivo,
+    handleAbrirAsignar,
+    handleGuardarAsignacion,
+    handleAbrirCambiarEstado,
+    handleGuardarCambioEstado,
+    handleAbrirTimeline,
     handleEliminar,
     handleEnviarATaller,
     handleMarcarReparado,
@@ -187,6 +206,9 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
           onMarcarReparado={handleMarcarReparado}
           onEditar={handleAbrirEditar}
           onEliminar={handleEliminar}
+          onAsignar={handleAbrirAsignar}
+          onCambiarEstado={handleAbrirCambiarEstado}
+          onVerTimeline={handleAbrirTimeline}
         />
       )}
 
@@ -203,7 +225,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         />
       )}
 
-      {/* 4. Modal Crear / Editar Equipo */}
+      {/* 4. Modal Crear / Editar Equipo (Solo campos de ingreso patrimonial) */}
       <AssetFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -218,25 +240,41 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         setModelo={setModelo}
         numeroSerie={numeroSerie}
         setNumeroSerie={setNumeroSerie}
-        sede={sede}
-        setSede={setSede}
-        departamento={departamento}
-        setDepartamento={setDepartamento}
-        ubicacion={ubicacion}
-        setUbicacion={setUbicacion}
-        responsable={responsable}
-        setResponsable={setResponsable}
-        estado={estado}
-        setEstado={setEstado}
-        observaciones={observaciones}
-        setObservaciones={setObservaciones}
+        codigoFactura={codigoFactura}
+        setCodigoFactura={setCodigoFactura}
         tiposDisponibles={tiposDisponibles}
-        sedesList={sedesList}
-        departamentosList={departamentosList}
         onGuardar={handleGuardarActivo}
       />
 
-      {/* 5. Modal de Etiqueta QR Imprimible */}
+      {/* 5. Modal de Asignación a Sede, Departamento y Responsable */}
+      <AssetAssignModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        activo={assignActivo}
+        sedesList={sedesList}
+        onGuardarAsignacion={handleGuardarAsignacion}
+      />
+
+      {/* 6. Modal de Cambio de Estado y Reporte de Fallas Técnicas */}
+      <AssetStatusModal
+        isOpen={isStatusModalOpen}
+        onClose={() => setIsStatusModalOpen(false)}
+        activo={statusActivo}
+        onGuardarCambioEstado={handleGuardarCambioEstado}
+      />
+
+      {/* 7. Modal de Trazabilidad Histórica Estilo AliExpress (Desktop) */}
+      <AssetTimelineModal
+        isOpen={isTimelineModalOpen}
+        onClose={() => setIsTimelineModalOpen(false)}
+        activo={timelineActivo}
+        onVerQr={(act) => {
+          setIsTimelineModalOpen(false);
+          setQrModalActivo(act);
+        }}
+      />
+
+      {/* 8. Modal de Etiqueta QR Imprimible */}
       <AssetQrModal
         activo={qrModalActivo}
         onClose={() => setQrModalActivo(null)}
