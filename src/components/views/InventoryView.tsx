@@ -95,7 +95,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
   } = useInventory({ userId, onActivoRescatado });
 
   return (
-    <div className="p-4 md:p-8 space-y-6 animate-in fade-in duration-300 max-w-[1700px] mx-auto">
+    <div className="p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 animate-in fade-in duration-300 max-w-[1700px] mx-auto">
       
       {/* 1. Cabecera Limpia y Armoniosa */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
