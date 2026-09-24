@@ -80,9 +80,9 @@ export function AssetTable({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-visible flex flex-col space-y-4 p-3 sm:p-4 md:p-6 animate-in fade-in">
-      {/* Barra de Búsqueda y Filtros Integrada */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4 relative z-10">
+    <div className="bg-transparent md:bg-white rounded-2xl md:border md:border-slate-200/90 md:shadow-sm overflow-visible flex flex-col space-y-4 p-0 md:p-6 animate-in fade-in">
+      {/* Barra de Búsqueda y Filtros Integrada (Solo Desktop) */}
+      <div className="hidden md:flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 pb-4 relative z-10">
         <div className="relative w-full lg:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 shrink-0" />
           <input 

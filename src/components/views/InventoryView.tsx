@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers 
+  Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers,
+  ArrowDownToLine, Search, X, SlidersHorizontal, ChevronDown, Check
 } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
+import { cn } from '@/lib/utils';
+import { exportActivosToCsv } from '@/lib/export-utils';
+import { toast } from 'sonner';
 import { 
   AssetTable, 
   AssetWorkshopBoard, 
@@ -94,11 +98,232 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     handleRescatar,
   } = useInventory({ userId, onActivoRescatado });
 
+  // Control de Dropdown de Sedes Móvil
+  const [openMobileSedeDropdown, setOpenMobileSedeDropdown] = useState(false);
+  const mobileSedeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileSedeRef.current && !mobileSedeRef.current.contains(event.target as Node)) {
+        setOpenMobileSedeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleMobileExport = () => {
+    try {
+      if (filteredActivos.length === 0) {
+        toast.error('No hay equipos para exportar');
+        return;
+      }
+      const sedeLabel = filterSede === 'TODAS' ? 'todas' : filterSede.toLowerCase().replace(/\s+/g, '-');
+      const estadoLabel = filterEstado === 'TODOS' ? 'todos' : filterEstado.toLowerCase();
+      exportActivosToCsv(filteredActivos, `inventario_${sedeLabel}_${estadoLabel}`);
+      toast.success(`Se exportaron ${filteredActivos.length} equipos a Excel`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al exportar inventario');
+    }
+  };
+
   return (
     <div className="p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 animate-in fade-in duration-300 max-w-[1700px] mx-auto">
       
-      {/* 1. Cabecera Limpia y Armoniosa */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* ========================================================
+          1. VISTA MÓVIL: Cabecera Minimalista (Estilo App Nativa)
+         ======================================================== */}
+      <div className="block md:hidden space-y-3">
+        {/* Fila 1: Título y Botones de Acción */}
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight leading-tight">
+              Inventario de Equipos
+            </h1>
+            <p className="text-slate-500 text-xs mt-0.5 font-medium">
+              Gestión de hardware y taller técnico
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleMobileExport}
+              className="w-10 h-10 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 flex items-center justify-center transition-all active:scale-95 shadow-2xs cursor-pointer"
+              title="Descargar Excel"
+            >
+              <ArrowDownToLine className="w-4 h-4 text-slate-700" />
+            </button>
+            <button
+              type="button"
+              onClick={handleAbrirCrear}
+              className="h-10 px-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+              title="Registrar equipo"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Registrar</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Fila 2: Selector de Pestañas Segmentado */}
+        <div className="bg-slate-100/90 p-1 rounded-2xl flex items-center gap-1 border border-slate-200/60 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('CATALOGO');
+              setFilterEstado('TODOS');
+            }}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+              activeTab === 'CATALOGO' && filterEstado === 'TODOS'
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <span>Todos</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+              activeTab === 'CATALOGO' && filterEstado === 'TODOS'
+                ? "bg-slate-100 text-slate-700"
+                : "text-slate-400"
+            )}>
+              {totalActivos}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('CATALOGO');
+              setFilterEstado('OPERATIVO');
+            }}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+              activeTab === 'CATALOGO' && filterEstado === 'OPERATIVO'
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <span>Operativos</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+              activeTab === 'CATALOGO' && filterEstado === 'OPERATIVO'
+                ? "bg-emerald-50 text-emerald-700"
+                : "text-slate-400"
+            )}>
+              {countOperativos}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('CATALOGO');
+              setFilterEstado('REPARACION');
+            }}
+            className={cn(
+              "flex-1 py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer select-none",
+              (activeTab === 'CATALOGO' && filterEstado === 'REPARACION') || activeTab === 'TALLER'
+                ? "bg-white text-slate-900 shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            )}
+          >
+            <span>En Taller</span>
+            <span className={cn(
+              "text-[10px] px-1.5 py-0.2 rounded-full font-bold",
+              (activeTab === 'CATALOGO' && filterEstado === 'REPARACION') || activeTab === 'TALLER'
+                ? "bg-amber-100 text-amber-800"
+                : "text-slate-400"
+            )}>
+              {countReparacion}
+            </span>
+          </button>
+        </div>
+
+        {/* Fila 3: Buscador + Filtro de Sedes */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Buscar código, serie, marca..."
+              className="w-full h-11 pl-9.5 pr-8 bg-white border border-slate-200/90 rounded-2xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-2xs transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div ref={mobileSedeRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setOpenMobileSedeDropdown(prev => !prev)}
+              className={cn(
+                "h-11 px-3.5 rounded-2xl border flex items-center gap-2 text-xs font-bold transition-all shadow-2xs cursor-pointer",
+                filterSede !== 'TODAS'
+                  ? "bg-indigo-50/80 border-indigo-300 text-indigo-800"
+                  : "bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50"
+              )}
+            >
+              <SlidersHorizontal className="w-4 h-4 text-slate-500 shrink-0" />
+              <span className="max-w-[70px] truncate">{filterSede === 'TODAS' ? 'Todas' : filterSede}</span>
+              {filterSede !== 'TODAS' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
+              )}
+            </button>
+
+            {openMobileSedeDropdown && (
+              <div className="absolute right-0 top-full mt-1.5 min-w-[180px] max-w-[240px] max-h-60 overflow-y-auto custom-scrollbar bg-white rounded-2xl shadow-xl border border-slate-100 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilterSede('TODAS');
+                    setOpenMobileSedeDropdown(false);
+                  }}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-between transition-colors",
+                    filterSede === 'TODAS' ? "bg-indigo-50 text-indigo-700" : "text-slate-700 hover:bg-slate-100"
+                  )}
+                >
+                  <span>Todas las Sedes</span>
+                  {filterSede === 'TODAS' && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                </button>
+                <div className="h-px bg-slate-100 my-1" />
+                {sedesDisponibles.map(s => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => {
+                      setFilterSede(s);
+                      setOpenMobileSedeDropdown(false);
+                    }}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors",
+                      filterSede === s ? "bg-indigo-50 text-indigo-700 font-bold" : "text-slate-700 hover:bg-slate-100"
+                    )}
+                  >
+                    <span className="truncate">{s}</span>
+                    {filterSede === s && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================
+          2. VISTA DESKTOP: Cabecera Completa (Intacta para PC)
+         ======================================================== */}
+      <div className="hidden md:flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-2xs shrink-0">
