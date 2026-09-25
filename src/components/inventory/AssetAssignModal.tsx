@@ -139,6 +139,7 @@ export function AssetAssignModal({
               ) : (
                 <input
                   type="text"
+                  maxLength={80}
                   value={departamento}
                   onChange={(e) => setDepartamento(e.target.value)}
                   placeholder="Ej: Rayos X, Admisión..."
@@ -154,6 +155,7 @@ export function AssetAssignModal({
             </label>
             <input
               type="text"
+              maxLength={120}
               value={ubicacion}
               onChange={(e) => setUbicacion(e.target.value)}
               placeholder="Ej: Piso 3, Consultorio 304, Mostrador 1"
@@ -167,6 +169,7 @@ export function AssetAssignModal({
             </label>
             <input
               type="text"
+              maxLength={100}
               value={responsable}
               onChange={(e) => setResponsable(e.target.value)}
               placeholder="Ej: Dra. Gómez / Lic. Pérez / Admisión Central"

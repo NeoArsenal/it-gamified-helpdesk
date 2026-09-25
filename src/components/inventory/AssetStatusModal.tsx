@@ -145,6 +145,7 @@ export function AssetStatusModal({
             <textarea
               required
               rows={3}
+              maxLength={500}
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               placeholder="Describe la falla presentada (ej: No enciende, pantalla azul, cable de red roto, mantenimiento preventivo)..."

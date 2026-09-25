@@ -97,6 +97,7 @@ export function AssetFormModal({
               <input
                 type="text"
                 required
+                maxLength={50}
                 value={codigo}
                 onChange={e => setCodigo(e.target.value)}
                 placeholder="Ej: PC-042"
@@ -128,6 +129,7 @@ export function AssetFormModal({
               </label>
               <input
                 type="text"
+                maxLength={60}
                 value={marca}
                 onChange={e => setMarca(e.target.value)}
                 placeholder="Ej: HP, Lenovo, Dell, Epson..."
@@ -141,6 +143,7 @@ export function AssetFormModal({
               </label>
               <input
                 type="text"
+                maxLength={80}
                 value={modelo}
                 onChange={e => setModelo(e.target.value)}
                 placeholder="Ej: ProDesk 400 G6, ThinkPad L14..."
@@ -156,6 +159,7 @@ export function AssetFormModal({
             </label>
             <input
               type="text"
+              maxLength={80}
               value={numeroSerie}
               onChange={e => setNumeroSerie(e.target.value)}
               placeholder="EJ: SN-4CE0460XYZ O SERIE DE FÁBRICA GRABADA EN EL CHASIS"
@@ -173,6 +177,7 @@ export function AssetFormModal({
             </label>
             <input
               type="text"
+              maxLength={60}
               value={codigoFactura}
               onChange={e => setCodigoFactura(e.target.value)}
               placeholder="Ej: F001-002345 o GR-2026-089"
