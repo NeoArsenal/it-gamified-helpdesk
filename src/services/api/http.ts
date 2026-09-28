@@ -66,6 +66,29 @@ export const getAuthHeaders = (): Record<string, string> => {
   };
 };
 
+// Cache en memoria ultra-rápido para peticiones GET (0ms de respuesta)
+interface CacheEntry {
+  body: string;
+  headers: Record<string, string>;
+  status: number;
+  statusText: string;
+  timestamp: number;
+}
+const apiCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 25000; // 25 segundos de vigencia
+
+export const clearApiCache = (filter?: string) => {
+  if (!filter) {
+    apiCache.clear();
+    return;
+  }
+  for (const key of apiCache.keys()) {
+    if (key.includes(filter)) {
+      apiCache.delete(key);
+    }
+  }
+};
+
 const originalFetch = globalThis.fetch;
 export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestInit) => {
   const token = safeStorage.getItem('auth_token');
@@ -75,6 +98,26 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const method = (options?.method || 'GET').toUpperCase();
+  const urlKey = typeof url === 'string' ? url : url.toString();
+
+  // Si es GET y está en cache fresco, responder en 0ms
+  if (method === 'GET' && !urlKey.includes('/auth/') && !urlKey.includes('/portal/')) {
+    const cached = apiCache.get(urlKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return new Response(cached.body, {
+        status: cached.status,
+        statusText: cached.statusText,
+        headers: cached.headers,
+      });
+    }
+  }
+
+  // Si es mutación (POST, PUT, PATCH, DELETE), invalidar cache para siempre obtener datos frescos
+  if (method !== 'GET') {
+    apiCache.clear();
   }
 
   try {
@@ -92,6 +135,22 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
       }
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.message || `Error ${res.status}`);
+    }
+
+    // Cachear respuesta exitosa de GET
+    if (method === 'GET' && res.ok && !urlKey.includes('/auth/') && !urlKey.includes('/portal/')) {
+      const cloned = res.clone();
+      cloned.text().then(body => {
+        const resHeaders: Record<string, string> = {};
+        cloned.headers.forEach((val, key) => { resHeaders[key] = val; });
+        apiCache.set(urlKey, {
+          body,
+          headers: resHeaders,
+          status: res.status,
+          statusText: res.statusText,
+          timestamp: Date.now(),
+        });
+      }).catch(() => {});
     }
 
     return res;
