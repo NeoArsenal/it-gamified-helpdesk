@@ -3,7 +3,8 @@ import { getTicketsAnalytics, getActivos } from '@/services/api/api-client';
 import { 
   Activity, Clock, Download, Ticket, BarChart3, PieChart as PieChartIcon, 
   Grid, Building2, Globe, CheckCircle2, ChevronRight, Laptop, 
-  Layers, ArrowUpRight, TrendingUp, AlertTriangle, ShieldCheck
+  Layers, ArrowUpRight, TrendingUp, AlertTriangle, ShieldCheck,
+  LayoutList, Table2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
@@ -18,6 +19,7 @@ export function AnalyticsView({ userId }: { userId?: string }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedSede, setSelectedSede] = useState<string>('TODAS');
   const [chartType, setChartType] = useState<'heatmap' | 'bar' | 'pie'>('heatmap');
+  const [mobileMatrixMode, setMobileMatrixMode] = useState<'cards' | 'table'>('cards');
   const reportRef = useRef<HTMLDivElement>(null);
 
   const fetchAnalytics = async (sede: string = selectedSede) => {
@@ -117,27 +119,27 @@ export function AnalyticsView({ userId }: { userId?: string }) {
   };
 
   return (
-    <div className="p-6 md:p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-300">
+    <div className="p-3.5 sm:p-6 md:p-8 h-full flex flex-col overflow-y-auto animate-in fade-in duration-300">
       
       {/* 1. Header Principal y Botón Exportar */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-5 sm:mb-6 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2.5">
-            <Activity className="w-6 h-6 text-indigo-600" /> Analítica y SLAs
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800 flex items-center gap-2.5">
+            <Activity className="w-5 h-5 sm:w-6 sm:h-6 text-indigo-600" /> Analítica y SLAs
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
             Métricas de rendimiento operativo, focos de fallas y benchmark multisede.
           </p>
         </div>
         <button 
           onClick={exportPDF}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold shadow-sm hover:shadow active:scale-95 transition-all cursor-pointer"
         >
           <Download className="w-4 h-4" /> Exportar Reporte PDF
         </button>
       </div>
 
-      <div ref={reportRef} className="space-y-6 bg-slate-50 p-5 md:p-7 rounded-3xl border border-slate-200/90 shadow-2xs">
+      <div ref={reportRef} className="space-y-5 sm:space-y-6 bg-slate-50 p-3.5 sm:p-5 md:p-7 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-2xs">
         
         {/* Cabecera contextual para el PDF impreso */}
         <div className="hidden pdf-header mb-4 bg-white p-6 rounded-2xl border border-slate-200">
@@ -390,7 +392,7 @@ export function AnalyticsView({ userId }: { userId?: string }) {
         )}
 
         {/* 5. Selector de Gráficos y Visualización de Incidencias */}
-        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl border border-slate-200 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
             <div>
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -401,29 +403,29 @@ export function AnalyticsView({ userId }: { userId?: string }) {
                   </span>
                 )}
               </h3>
-              <p className="text-sm text-slate-500 mt-0.5">
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
                 {selectedSede === 'TODAS'
                   ? 'Matriz corporativa consolidada de todos los departamentos en la empresa.'
                   : `Focalizado exclusivamente en los departamentos activos de Sede ${selectedSede}.`}
               </p>
             </div>
             
-            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 self-start sm:self-auto">
+            <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 w-full sm:w-auto">
               <button 
                 onClick={() => setChartType('heatmap')}
-                className={`px-3 py-1.5 flex items-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'heatmap' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 flex items-center justify-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'heatmap' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <Grid className="w-3.5 h-3.5" /> Matriz
               </button>
               <button 
                 onClick={() => setChartType('bar')}
-                className={`px-3 py-1.5 flex items-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'bar' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 flex items-center justify-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'bar' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <BarChart3 className="w-3.5 h-3.5" /> Barras
               </button>
               <button 
                 onClick={() => setChartType('pie')}
-                className={`px-3 py-1.5 flex items-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'pie' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
+                className={`flex-1 sm:flex-initial px-3 py-1.5 flex items-center justify-center gap-1.5 text-xs md:text-sm font-bold rounded-lg transition-all cursor-pointer ${chartType === 'pie' ? 'bg-white shadow-xs text-indigo-600' : 'text-slate-500 hover:text-slate-800'}`}
               >
                 <PieChartIcon className="w-3.5 h-3.5" /> Circular
               </button>
@@ -435,40 +437,118 @@ export function AnalyticsView({ userId }: { userId?: string }) {
               
               {/* Heatmap / Matriz Adaptativa */}
               {chartType === 'heatmap' && (
-                <div className="min-w-[600px] overflow-x-auto custom-scrollbar">
-                  {/* Encabezados */}
-                  <div className="grid grid-cols-5 gap-2 mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    <div className="text-left pl-2">Departamento</div>
-                    <div>Baja</div>
-                    <div>Media</div>
-                    <div>Alta</div>
-                    <div>Crítica</div>
+                <div>
+                  {/* Selector de sub-vista exclusivo para móvil */}
+                  <div className="flex md:hidden items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
+                    <span className="text-[11px] font-semibold text-slate-500">Vista móvil:</span>
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setMobileMatrixMode('cards')}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md font-bold transition-all flex items-center gap-1",
+                          mobileMatrixMode === 'cards' ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500"
+                        )}
+                      >
+                        <LayoutList className="w-3 h-3" />
+                        <span>Tarjetas</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setMobileMatrixMode('table')}
+                        className={cn(
+                          "px-2.5 py-1 rounded-md font-bold transition-all flex items-center gap-1",
+                          mobileMatrixMode === 'table' ? "bg-white text-indigo-600 shadow-2xs" : "text-slate-500"
+                        )}
+                      >
+                        <Table2 className="w-3 h-3" />
+                        <span>Tabla</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Filas */}
-                  <div className="space-y-2">
+                  {/* 1. Vista Tarjetas Móvil (por defecto en celulares: 100% visible, sin cortes) */}
+                  <div className={cn("space-y-2.5", mobileMatrixMode === 'cards' ? "block md:hidden" : "hidden")}>
                     {data.heatmapDept.map((row: any) => (
-                      <div key={row.departamento} className="grid grid-cols-5 gap-2 items-center">
-                        <div className="font-bold text-slate-700 text-sm truncate pl-2" title={row.departamento}>
-                          {row.departamento} <span className="text-xs text-slate-400 font-normal">({row.total})</span>
+                      <div 
+                        key={row.departamento}
+                        className="bg-slate-50/70 p-3 rounded-xl border border-slate-200/90 shadow-2xs space-y-2"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-slate-800 text-sm truncate" title={row.departamento}>
+                            {row.departamento}
+                          </span>
+                          <span className="shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                            {row.total} {row.total === 1 ? 'ticket' : 'tickets'}
+                          </span>
                         </div>
 
-                        {['BAJA', 'MEDIA', 'ALTA', 'CRITICA'].map((prio) => (
-                          <div 
-                            key={prio}
-                            className={`h-11 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 shadow-2xs ${getHeatmapColor(row[prio])}`}
-                            title={`${row.departamento} - ${prio}: ${row[prio]} tickets`}
-                          >
-                            {row[prio] > 0 ? row[prio] : '-'}
-                          </div>
-                        ))}
+                        <div className="grid grid-cols-4 gap-1.5">
+                          {[
+                            { label: 'Baja', key: 'BAJA' },
+                            { label: 'Media', key: 'MEDIA' },
+                            { label: 'Alta', key: 'ALTA' },
+                            { label: 'Crítica', key: 'CRITICA' },
+                          ].map(({ label, key }) => {
+                            const val = row[key];
+                            return (
+                              <div 
+                                key={key}
+                                className={`py-1.5 px-1 rounded-lg border flex flex-col items-center justify-center text-center shadow-2xs ${getHeatmapColor(val)}`}
+                              >
+                                <span className="text-[9px] font-bold uppercase tracking-tight opacity-75">{label}</span>
+                                <span className="text-xs font-black mt-0.5">{val > 0 ? val : '-'}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))}
                   </div>
+
+                  {/* 2. Vista Matriz Tabular (Visible en desktop md+, y en móvil si eligen modo tabla) */}
+                  <div className={cn("w-full overflow-x-auto custom-scrollbar pb-2", mobileMatrixMode === 'cards' ? "hidden md:block" : "block")}>
+                    <div className="min-w-[540px]">
+                      {/* Indicador de swipe en móvil si está en modo tabla */}
+                      <div className="md:hidden text-[11px] text-indigo-600 font-semibold mb-2 flex items-center gap-1">
+                        <span>👉 Desliza horizontalmente para ver todas las columnas</span>
+                      </div>
+
+                      {/* Encabezados */}
+                      <div className="grid grid-cols-5 gap-2 mb-2 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
+                        <div className="text-left pl-2">Departamento</div>
+                        <div>Baja</div>
+                        <div>Media</div>
+                        <div>Alta</div>
+                        <div>Crítica</div>
+                      </div>
+
+                      {/* Filas */}
+                      <div className="space-y-2">
+                        {data.heatmapDept.map((row: any) => (
+                          <div key={row.departamento} className="grid grid-cols-5 gap-2 items-center">
+                            <div className="font-bold text-slate-700 text-sm truncate pl-2" title={row.departamento}>
+                              {row.departamento} <span className="text-xs text-slate-400 font-normal">({row.total})</span>
+                            </div>
+
+                            {['BAJA', 'MEDIA', 'ALTA', 'CRITICA'].map((prio) => (
+                              <div 
+                                key={prio}
+                                className={`h-11 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 shadow-2xs ${getHeatmapColor(row[prio])}`}
+                                title={`${row.departamento} - ${prio}: ${row[prio]} tickets`}
+                              >
+                                {row[prio] > 0 ? row[prio] : '-'}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                   
-                  {/* Leyenda Heatmap */}
-                  <div className="mt-8 flex items-center gap-4 text-xs text-slate-500 flex-wrap">
-                    <span className="font-bold">Leyenda:</span>
+                  {/* Leyenda Heatmap (fuera del scroll container, 100% visible en cualquier dispositivo) */}
+                  <div className="mt-6 pt-3 border-t border-slate-100 flex items-center gap-2.5 sm:gap-4 text-xs text-slate-500 flex-wrap">
+                    <span className="font-bold text-slate-700">Leyenda:</span>
                     <div className="flex items-center gap-1.5"><div className="w-3.5 h-3.5 rounded-md bg-slate-50 border border-slate-200"></div> 0</div>
                     <div className="flex items-center gap-1.5"><div className="w-3.5 h-3.5 rounded-md bg-amber-100 border border-amber-200"></div> 1-2</div>
                     <div className="flex items-center gap-1.5"><div className="w-3.5 h-3.5 rounded-md bg-orange-300 border border-orange-400"></div> 3-5</div>
@@ -482,14 +562,21 @@ export function AnalyticsView({ userId }: { userId?: string }) {
               {chartType === 'bar' && (
                 <div className="h-80 w-full mt-4">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.heatmapDept} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
-                      <XAxis dataKey="departamento" tick={{ fontSize: 12 }} stroke="#94a3b8" />
-                      <YAxis tick={{ fontSize: 12 }} stroke="#94a3b8" />
+                    <BarChart data={data.heatmapDept} margin={{ top: 20, right: 10, left: -20, bottom: 25 }}>
+                      <XAxis 
+                        dataKey="departamento" 
+                        tick={{ fontSize: 11 }} 
+                        stroke="#94a3b8" 
+                        interval={0}
+                        angle={-25}
+                        textAnchor="end"
+                      />
+                      <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
                       <Tooltip 
                         cursor={{ fill: '#f8fafc' }}
                         contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       />
-                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }} />
                       <Bar dataKey="BAJA" stackId="a" fill="#10b981" name="Baja" />
                       <Bar dataKey="MEDIA" stackId="a" fill="#f59e0b" name="Media" />
                       <Bar dataKey="ALTA" stackId="a" fill="#f97316" name="Alta" />
@@ -510,10 +597,10 @@ export function AnalyticsView({ userId }: { userId?: string }) {
                         nameKey="departamento"
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        innerRadius={50}
+                        outerRadius={85}
+                        paddingAngle={4}
+                        label={({ percent }) => `${((percent || 0) * 100).toFixed(0)}%`}
                       >
                         {data.heatmapDept.map((entry: any, index: number) => {
                           const colors = ['#4f46e5', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#f97316', '#ef4444', '#ec4899'];
@@ -523,6 +610,7 @@ export function AnalyticsView({ userId }: { userId?: string }) {
                       <Tooltip 
                         contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       />
+                      <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
