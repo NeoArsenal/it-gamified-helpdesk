@@ -11,6 +11,7 @@ import {
   PieChart, Pie, Cell, Legend, AreaChart, Area, CartesianGrid 
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { AnalyticsSkeleton } from '@/components/ui/Skeleton';
 
 export function AnalyticsView({ userId }: { userId?: string }) {
   const [data, setData] = useState<any>(null);
@@ -101,12 +102,7 @@ export function AnalyticsView({ userId }: { userId?: string }) {
   };
 
   if (loading) {
-    return (
-      <div className="p-8 h-full flex flex-col items-center justify-center text-slate-400 gap-3">
-        <Activity className="w-8 h-8 animate-spin text-indigo-600" />
-        <p className="text-sm font-medium">Cargando métricas y analítica multisede...</p>
-      </div>
-    );
+    return <AnalyticsSkeleton />;
   }
 
   // Función para obtener la intensidad de color en el Heatmap

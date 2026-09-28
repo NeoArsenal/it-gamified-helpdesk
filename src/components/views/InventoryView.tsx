@@ -16,6 +16,7 @@ import {
   AssetStatusModal,
   AssetTimelineModal,
 } from '@/components/inventory';
+import { InventorySkeleton } from '@/components/ui/Skeleton';
 
 interface InventoryViewProps {
   userId?: string;
@@ -25,6 +26,7 @@ interface InventoryViewProps {
 export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps) {
   const {
     activos,
+    loading,
     activeTab,
     setActiveTab,
     isModalOpen,
@@ -126,6 +128,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
       toast.error(err?.message || 'Error al exportar inventario');
     }
   };
+
+  if (loading && activos.length === 0) {
+    return <InventorySkeleton />;
+  }
 
   return (
     <div className="p-3 sm:p-4 md:p-8 space-y-4 sm:space-y-6 animate-in fade-in duration-300 max-w-[1700px] mx-auto">

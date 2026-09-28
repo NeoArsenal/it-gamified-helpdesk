@@ -4,6 +4,7 @@ import { getUsuarios, crearUsuario, actualizarUsuario, eliminarUsuario } from '@
 import { useAuth } from '@/components/providers/AuthProvider';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
+import { UsersSkeleton } from '@/components/ui/Skeleton';
 
 const MODULOS_DISPONIBLES = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -114,6 +115,10 @@ export const UsersView = () => {
       setIsDeleting(false);
     }
   };
+
+  if (loading) {
+    return <UsersSkeleton />;
+  }
 
   return (
     <div className="p-3 sm:p-4 md:p-8 max-w-7xl mx-auto space-y-4 md:space-y-6 animate-in fade-in duration-300">

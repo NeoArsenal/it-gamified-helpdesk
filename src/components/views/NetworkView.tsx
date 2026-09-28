@@ -1,6 +1,7 @@
 import { Server, Wifi, Router, Activity, ShieldAlert, CheckCircle2, RotateCw, Network, X, Link, AlertTriangle, Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getDispositivosRed, getDireccionesIP, registrarNuevaIP, updateDispositivoRed, asignarIP, liberarIP, simularCaidaRed, restaurarDispositivoRed } from '@/services/api/api-client';
+import { NetworkSkeleton } from '@/components/ui/Skeleton';
 
 interface NetworkViewProps {
   userId?: string;
@@ -124,7 +125,7 @@ export function NetworkView({ userId, onTicketResolved }: NetworkViewProps) {
   };
 
   if (loading) {
-    return <div className="p-8 text-slate-500 animate-pulse">Cargando infraestructura de red...</div>;
+    return <NetworkSkeleton />;
   }
 
   // Agrupación de IPs por Sede y Área

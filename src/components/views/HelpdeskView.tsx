@@ -20,6 +20,7 @@ import {
 import { useTickets } from '@/hooks/useTickets';
 import { exportTicketsToCsv } from '@/lib/export-utils';
 import { toast } from 'sonner';
+import { HelpdeskSkeleton } from '@/components/ui/Skeleton';
 import {
   TicketKanbanBoard,
   TicketHistoryTable,
@@ -258,7 +259,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-slate-400 animate-pulse">Cargando tablero...</div>;
+    return <HelpdeskSkeleton />;
   }
 
   return (

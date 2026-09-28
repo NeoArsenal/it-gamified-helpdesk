@@ -2,6 +2,7 @@ import { Ticket, Clock, Network, CheckCircle2, ShieldAlert, Users, MapPin, Gradu
 import { useState, useEffect } from 'react';
 import { getStats, getEstadisticasRed, getTickets, getUsuarios } from '@/services/api/api-client';
 import { UserAvatar } from '@/components/common/UserAvatar';
+import { DashboardSkeleton } from '@/components/ui/Skeleton';
 
 interface DashboardViewProps {
   onNavigate?: (view: string) => void;
@@ -37,7 +38,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-slate-500 animate-pulse">Cargando métricas en vivo...</div>;
+    return <DashboardSkeleton />;
   }
 
   const safeStats = stats || { total: 0, abiertos: 0, enProgreso: 0, resueltos: 0 };

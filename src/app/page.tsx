@@ -51,7 +51,18 @@ export default function Home() {
   };
 
   if (isLoading) {
-    return <div className="h-screen bg-slate-900 flex items-center justify-center text-white">Cargando...</div>;
+    return (
+      <div className="h-screen bg-slate-900 flex flex-col items-center justify-center text-white gap-4 select-none">
+        <div className="w-14 h-14 rounded-2xl bg-white p-2.5 flex items-center justify-center shadow-xl shadow-black/40 border border-slate-700/60 animate-pulse">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/emblem.svg" alt="Logo Limatambo" className="w-full h-full object-contain" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-rose-500">Clínicas Limatambo</p>
+          <p className="text-xs text-slate-400 font-medium">Iniciando plataforma de soporte TI...</p>
+        </div>
+      </div>
+    );
   }
 
   if (!user) {

@@ -4,6 +4,7 @@ import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/servic
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
+import { KnowledgeSkeleton } from '@/components/ui/Skeleton';
 import 'react-quill-new/dist/quill.snow.css';
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
@@ -134,6 +135,10 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
       setGuideToDelete(null);
     }
   };
+
+  if (loading && guides.length === 0) {
+    return <KnowledgeSkeleton />;
+  }
 
   return (
     <div className="p-8 space-y-6 animate-in fade-in duration-500 relative h-full">
