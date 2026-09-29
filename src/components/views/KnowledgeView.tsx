@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Plus, Download, Eye, UploadCloud, X, Trash2, ShieldAlert, Search, FileEdit, FileCode, ExternalLink } from 'lucide-react';
 import { getGuias, crearGuia, eliminarGuia, uploadFileToStorage } from '@/services/api/api-client';
+import { safeStorage } from '@/services/api/http';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { toast } from 'sonner';
 import dynamic from 'next/dynamic';
@@ -104,12 +105,22 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
         contenidoRichText = contenidoNativo;
       }
 
+      let effectiveUserId = userId;
+      if (!effectiveUserId && typeof window !== 'undefined') {
+        try {
+          const stored = safeStorage.getItem('auth_user');
+          if (stored) {
+            effectiveUserId = JSON.parse(stored)?.id;
+          }
+        } catch {}
+      }
+
       await crearGuia({
         titulo: nuevoTitulo,
         urlPdf,
         contenidoRichText,
         peso,
-        autorId: userId || undefined, // Evitar enviar un UUID hardcodeado
+        autorId: effectiveUserId || undefined, // Asignar el ID del usuario autenticado
       });
 
       setIsModalOpen(false);
@@ -204,11 +215,13 @@ export function KnowledgeView({ userId }: KnowledgeViewProps) {
                 <div className="flex items-center gap-2">
                   <UserAvatar
                     avatar={guide.autor?.avatar}
-                    name={guide.autor?.nombre}
+                    name={guide.autor?.nombre || 'Soporte TI'}
                     size="xs"
                   />
                   <div className="flex flex-col">
-                    <p className="text-[10px] font-bold text-slate-600 leading-none mb-0.5">{guide.autor?.nombre?.split(' ')[0] || 'Desconocido'}</p>
+                    <p className="text-[10px] font-bold text-slate-600 leading-none mb-0.5" title={guide.autor?.nombre || 'Soporte TI'}>
+                      {guide.autor?.nombre ? guide.autor.nombre.split(' ')[0] : 'Soporte TI'}
+                    </p>
                     <p className="text-[9px] text-slate-400 leading-none">{guide.fechaSubida ? new Date(guide.fechaSubida).toLocaleDateString() : 'Reciente'}</p>
                   </div>
                 </div>

@@ -109,7 +109,7 @@ export default function Home() {
           )}
           {visitedViews.includes('knowledge') && (
             <div className={activeView === 'knowledge' ? 'block min-h-full' : 'hidden'}>
-              <KnowledgeView />
+              <KnowledgeView userId={user.id} />
             </div>
           )}
           {visitedViews.includes('inventory') && (
