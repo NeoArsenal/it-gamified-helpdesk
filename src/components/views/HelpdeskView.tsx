@@ -263,7 +263,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   }
 
   return (
-    <div className="p-3 sm:p-4 md:p-8 h-full flex flex-col space-y-3.5 md:space-y-5 animate-in fade-in duration-500 overflow-hidden">
+    <div className="p-3 sm:p-4 md:p-8 md:h-full flex flex-col space-y-3.5 md:space-y-5 animate-in fade-in duration-500 overflow-x-hidden md:overflow-hidden">
       
       {/* ========================================================
           1. VISTA MÓVIL: Cabecera Minimalista (Estilo App Nativa)

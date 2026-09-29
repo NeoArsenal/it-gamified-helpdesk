@@ -50,13 +50,13 @@ export const TicketKanbanBoard: React.FC<TicketKanbanBoardProps> = ({
   handleResetFilters,
 }) => {
   return (
-    <div className="flex gap-4 md:gap-6 flex-1 min-h-[420px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar">
+    <div className="flex gap-4 md:gap-6 flex-1 md:min-h-[420px] overflow-x-auto pb-4 shrink-0 snap-x custom-scrollbar items-start md:items-stretch">
       {columnas.map((col) => {
         const colTickets = activeTickets.filter((t) => t.estado === col.id);
         return (
           <div
             key={col.id}
-            className={`flex-1 min-w-[85vw] sm:min-w-[320px] snap-center rounded-2xl flex flex-col ${col.bgClass} border ${col.borderClass} shadow-xs overflow-hidden transition-all`}
+            className={`flex-1 min-w-[85vw] sm:min-w-[320px] snap-center rounded-2xl flex flex-col ${col.bgClass} border ${col.borderClass} shadow-xs overflow-hidden transition-all self-start md:self-auto`}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, col.id)}
           >
@@ -74,7 +74,7 @@ export const TicketKanbanBoard: React.FC<TicketKanbanBoardProps> = ({
               </span>
             </div>
 
-            <div className="p-3 flex-1 overflow-y-auto space-y-3 pb-28 md:pb-3 custom-scrollbar">
+            <div className="p-3 flex-1 overflow-y-auto space-y-3 pb-6 md:pb-3 custom-scrollbar max-h-[70vh] md:max-h-none">
               {colTickets.map((ticket) => (
                 <TicketKanbanCard
                   key={ticket.id}
@@ -92,8 +92,8 @@ export const TicketKanbanBoard: React.FC<TicketKanbanBoardProps> = ({
               ))}
 
               {colTickets.length === 0 && (
-                <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-slate-300/60 rounded-2xl bg-white/40 kanban-empty-card hover:bg-white/70 transition-all duration-200 group/empty">
-                  <div className="w-13 h-13 rounded-2xl bg-white kanban-empty-icon-box shadow-2xs border border-slate-200/80 flex items-center justify-center mb-2.5 group-hover/empty:scale-105 group-hover/empty:shadow-xs transition-all duration-300">
+                <div className="min-h-[170px] sm:min-h-[220px] flex-1 flex flex-col items-center justify-center py-7 px-4 text-center border-2 border-dashed border-slate-300/60 rounded-2xl bg-white/40 kanban-empty-card hover:bg-white/70 transition-all duration-200 group/empty">
+                  <div className="w-12 h-12 rounded-2xl bg-white kanban-empty-icon-box shadow-2xs border border-slate-200/80 flex items-center justify-center mb-2.5 group-hover/empty:scale-105 group-hover/empty:shadow-xs transition-all duration-300">
                     {col.emptyIcon}
                   </div>
                   <h4 className="text-sm font-bold text-slate-700 mb-1">{col.emptyTitle}</h4>
