@@ -74,8 +74,19 @@ interface CacheEntry {
   statusText: string;
   timestamp: number;
 }
+
+interface InFlightPayload {
+  body: string;
+  headers: Record<string, string>;
+  status: number;
+  statusText: string;
+}
+
 const apiCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 25000; // 25 segundos de vigencia
+
+// Mapa de peticiones GET actualmente en vuelo por la red (Deduplicación)
+const inFlightRequests = new Map<string, Promise<InFlightPayload>>();
 
 export const clearApiCache = (filter?: string) => {
   if (!filter) {
@@ -89,8 +100,80 @@ export const clearApiCache = (filter?: string) => {
   }
 };
 
+/**
+ * Invalida selectivamente el caché según el módulo que sufrió la mutación,
+ * preservando intacto el caché del resto de módulos no afectados.
+ */
+export const invalidateCacheForMutation = (url: string) => {
+  const norm = url.toLowerCase();
+
+  // 1. Módulo de Tickets -> Invalida tickets, analítica y dashboard/métricas
+  if (norm.includes('/ticket')) {
+    clearApiCache('/ticket');
+    clearApiCache('/stat');
+    clearApiCache('/analytic');
+    clearApiCache('/dashboard');
+    return;
+  }
+
+  // 2. Módulo de Inventario / Activos -> Invalida activos, inventario, categorías y métricas
+  if (norm.includes('/activo') || norm.includes('/asset') || norm.includes('/categoria')) {
+    clearApiCache('/activo');
+    clearApiCache('/asset');
+    clearApiCache('/categoria');
+    clearApiCache('/stat');
+    clearApiCache('/dashboard');
+    return;
+  }
+
+  // 3. Módulo de Red / Nodos
+  if (norm.includes('/network') || norm.includes('/red') || norm.includes('/nodo')) {
+    clearApiCache('/network');
+    clearApiCache('/red');
+    clearApiCache('/nodo');
+    clearApiCache('/dashboard');
+    return;
+  }
+
+  // 4. Módulo de Base de Conocimiento / Artículos
+  if (norm.includes('/articulo') || norm.includes('/knowledge')) {
+    clearApiCache('/articulo');
+    clearApiCache('/knowledge');
+    return;
+  }
+
+  // 5. Módulo de Usuarios y Sedes
+  if (norm.includes('/usuario') || norm.includes('/user') || norm.includes('/sede') || norm.includes('/location')) {
+    clearApiCache('/usuario');
+    clearApiCache('/user');
+    clearApiCache('/sede');
+    clearApiCache('/location');
+    return;
+  }
+
+  // 6. Módulo de Academia / Gamificación / Ranking
+  if (norm.includes('/academy') || norm.includes('/ranking') || norm.includes('/gamification') || norm.includes('/insignia') || norm.includes('/curso')) {
+    clearApiCache('/academy');
+    clearApiCache('/ranking');
+    clearApiCache('/gamification');
+    clearApiCache('/insignia');
+    clearApiCache('/curso');
+    return;
+  }
+
+  // 7. Notificaciones
+  if (norm.includes('/notificacion') || norm.includes('/notification')) {
+    clearApiCache('/notificacion');
+    clearApiCache('/notification');
+    return;
+  }
+
+  // Fallback de seguridad: si no coincide con ningún módulo conocido, limpiar todo
+  apiCache.clear();
+};
+
 const originalFetch = globalThis.fetch;
-export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestInit) => {
+export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
   const token = safeStorage.getItem('auth_token');
   const headers: any = {
     ...options?.headers,
@@ -103,8 +186,14 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
   const method = (options?.method || 'GET').toUpperCase();
   const urlKey = typeof url === 'string' ? url : url.toString();
 
-  // Si es GET y está en cache fresco, responder en 0ms
+  // Si es una mutación (POST, PUT, PATCH, DELETE), invalidar selectivamente el caché correspondiente
+  if (method !== 'GET') {
+    invalidateCacheForMutation(urlKey);
+  }
+
+  // Manejo de peticiones GET cacheadas o en vuelo (Deduplicación)
   if (method === 'GET' && !urlKey.includes('/auth/') && !urlKey.includes('/portal/')) {
+    // 1. Respuesta instantánea desde caché en memoria (0ms)
     const cached = apiCache.get(urlKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return new Response(cached.body, {
@@ -113,13 +202,80 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
         headers: cached.headers,
       });
     }
+
+    // 2. Si ya hay una petición IDÉNTICA en vuelo por la red, unirse a su Promise (Deduplicación)
+    const existingInFlight = inFlightRequests.get(urlKey);
+    if (existingInFlight) {
+      try {
+        const payload = await existingInFlight;
+        return new Response(payload.body, {
+          status: payload.status,
+          statusText: payload.statusText,
+          headers: payload.headers,
+        });
+      } catch (err) {
+        throw err;
+      }
+    }
+
+    // 3. Iniciar la petición en red y registrarla como en vuelo
+    const fetchPromise = (async (): Promise<InFlightPayload> => {
+      const res = await originalFetch(url, { ...options, headers });
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          if (typeof window !== 'undefined') {
+            safeStorage.removeItem('auth_token');
+            safeStorage.removeItem('auth_user');
+            if (window.location.pathname !== '/portal' && !window.location.pathname.startsWith('/activo')) {
+              window.location.href = '/';
+            }
+          }
+        }
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Error ${res.status}`);
+      }
+
+      const body = await res.text();
+      const resHeaders: Record<string, string> = {};
+      res.headers.forEach((val, key) => { resHeaders[key] = val; });
+
+      const payload: InFlightPayload = {
+        body,
+        headers: resHeaders,
+        status: res.status,
+        statusText: res.statusText,
+      };
+
+      // Guardar en caché fresco
+      apiCache.set(urlKey, {
+        ...payload,
+        timestamp: Date.now(),
+      });
+
+      return payload;
+    })().finally(() => {
+      inFlightRequests.delete(urlKey);
+    });
+
+    inFlightRequests.set(urlKey, fetchPromise);
+
+    try {
+      const payload = await fetchPromise;
+      return new Response(payload.body, {
+        status: payload.status,
+        statusText: payload.statusText,
+        headers: payload.headers,
+      });
+    } catch (error: any) {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/portal') {
+        toast.error(error.message || 'Error de conexión con el servidor');
+      }
+      throw error;
+    }
   }
 
-  // Si es mutación (POST, PUT, PATCH, DELETE), invalidar cache para siempre obtener datos frescos
-  if (method !== 'GET') {
-    apiCache.clear();
-  }
-
+  // Mutaciones o peticiones que no usan caché (POST, PUT, DELETE, /auth/, /portal/)
   try {
     const res = await originalFetch(url, { ...options, headers });
 
@@ -135,22 +291,6 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
       }
       const errData = await res.json().catch(() => ({}));
       throw new Error(errData.message || `Error ${res.status}`);
-    }
-
-    // Cachear respuesta exitosa de GET
-    if (method === 'GET' && res.ok && !urlKey.includes('/auth/') && !urlKey.includes('/portal/')) {
-      const cloned = res.clone();
-      cloned.text().then(body => {
-        const resHeaders: Record<string, string> = {};
-        cloned.headers.forEach((val, key) => { resHeaders[key] = val; });
-        apiCache.set(urlKey, {
-          body,
-          headers: resHeaders,
-          status: res.status,
-          statusText: res.statusText,
-          timestamp: Date.now(),
-        });
-      }).catch(() => {});
     }
 
     return res;
