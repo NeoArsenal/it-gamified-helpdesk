@@ -25,17 +25,13 @@ interface TicketKanbanCardProps {
   getPriorityStyle?: (priority: string) => any;
 }
 
-// Formatear el número de ticket estilo "N.º 412"
-const formatTicketNumber = (ticket: any): string => {
-  if (ticket.numero) {
-    return `N.º ${ticket.numero}`;
+// Formatear el código de ticket en formato oficial "TIC-XXXXX"
+const formatTicketCode = (ticket: any): string => {
+  if (ticket.codigo) {
+    return ticket.codigo.toUpperCase();
   }
-  const cleanId = String(ticket.id || '');
-  const digits = cleanId.replace(/\D/g, '');
-  if (digits.length >= 3) {
-    return `N.º ${digits.slice(-3)}`;
-  }
-  return `N.º ${cleanId.substring(0, 4).toUpperCase()}`;
+  const idStr = String(ticket.id || '');
+  return `TIC-${idStr.substring(0, 5).toUpperCase()}`;
 };
 
 // Configuración de estilo según la urgencia/prioridad para el talón de boleto
@@ -81,30 +77,30 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
   handleEliminarTicket,
 }) => {
   const prio = getPriorityStubConfig(ticket.prioridad);
-  const ticketNumber = formatTicketNumber(ticket);
+  const ticketCode = formatTicketCode(ticket);
 
   return (
     <div
       draggable
       onDragStart={(e) => handleDragStart(e, ticket.id)}
       onClick={() => handleAbrirDetalle(ticket)}
-      className={`relative flex items-stretch rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer active:scale-[0.99] group overflow-hidden ${
+      className={`relative flex items-stretch rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer active:scale-[0.99] group overflow-hidden ${
         activeDropdown === ticket.id ? 'z-40' : 'z-0'
       }`}
     >
-      {/* 1. TALÓN DEL TICKET / BOLETO (Lado Izquierdo con N.º y Muescas Circulares) */}
+      {/* 1. TALÓN DEL TICKET / BOLETO (Con TIC-XXXXX y Muescas Adaptables a Modo Claro/Oscuro) */}
       <div
-        className={`w-11 sm:w-12 shrink-0 flex items-center justify-center relative select-none border-r-2 border-dashed border-slate-300 dark:border-slate-700 ${prio.stubBg}`}
+        className={`w-12 sm:w-13 shrink-0 flex items-center justify-center relative select-none border-r-2 border-dashed border-slate-200/90 dark:border-slate-700/80 ${prio.stubBg}`}
       >
-        <span className="-rotate-90 text-[11px] font-black tracking-widest whitespace-nowrap">
-          {ticketNumber}
+        <span className="-rotate-90 text-[10.5px] sm:text-[11px] font-mono font-black tracking-wider whitespace-nowrap">
+          {ticketCode}
         </span>
 
-        {/* Muesca circular superior del ticket */}
-        <div className="absolute -top-2.5 -right-2 w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 z-20 pointer-events-none ticket-notch" />
+        {/* Muesca circular superior del ticket (color claro en tema claro, oscuro en modo oscuro) */}
+        <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 z-20 pointer-events-none ticket-notch" />
 
         {/* Muesca circular inferior del ticket */}
-        <div className="absolute -bottom-2.5 -right-2 w-4 h-4 rounded-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 z-20 pointer-events-none ticket-notch" />
+        <div className="absolute -bottom-2 -right-2 w-4 h-4 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 z-20 pointer-events-none ticket-notch" />
       </div>
 
       {/* 2. CUERPO PRINCIPAL DEL TICKET */}
@@ -245,7 +241,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
           </div>
         </div>
 
-        {/* Fila Inferior: Urgencia y Botón de Acción Directo ("Pasar a...") */}
+        {/* Fila Inferior: Urgencia y Botón de Acción Directo Adaptado al Tema Claro */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80">
           {/* Indicador de Urgencia y Asignado */}
           <div className="flex items-center gap-2 min-w-0">
@@ -263,7 +259,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
             )}
           </div>
 
-          {/* Botón de Acción Directo e Intuitivo */}
+          {/* Botones de Acción Luminosos y Claros para el modo claro */}
           <div className="shrink-0">
             {ticket.estado === 'ABIERTO' && (
               <button
@@ -272,7 +268,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
                   e.stopPropagation();
                   handleMoverTicket(ticket.id, 'EN_PROGRESO', ticket.estado);
                 }}
-                className="px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
                 title="Comenzar a resolver este ticket"
               >
                 <span>Pasar a en progreso</span>
@@ -286,7 +282,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
                   e.stopPropagation();
                   handleMoverTicket(ticket.id, 'RESUELTO', ticket.estado);
                 }}
-                className="px-3.5 py-1.5 rounded-full bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
                 title="Marcar ticket como resuelto"
               >
                 <span>Pasar a resuelto</span>
@@ -300,7 +296,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
                   e.stopPropagation();
                   handleCerrarTicket(ticket.id);
                 }}
-                className="px-3.5 py-1.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-full bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
                 title="Archivar en el historial de tickets cerrados"
               >
                 <span>Cerrar ticket</span>
