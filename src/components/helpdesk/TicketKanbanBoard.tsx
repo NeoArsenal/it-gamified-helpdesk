@@ -63,13 +63,17 @@ export const TicketKanbanBoard: React.FC<TicketKanbanBoardProps> = ({
             {/* Acento superior de color */}
             <div className={`h-1.5 w-full ${col.accentBar} shrink-0`}></div>
 
-            {/* Encabezado de Columna */}
-            <div className="p-3.5 px-4 flex items-center justify-between border-b border-slate-200/70 bg-white/80 kanban-col-header backdrop-blur-xs shrink-0">
+            {/* Encabezado de Columna Adaptado al Nuevo Diseño */}
+            <div className="p-4 px-4.5 flex items-start justify-between border-b border-slate-200/70 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 kanban-col-header backdrop-blur-xs shrink-0">
               <div>
-                <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">{col.title}</h3>
-                <p className="text-[10px] text-slate-400 font-medium hidden sm:block leading-none mt-0.5">{col.subtitle}</p>
+                <h3 className="font-black text-slate-800 dark:text-slate-100 text-base sm:text-lg tracking-tight leading-tight">
+                  {col.title}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5 leading-none">
+                  {col.subtitle}
+                </p>
               </div>
-              <span className={`text-xs font-black px-2.5 py-0.5 rounded-full border shadow-2xs ${col.badgeBg}`}>
+              <span className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none ml-2 select-none">
                 {colTickets.length}
               </span>
             </div>

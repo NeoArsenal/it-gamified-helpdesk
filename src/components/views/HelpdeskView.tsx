@@ -193,7 +193,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     {
       id: 'ABIERTO',
       title: 'Abiertos',
-      subtitle: 'En espera de atención',
+      subtitle: 'Esperando atención',
       bgClass: 'bg-slate-50/60 kanban-col-abierto',
       borderClass: 'border-slate-200',
       accentBar: 'bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500',
@@ -204,8 +204,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     },
     {
       id: 'EN_PROGRESO',
-      title: 'En Progreso',
-      subtitle: 'En resolución activa',
+      title: 'En progreso',
+      subtitle: 'Alguien lo está resolviendo',
       bgClass: 'bg-blue-50/40 kanban-col-progreso',
       borderClass: 'border-blue-200/70',
       accentBar: 'bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600',
@@ -217,7 +217,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     {
       id: 'RESUELTO',
       title: 'Resueltos',
-      subtitle: 'Completados recientemente',
+      subtitle: 'Cerrados esta semana',
       bgClass: 'bg-emerald-50/40 kanban-col-resuelto',
       borderClass: 'border-emerald-200/70',
       accentBar: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-500',

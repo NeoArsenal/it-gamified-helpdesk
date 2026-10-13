@@ -360,6 +360,11 @@ html.dark-mode {
   border-color: rgba(16, 185, 129, 0.4) !important;
 }
 
+.dark-mode .ticket-notch {
+  background-color: #111a2e !important;
+  border-color: #1e2c47 !important;
+}
+
 /* --- Estilos para Impresión --- */
 @media print {
   body {
