@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   ShieldAlert,
@@ -16,8 +16,11 @@ import {
   Camera,
   Eye,
   ExternalLink,
+  History,
+  Activity,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
+import { getHistorialTicket } from '@/services/api';
 
 interface TicketDetailModalProps {
   selectedTicket: any | null;
@@ -49,6 +52,23 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   getPriorityStyle,
 }) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+
+  useEffect(() => {
+    if (selectedTicket?.id) {
+      setLoadingHistorial(true);
+      getHistorialTicket(selectedTicket.id)
+        .then((data) => setHistorial(Array.isArray(data) ? data : []))
+        .catch((err) => {
+          console.error('Error cargando historial:', err);
+          setHistorial([]);
+        })
+        .finally(() => setLoadingHistorial(false));
+    } else {
+      setHistorial([]);
+    }
+  }, [selectedTicket?.id, selectedTicket?.actualizadoEn, selectedTicket?.estado, selectedTicket?.prioridad, selectedTicket?.solucion]);
 
   if (!selectedTicket) return null;
 
@@ -326,6 +346,71 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     {isSavingSolucion ? 'Guardando...' : 'Guardar Solución'}
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+
+          {/* SECCIÓN DE LÍNEA DE TIEMPO Y AUDITORÍA */}
+          <div className="space-y-3 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <History className="w-4 h-4 text-indigo-600" />
+                Línea de Tiempo y Auditoría
+              </h3>
+              <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                {historial.length} {historial.length === 1 ? 'evento' : 'eventos'}
+              </span>
+            </div>
+
+            {loadingHistorial ? (
+              <div className="py-4 text-center text-xs text-slate-400 flex items-center justify-center gap-2 animate-pulse">
+                <Activity className="w-3.5 h-3.5 animate-spin" /> Cargando trazabilidad del ticket...
+              </div>
+            ) : historial.length === 0 ? (
+              <div className="p-4 bg-slate-50/80 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-400">
+                Aún no hay registros de auditoría para este ticket.
+              </div>
+            ) : (
+              <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                {historial.map((item, idx) => {
+                  let badgeColor = 'bg-indigo-500 ring-indigo-100';
+                  if (item.tipoAccion === 'CREADO') badgeColor = 'bg-blue-500 ring-blue-100';
+                  if (item.tipoAccion === 'CAMBIO_ESTADO') badgeColor = 'bg-amber-500 ring-amber-100';
+                  if (item.tipoAccion === 'CAMBIO_PRIORIDAD') badgeColor = 'bg-orange-500 ring-orange-100';
+                  if (item.tipoAccion === 'SOLUCION_REGISTRADA') badgeColor = 'bg-emerald-500 ring-emerald-100';
+                  if (item.tipoAccion === 'CERRADO') badgeColor = 'bg-slate-500 ring-slate-100';
+
+                  return (
+                    <div key={item.id || idx} className="relative group">
+                      <div
+                        className={`absolute -left-6 top-1.5 w-3 h-3 rounded-full border-2 border-white ${badgeColor} ring-4 shadow-2xs group-hover:scale-125 transition-transform`}
+                      />
+                      <div className="bg-slate-50/90 hover:bg-slate-100/70 border border-slate-200/80 rounded-2xl p-3.5 transition-colors space-y-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs font-bold text-slate-800 leading-snug">
+                            {item.descripcion}
+                          </p>
+                          <span className="text-[10px] font-semibold text-slate-400 shrink-0">
+                            {item.creadoEn
+                              ? new Date(item.creadoEn).toLocaleString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : ''}
+                          </span>
+                        </div>
+                        {item.usuarioNombre && (
+                          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                            <User className="w-3 h-3 text-indigo-500" />
+                            <span>{item.usuarioNombre}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

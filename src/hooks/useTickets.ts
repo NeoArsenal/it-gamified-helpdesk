@@ -10,6 +10,7 @@ import {
   getUbicacionesAreas,
   socket,
   safeStorage,
+  clearApiCache,
 } from '@/services/api';
 import { toast } from 'sonner';
 
@@ -43,6 +44,7 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
   const [solucionInput, setSolucionInput] = useState('');
   const [isEditingSolucion, setIsEditingSolucion] = useState(false);
   const [isSavingSolucion, setIsSavingSolucion] = useState(false);
+  const [isLiveConnected, setIsLiveConnected] = useState(socket.connected);
 
   const fetchTicketsData = async () => {
     try {
@@ -72,7 +74,15 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
       socket.connect();
     }
 
+    const onConnect = () => setIsLiveConnected(true);
+    const onDisconnect = () => setIsLiveConnected(false);
+    if (socket.connected) setIsLiveConnected(true);
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+
     const handleNuevoTicket = (ticket: any) => {
+      clearApiCache('/ticket');
       setTickets((prev) => {
         if (prev.find((t) => t.id === ticket.id)) return prev;
         return [ticket, ...prev];
@@ -89,25 +99,40 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
     };
 
     const handleTicketActualizado = (updatedTicket: any) => {
+      clearApiCache('/ticket');
       setTickets((prev) => prev.map((t) => (t.id === updatedTicket.id ? { ...t, ...updatedTicket } : t)));
       setSelectedTicket((prev: any) => (prev?.id === updatedTicket.id ? { ...prev, ...updatedTicket } : prev));
     };
 
+    const handleTicketEvento = (evento: any) => {
+      if (evento?.actualizadoPor && evento.actualizadoPor.id !== userId) {
+        toast.info(
+          `Ticket TIC-${(evento.ticket?.id || '').slice(0, 5).toUpperCase()} fue actualizado por ${evento.actualizadoPor.nombre || 'otro técnico'}`,
+          { duration: 4000 }
+        );
+      }
+    };
+
     const handleTicketEliminado = (id: string) => {
+      clearApiCache('/ticket');
       setTickets((prev) => prev.filter((t) => t.id !== id));
       setSelectedTicket((prev: any) => (prev?.id === id ? null : prev));
     };
 
     socket.on('nuevoTicket', handleNuevoTicket);
     socket.on('ticketActualizado', handleTicketActualizado);
+    socket.on('ticketEvento', handleTicketEvento);
     socket.on('ticketEliminado', handleTicketEliminado);
 
     return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
       socket.off('nuevoTicket', handleNuevoTicket);
       socket.off('ticketActualizado', handleTicketActualizado);
+      socket.off('ticketEvento', handleTicketEvento);
       socket.off('ticketEliminado', handleTicketEliminado);
     };
-  }, []);
+  }, [userId]);
 
   // Cargar sedes cuando se abre el modal
   useEffect(() => {
@@ -376,5 +401,6 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
     areasList,
     isHistoryDrawerOpen,
     setIsHistoryDrawerOpen,
+    isLiveConnected,
   };
 }

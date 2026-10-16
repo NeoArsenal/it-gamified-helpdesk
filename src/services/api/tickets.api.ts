@@ -122,3 +122,9 @@ export const getAnalytics = async (sede?: string): Promise<any> => {
 export const getTicketsAnalytics = async (sede?: string): Promise<any> => {
   return getAnalytics(sede);
 };
+
+export const getHistorialTicket = async (ticketId: string): Promise<any[]> => {
+  const res = await fetch(`${BASE_URL}/tickets/${ticketId}/historial`);
+  if (!res.ok) return [];
+  return res.json().catch(() => []);
+};

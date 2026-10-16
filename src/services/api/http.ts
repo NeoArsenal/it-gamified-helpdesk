@@ -223,6 +223,11 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
       const res = await originalFetch(url, { ...options, headers });
 
       if (!res.ok) {
+        if (res.status === 429) {
+          const errData = await res.json().catch(() => ({}));
+          const msg = errData.message || 'Límite de solicitudes alcanzado. Espera un momento.';
+          throw new Error(msg);
+        }
         if (res.status === 401 || res.status === 403) {
           if (typeof window !== 'undefined') {
             safeStorage.removeItem('auth_token');
@@ -280,6 +285,14 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
     const res = await originalFetch(url, { ...options, headers });
 
     if (!res.ok) {
+      if (res.status === 429) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.message || 'Demasiadas solicitudes. Espera un momento antes de reintentar.';
+        if (typeof window !== 'undefined') {
+          toast.error(msg);
+        }
+        throw new Error(msg);
+      }
       if (res.status === 401 || res.status === 403) {
         if (typeof window !== 'undefined') {
           safeStorage.removeItem('auth_token');

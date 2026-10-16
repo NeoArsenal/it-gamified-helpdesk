@@ -74,6 +74,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     areasList,
     isHistoryDrawerOpen,
     setIsHistoryDrawerOpen,
+    isLiveConnected,
   } = useTickets({ userId, onTicketResolved });
 
   // Estados de búsqueda y filtros para el TABLERO KANBAN
@@ -275,9 +276,15 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             <h1 className="text-xl font-black text-slate-800 tracking-tight leading-tight">
               Tickets de Soporte
             </h1>
-            <p className="text-slate-500 text-xs mt-0.5 font-medium">
-              Gestión y atención en tiempo real
-            </p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-slate-500 text-xs font-medium">Gestión y atención</span>
+              <span className={`inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-full border transition-colors ${
+                isLiveConnected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+                {isLiveConnected ? 'En vivo' : 'Conectando...'}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -502,8 +509,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">Tickets de Soporte</h1>
-            <span className="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-1 rounded-full border border-indigo-200/70 shadow-xs">
-              <Zap className="w-3 h-3 fill-indigo-500 text-indigo-500" /> Tablero Vivo
+            <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border shadow-2xs transition-colors ${
+              isLiveConnected
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                : 'bg-amber-50 text-amber-700 border-amber-200/80'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${isLiveConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 animate-ping'}`} />
+              {isLiveConnected ? 'Sincronizado en Vivo' : 'Reconectando...'}
             </span>
           </div>
           <p className="text-slate-500 text-xs md:text-sm mt-1">
