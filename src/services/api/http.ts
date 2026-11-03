@@ -1,20 +1,11 @@
 import { toast } from 'sonner';
-import { io } from 'socket.io-client';
+import * as signalR from '@microsoft/signalr';
 
-const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const rawUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7172/api';
 const cleanUrl = rawUrl.endsWith('/') ? rawUrl.slice(0, -1) : rawUrl;
 export const BASE_URL = cleanUrl.endsWith('/api') ? cleanUrl : `${cleanUrl}/api`;
 export const SOCKET_URL = cleanUrl.replace(/\/api$/, '');
-
-// Global socket instance
-export const socket = io(SOCKET_URL, {
-  autoConnect: false,
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  transports: ['websocket', 'polling'],
-});
+export const SIGNALR_HUB_URL = `${SOCKET_URL}/ws/notificaciones`;
 
 // Storage seguro con fallback en memoria (compatible con Safari Privado, WebViews y bloqueadores)
 const memoryStorage: Record<string, string> = {};
@@ -48,6 +39,144 @@ export const safeStorage = {
     delete memoryStorage[key];
   },
 };
+
+type EventCallback = (...args: any[]) => void;
+
+class SignalRSocketAdapter {
+  private hubConnection: signalR.HubConnection | null = null;
+  private listeners: Map<string, Set<EventCallback>> = new Map();
+  private connectListeners: Set<() => void> = new Set();
+  private disconnectListeners: Set<() => void> = new Set();
+  private isConnecting: boolean = false;
+
+  public auth: { token?: string } = {};
+
+  get connected(): boolean {
+    return this.hubConnection?.state === signalR.HubConnectionState.Connected;
+  }
+
+  private initConnection(): signalR.HubConnection {
+    if (this.hubConnection) return this.hubConnection;
+
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(SIGNALR_HUB_URL, {
+        accessTokenFactory: () => {
+          return this.auth?.token || safeStorage.getItem('auth_token') || '';
+        },
+        skipNegotiation: false,
+        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling,
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
+      .configureLogging(signalR.LogLevel.Error)
+      .build();
+
+    this.hubConnection.onclose(() => {
+      this.disconnectListeners.forEach((cb) => cb());
+    });
+
+    this.hubConnection.onreconnected(() => {
+      this.connectListeners.forEach((cb) => cb());
+    });
+
+    // Re-vincular los eventos registrados previamente
+    for (const [event, cbs] of this.listeners.entries()) {
+      for (const cb of cbs) {
+        this.hubConnection.on(event, cb);
+      }
+    }
+
+    return this.hubConnection;
+  }
+
+  public async connect(): Promise<void> {
+    if (typeof window === 'undefined') return;
+    const conn = this.initConnection();
+    if (conn.state === signalR.HubConnectionState.Connected || this.isConnecting) {
+      return;
+    }
+    this.isConnecting = true;
+    try {
+      await conn.start();
+      this.connectListeners.forEach((cb) => cb());
+    } catch (err) {
+      console.warn('Error conectando a SignalR:', err);
+    } finally {
+      this.isConnecting = false;
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    if (this.hubConnection) {
+      try {
+        await this.hubConnection.stop();
+      } catch (err) {
+        console.warn('Error desconectando SignalR:', err);
+      }
+      this.disconnectListeners.forEach((cb) => cb());
+    }
+  }
+
+  public on(event: string, callback: EventCallback): this {
+    if (event === 'connect') {
+      this.connectListeners.add(callback);
+      if (this.connected) {
+        callback();
+      }
+      return this;
+    }
+    if (event === 'disconnect') {
+      this.disconnectListeners.add(callback);
+      return this;
+    }
+
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, new Set());
+    }
+    this.listeners.get(event)!.add(callback);
+
+    if (this.hubConnection) {
+      this.hubConnection.on(event, callback);
+    }
+    return this;
+  }
+
+  public off(event: string, callback?: EventCallback): this {
+    if (event === 'connect') {
+      if (callback) this.connectListeners.delete(callback);
+      else this.connectListeners.clear();
+      return this;
+    }
+    if (event === 'disconnect') {
+      if (callback) this.disconnectListeners.delete(callback);
+      else this.disconnectListeners.clear();
+      return this;
+    }
+
+    if (callback) {
+      this.listeners.get(event)?.delete(callback);
+      if (this.hubConnection) {
+        this.hubConnection.off(event, callback);
+      }
+    } else {
+      this.listeners.delete(event);
+      if (this.hubConnection) {
+        this.hubConnection.off(event);
+      }
+    }
+    return this;
+  }
+
+  public async emit(event: string, ...args: any[]): Promise<any> {
+    const conn = this.initConnection();
+    if (conn.state !== signalR.HubConnectionState.Connected) {
+      await this.connect();
+    }
+    return conn.invoke(event, ...args);
+  }
+}
+
+// Instancia global adaptada a la interfaz previa de socket
+export const socket = new SignalRSocketAdapter();
 
 export const safeJsonResponse = async (res: Response) => {
   try {
@@ -142,12 +271,14 @@ export const invalidateCacheForMutation = (url: string) => {
     return;
   }
 
-  // 5. Módulo de Usuarios y Sedes
-  if (norm.includes('/usuario') || norm.includes('/user') || norm.includes('/sede') || norm.includes('/location')) {
+  // 5. Módulo de Ubicaciones, Sedes y Usuarios
+  if (norm.includes('/usuario') || norm.includes('/user') || norm.includes('/sede') || norm.includes('/location') || norm.includes('/ubicacion')) {
     clearApiCache('/usuario');
     clearApiCache('/user');
     clearApiCache('/sede');
     clearApiCache('/location');
+    clearApiCache('/ubicacion');
+    clearApiCache('/analytic');
     return;
   }
 

@@ -77,8 +77,9 @@ export function AnalyticsView({ userId }: { userId?: string }) {
       if (!reportRef.current) return;
       
       const imgData = await toPng(reportRef.current, {
-        quality: 1.0,
-        backgroundColor: '#ffffff'
+        quality: 0.95,
+        backgroundColor: '#ffffff',
+        skipFonts: true,
       });
       
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -106,11 +107,12 @@ export function AnalyticsView({ userId }: { userId?: string }) {
   }
 
   // Función para obtener la intensidad de color en el Heatmap
-  const getHeatmapColor = (value: number) => {
-    if (value === 0) return 'bg-slate-50 border-slate-100 text-slate-300';
-    if (value <= 2) return 'bg-amber-100 border-amber-200 text-amber-700';
-    if (value <= 5) return 'bg-orange-300 border-orange-400 text-orange-900';
-    if (value <= 10) return 'bg-red-400 border-red-500 text-white font-bold';
+  const getHeatmapColor = (value: any) => {
+    const val = Number(value) || 0;
+    if (val === 0) return 'bg-slate-50 border-slate-100 text-slate-300';
+    if (val <= 2) return 'bg-amber-100 border-amber-200 text-amber-700';
+    if (val <= 5) return 'bg-orange-300 border-orange-400 text-orange-900';
+    if (val <= 10) return 'bg-red-400 border-red-500 text-white font-bold';
     return 'bg-red-600 border-red-700 text-white font-black'; // Más de 10 = Crítico
   };
 
@@ -486,7 +488,7 @@ export function AnalyticsView({ userId }: { userId?: string }) {
                             { label: 'Alta', key: 'ALTA' },
                             { label: 'Crítica', key: 'CRITICA' },
                           ].map(({ label, key }) => {
-                            const val = row[key];
+                            const val = Number(row[key] ?? row[key.toLowerCase()] ?? 0);
                             return (
                               <div 
                                 key={key}
@@ -527,15 +529,18 @@ export function AnalyticsView({ userId }: { userId?: string }) {
                               {row.departamento} <span className="text-xs text-slate-400 font-normal">({row.total})</span>
                             </div>
 
-                            {['BAJA', 'MEDIA', 'ALTA', 'CRITICA'].map((prio) => (
-                              <div 
-                                key={prio}
-                                className={`h-11 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 shadow-2xs ${getHeatmapColor(row[prio])}`}
-                                title={`${row.departamento} - ${prio}: ${row[prio]} tickets`}
-                              >
-                                {row[prio] > 0 ? row[prio] : '-'}
-                              </div>
-                            ))}
+                            {['BAJA', 'MEDIA', 'ALTA', 'CRITICA'].map((prio) => {
+                              const count = Number(row[prio] ?? row[prio.toLowerCase()] ?? 0);
+                              return (
+                                <div 
+                                  key={prio}
+                                  className={`h-11 rounded-xl border flex items-center justify-center text-xs font-bold transition-all duration-200 hover:scale-105 shadow-2xs ${getHeatmapColor(count)}`}
+                                  title={`${row.departamento} - ${prio}: ${count} tickets`}
+                                >
+                                  {count > 0 ? count : '-'}
+                                </div>
+                              );
+                            })}
                           </div>
                         ))}
                       </div>
@@ -556,8 +561,8 @@ export function AnalyticsView({ userId }: { userId?: string }) {
 
               {/* Gráfico de Barras */}
               {chartType === 'bar' && (
-                <div className="h-80 w-full mt-4">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full mt-4 min-w-0">
+                  <ResponsiveContainer width="100%" height={320} minWidth={0}>
                     <BarChart data={data.heatmapDept} margin={{ top: 20, right: 10, left: -20, bottom: 25 }}>
                       <XAxis 
                         dataKey="departamento" 
@@ -584,8 +589,8 @@ export function AnalyticsView({ userId }: { userId?: string }) {
 
               {/* Gráfico Circular */}
               {chartType === 'pie' && (
-                <div className="h-80 w-full mt-4 flex justify-center">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full mt-4 flex justify-center min-w-0">
+                  <ResponsiveContainer width="100%" height={320} minWidth={0}>
                     <PieChart>
                       <Pie
                         data={data.heatmapDept}
@@ -639,8 +644,8 @@ export function AnalyticsView({ userId }: { userId?: string }) {
           </div>
 
           {data?.porSede && data.porSede.length > 0 ? (
-            <div className="h-72 w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="w-full mt-4 min-w-0">
+              <ResponsiveContainer width="100%" height={280} minWidth={0}>
                 <BarChart data={data.porSede} margin={{ top: 20, right: 30, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="sede" tick={{ fontSize: 11 }} stroke="#94a3b8" />

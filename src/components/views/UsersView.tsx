@@ -56,7 +56,12 @@ export const UsersView = () => {
       setEmail(user.email);
       setRol(user.rol);
       setPassword(''); // No mostrar la contraseña actual
-      setModulos(user.modulosAccesibles || []);
+      const initialModulos = Array.isArray(user.modulosAccesibles)
+        ? user.modulosAccesibles
+        : (typeof user.modulosAccesibles === 'string' && user.modulosAccesibles.length > 0)
+          ? user.modulosAccesibles.split(',').map((m: string) => m.trim()).filter(Boolean)
+          : [];
+      setModulos(initialModulos);
     } else {
       setNombre('');
       setEmail('');
@@ -224,15 +229,22 @@ export const UsersView = () => {
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-1">
-                  {user.modulosAccesibles && user.modulosAccesibles.length > 0 ? (
-                    user.modulosAccesibles.map((mod: string) => (
-                      <span key={mod} className="text-[10px] font-bold bg-white text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
-                        {MODULOS_DISPONIBLES.find(m => m.id === mod)?.label || mod}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-xs text-slate-400 italic">Sin módulos asignados</span>
-                  )}
+                  {(() => {
+                    const list = Array.isArray(user.modulosAccesibles)
+                      ? user.modulosAccesibles
+                      : (typeof user.modulosAccesibles === 'string' && user.modulosAccesibles.length > 0)
+                        ? user.modulosAccesibles.split(',').map((m: string) => m.trim()).filter(Boolean)
+                        : [];
+                    return list.length > 0 ? (
+                      list.map((mod: string) => (
+                        <span key={mod} className="text-[10px] font-bold bg-white text-slate-700 px-2 py-0.5 rounded-md border border-slate-200 shadow-2xs">
+                          {MODULOS_DISPONIBLES.find(m => m.id === mod)?.label || mod}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">Sin módulos asignados</span>
+                    );
+                  })()}
                 </div>
               )}
             </div>
