@@ -78,6 +78,18 @@ class SignalRSocketAdapter {
       this.connectListeners.forEach((cb) => cb());
     });
 
+    // Invalidador reactivo automático de caché ante cualquier evento en tiempo real
+    const autoInvalidateEvents = ['nuevoTicket', 'ticketActualizado', 'ticketEliminado', 'dispositivoActualizado', 'alertared'];
+    autoInvalidateEvents.forEach(evt => {
+      this.hubConnection?.on(evt, () => {
+        clearApiCache('/ticket');
+        clearApiCache('/stat');
+        clearApiCache('/analytic');
+        clearApiCache('/dashboard');
+        clearApiCache('/red');
+      });
+    });
+
     // Re-vincular los eventos registrados previamente
     for (const [event, cbs] of this.listeners.entries()) {
       for (const cb of cbs) {
@@ -212,7 +224,7 @@ interface InFlightPayload {
 }
 
 const apiCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 25000; // 25 segundos de vigencia
+const CACHE_TTL_MS = 4000; // 4 segundos de vigencia máxima (reactividad ultra-rápida)
 
 // Mapa de peticiones GET actualmente en vuelo por la red (Deduplicación)
 const inFlightRequests = new Map<string, Promise<InFlightPayload>>();

@@ -1,6 +1,6 @@
 import { Ticket, Clock, Network, CheckCircle2, ShieldAlert, Users, MapPin, GraduationCap, BookOpen, ArrowRight, Activity, FileText } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { getStats, getEstadisticasRed, getTickets, getUsuarios } from '@/services/api/api-client';
+import { getStats, getEstadisticasRed, getTickets, getUsuarios, socket, clearApiCache } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { DashboardSkeleton } from '@/components/ui/Skeleton';
 
@@ -16,7 +16,9 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    let isMounted = true;
+
+    const fetchData = async (isBackground = false) => {
       try {
         const [sData, rData, tData, uData] = await Promise.all([
           getStats().catch(() => null),
@@ -24,6 +26,7 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
           getTickets().catch(() => []),
           getUsuarios().catch(() => [])
         ]);
+        if (!isMounted) return;
         setStats(sData);
         setRedStats(rData);
         setTickets(Array.isArray(tData) ? tData : []);
@@ -31,10 +34,54 @@ export function DashboardView({ onNavigate }: DashboardViewProps) {
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
-        setLoading(false);
+        if (isMounted && !isBackground) {
+          setLoading(false);
+        }
       }
     };
+
     fetchData();
+
+    // 1. Refresco suave y silencioso en segundo plano cada 6 segundos
+    const interval = setInterval(() => {
+      clearApiCache('/stat');
+      clearApiCache('/ticket');
+      fetchData(true);
+    }, 6000);
+
+    // 2. Refresco instantáneo al enfocar la pestaña del navegador
+    const onFocus = () => {
+      clearApiCache('/stat');
+      clearApiCache('/ticket');
+      fetchData(true);
+    };
+    window.addEventListener('focus', onFocus);
+
+    // 3. Conexión y escucha en tiempo real a WebSockets (SignalR)
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const onRealtimeUpdate = () => {
+      clearApiCache('/stat');
+      clearApiCache('/ticket');
+      fetchData(true);
+    };
+
+    socket.on('nuevoTicket', onRealtimeUpdate);
+    socket.on('ticketActualizado', onRealtimeUpdate);
+    socket.on('ticketEliminado', onRealtimeUpdate);
+    socket.on('dispositivoActualizado', onRealtimeUpdate);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      socket.off('nuevoTicket', onRealtimeUpdate);
+      socket.off('ticketActualizado', onRealtimeUpdate);
+      socket.off('ticketEliminado', onRealtimeUpdate);
+      socket.off('dispositivoActualizado', onRealtimeUpdate);
+    };
   }, []);
 
   if (loading) {
