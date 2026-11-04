@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { BookOpen, Star, Lock, Play, CheckCircle2, XCircle, ShieldCheck, Trophy, Zap, Target, Sparkles } from 'lucide-react';
 import { getCursosAcademia, getNivelPreguntas, completarNivelAcademia } from '@/services/api/api-client';
 
@@ -96,7 +96,23 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
   }
 
   const curso = cursos[0];
-  const niveles = curso?.niveles || [];
+  const niveles = useMemo(() => {
+    return (curso?.niveles || []).map((nivel: any, index: number) => {
+      const isCompleted = Boolean(nivel.isCompleted || nivel.status === 'COMPLETED');
+      // El nivel 1 siempre está desbloqueado; los demás según progreso o estado del backend
+      const isUnlocked = Boolean(
+        isCompleted || 
+        nivel.isUnlocked || 
+        nivel.status === 'UNLOCKED' || 
+        index === 0
+      );
+      return {
+        ...nivel,
+        isCompleted,
+        isUnlocked,
+      };
+    });
+  }, [curso]);
   const completados = niveles.filter((n: any) => n.isCompleted).length;
   const totalNiveles = niveles.length;
   const progresoPct = totalNiveles > 0 ? Math.round((completados / totalNiveles) * 100) : 0;
