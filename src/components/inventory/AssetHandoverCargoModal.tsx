@@ -1,12 +1,14 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   FileText,
   Printer,
   Download,
   X,
   RotateCcw,
+  Undo2,
+  CheckCircle2,
   CheckSquare,
   Square,
   Building2,
@@ -19,8 +21,20 @@ import {
   Calendar,
   Hash,
   PenTool,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
+
+interface Point {
+  x: number;
+  y: number;
+  time: number;
+}
+
+interface Stroke {
+  points: Point[];
+  color: string;
+}
 
 interface AssetHandoverCargoModalProps {
   isOpen: boolean;
@@ -72,10 +86,166 @@ export function AssetHandoverCargoModal({
     candado: false,
   });
 
-  // Estado de la firma digital
-  const [isDrawing, setIsDrawing] = useState(false);
+  // Estado y configuraciones de la firma digital de alta fidelidad
+  const [inkColor, setInkColor] = useState<'#1e40af' | '#0f172a'>('#1e40af'); // Azul bolígrafo legal por defecto
   const [hasSignature, setHasSignature] = useState(false);
+  const [strokeCount, setStrokeCount] = useState(0);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
+
+  // Refs de almacenamiento de trazos vectoriales para suavizado Bezier y Retina
+  const strokesRef = useRef<Stroke[]>([]);
+  const currentStrokeRef = useRef<Point[]>([]);
+  const lastMidPointRef = useRef<{ x: number; y: number } | null>(null);
+  const isDrawingRef = useRef(false);
+
+  // Redibujado completo con curvas Bezier cuadráticas y dinámica de grosor
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Resetear matriz de transformación para limpiar el buffer físico completo
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
+    for (const stroke of strokesRef.current) {
+      const { points, color } = stroke;
+      if (points.length === 0) continue;
+
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (points.length === 1) {
+        ctx.beginPath();
+        ctx.arc(points[0].x, points[0].y, 2, 0, Math.PI * 2);
+        ctx.fill();
+        continue;
+      }
+
+      if (points.length === 2) {
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        ctx.lineTo(points[1].x, points[1].y);
+        ctx.stroke();
+        continue;
+      }
+
+      let lastMid = {
+        x: (points[0].x + points[1].x) / 2,
+        y: (points[0].y + points[1].y) / 2,
+      };
+
+      // Unir primer punto al primer punto medio
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.lineTo(lastMid.x, lastMid.y);
+      ctx.stroke();
+
+      for (let i = 1; i < points.length - 1; i++) {
+        const pCurrent = points[i];
+        const pNext = points[i + 1];
+        const nextMid = {
+          x: (pCurrent.x + pNext.x) / 2,
+          y: (pCurrent.y + pNext.y) / 2,
+        };
+
+        const dist = Math.hypot(nextMid.x - lastMid.x, nextMid.y - lastMid.y);
+        const timeDiff = Math.max(1, pNext.time - pCurrent.time);
+        const speed = dist / timeDiff;
+        // Grosor variable según velocidad: trazo fluido caligráfico de 1.8px a 3.2px
+        const width = Math.max(1.8, Math.min(3.2, 3.1 - speed * 0.4));
+
+        ctx.lineWidth = width;
+        ctx.beginPath();
+        ctx.moveTo(lastMid.x, lastMid.y);
+        ctx.quadraticCurveTo(pCurrent.x, pCurrent.y, nextMid.x, nextMid.y);
+        ctx.stroke();
+
+        lastMid = nextMid;
+      }
+
+      // Unir al último punto
+      const lastP = points[points.length - 1];
+      ctx.beginPath();
+      ctx.moveTo(lastMid.x, lastMid.y);
+      ctx.lineTo(lastP.x, lastP.y);
+      ctx.stroke();
+    }
+  }, []);
+
+  // Sincronizar el canvas con la vista previa del cargo impreso
+  const syncSignatureToDocument = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    setSignatureDataUrl(canvas.toDataURL('image/png'));
+  }, []);
+
+  // Inicializar o redimensionar canvas en resolución Retina 2x/3x
+  const initCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const width = Math.max(300, Math.floor(rect.width));
+    const height = Math.max(160, Math.floor(rect.height || 180));
+    const dpr = Math.max(2, window.devicePixelRatio || 2);
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.scale(dpr, dpr);
+    }
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  // Limpiar completamente la firma
+  const clearCanvas = useCallback(() => {
+    strokesRef.current = [];
+    currentStrokeRef.current = [];
+    lastMidPointRef.current = null;
+    isDrawingRef.current = false;
+    setStrokeCount(0);
+    setHasSignature(false);
+    setSignatureDataUrl(null);
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  // Deshacer el último trazo
+  const handleUndo = useCallback(() => {
+    if (strokesRef.current.length === 0) return;
+    strokesRef.current.pop();
+    const count = strokesRef.current.length;
+    setStrokeCount(count);
+    redrawCanvas();
+    if (count === 0) {
+      setHasSignature(false);
+      setSignatureDataUrl(null);
+    } else {
+      syncSignatureToDocument();
+    }
+  }, [redrawCanvas, syncSignatureToDocument]);
+
+  // Configurar observador de resize y apertura del modal
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(initCanvas, 100);
+    window.addEventListener('resize', initCanvas);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', initCanvas);
+    };
+  }, [isOpen, initCanvas]);
 
   // Inicializar datos al abrir modal
   useEffect(() => {
@@ -117,66 +287,119 @@ export function AssetHandoverCargoModal({
       setObservaciones('El equipo se entrega configurado con las aplicaciones corporativas y conexión de red institucional.');
       clearCanvas();
     }
-  }, [isOpen, activo, defaultSede, defaultDepto, defaultUbicacion, defaultResponsable, propTecnico, user]);
+  }, [isOpen, activo, defaultSede, defaultDepto, defaultUbicacion, defaultResponsable, propTecnico, user, clearCanvas]);
 
-  // Manejo de la firma táctil / mouse en el Canvas
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
+  // Coordenadas precisas 1:1 en píxeles CSS
+  const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    setIsDrawing(true);
+    if (!canvas) return { x: 0, y: 0, time: Date.now() };
     const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-
-    ctx.beginPath();
-    ctx.moveTo(x, y);
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      time: Date.now(),
+    };
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
+  // Manejadores Pointer Events de alta precisión para pantalla táctil y mouse
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    try {
+      canvas.setPointerCapture(e.pointerId);
+    } catch (_) {}
+
+    const pt = getCanvasCoords(e);
+    isDrawingRef.current = true;
+    currentStrokeRef.current = [pt];
+    lastMidPointRef.current = { x: pt.x, y: pt.y };
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = inkColor;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    e.preventDefault();
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-    const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+    const pt = getCanvasCoords(e);
+    const stroke = currentStrokeRef.current;
+    if (stroke.length === 0) return;
 
-    ctx.lineWidth = 2.5;
+    const p0 = stroke[stroke.length - 1];
+    const dist = Math.hypot(pt.x - p0.x, pt.y - p0.y);
+    if (dist < 1.2) return; // Filtrar ruido o microvibración
+
+    stroke.push(pt);
+
+    const midX = (p0.x + pt.x) / 2;
+    const midY = (p0.y + pt.y) / 2;
+
+    const timeDiff = Math.max(1, pt.time - p0.time);
+    const speed = dist / timeDiff;
+    const width = Math.max(1.8, Math.min(3.3, 3.1 - speed * 0.4));
+
+    ctx.lineWidth = width;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#0f172a'; // Slate 900
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    setHasSignature(true);
-  };
+    ctx.strokeStyle = inkColor;
 
-  const stopDrawing = () => {
-    if (isDrawing) {
-      setIsDrawing(false);
-      const canvas = canvasRef.current;
-      if (canvas && hasSignature) {
-        setSignatureDataUrl(canvas.toDataURL('image/png'));
-      }
+    if (lastMidPointRef.current) {
+      ctx.beginPath();
+      ctx.moveTo(lastMidPointRef.current.x, lastMidPointRef.current.y);
+      ctx.quadraticCurveTo(p0.x, p0.y, midX, midY);
+      ctx.stroke();
     }
+
+    lastMidPointRef.current = { x: midX, y: midY };
   };
 
-  const clearCanvas = () => {
+  const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+
     const canvas = canvasRef.current;
     if (canvas) {
+      try {
+        canvas.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+
       const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (ctx && lastMidPointRef.current && currentStrokeRef.current.length > 0) {
+        const lastP = currentStrokeRef.current[currentStrokeRef.current.length - 1];
+        ctx.beginPath();
+        ctx.moveTo(lastMidPointRef.current.x, lastMidPointRef.current.y);
+        ctx.lineTo(lastP.x, lastP.y);
+        ctx.stroke();
       }
     }
-    setHasSignature(false);
-    setSignatureDataUrl(null);
+
+    if (currentStrokeRef.current.length > 0) {
+      strokesRef.current.push({
+        points: [...currentStrokeRef.current],
+        color: inkColor,
+      });
+      currentStrokeRef.current = [];
+      setHasSignature(true);
+      setStrokeCount(strokesRef.current.length);
+      syncSignatureToDocument();
+    }
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    handlePointerUp(e);
   };
 
   // Cambio de Logo Personalizado
@@ -626,44 +849,119 @@ export function AssetHandoverCargoModal({
             </div>
           </div>
 
-          {/* Panel de Firma Digital Táctil / Mouse */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs max-w-[800px] mx-auto space-y-2">
-            <div className="flex items-center justify-between">
+          {/* Panel de Firma Digital Táctil / Mouse de Alta Precisión */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm max-w-[800px] mx-auto space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex items-center gap-2">
-                <PenTool className="w-4 h-4 text-blue-600" />
-                <span className="font-bold text-slate-800 text-xs sm:text-sm">
-                  Firma Digital del Receptor (Firma con dedo o mouse en pantalla)
-                </span>
+                <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 shrink-0">
+                  <PenTool className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5">
+                    Firma Táctil del Colaborador
+                    {hasSignature && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        Firma registrada ({strokeCount} {strokeCount === 1 ? 'trazo' : 'trazos'})
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-slate-500">
+                    Trazo caligráfico ultrasuave con el dedo, stylus o mouse (100% 1:1 sin retraso).
+                  </p>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={clearCanvas}
-                className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Borrar Firma</span>
-              </button>
+
+              {/* Botones de Acción y Selector de Tinta */}
+              <div className="flex items-center gap-1.5 flex-wrap ml-auto">
+                {/* Selector de Color de Tinta */}
+                <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/80 mr-1">
+                  <button
+                    type="button"
+                    onClick={() => setInkColor('#1e40af')}
+                    className={`px-2 py-1 rounded text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      inkColor === '#1e40af'
+                        ? 'bg-blue-600 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Tinta azul bolígrafo (Estándar legal institucional)"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-blue-300 ring-1 ring-white" />
+                    <span>Azul</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInkColor('#0f172a')}
+                    className={`px-2 py-1 rounded text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      inkColor === '#0f172a'
+                        ? 'bg-slate-900 text-white shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                    title="Tinta negra clásica"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-slate-400 ring-1 ring-white" />
+                    <span>Negro</span>
+                  </button>
+                </div>
+
+                {/* Deshacer Trazo */}
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  disabled={strokeCount === 0}
+                  className="px-2.5 py-1 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 active:scale-95 rounded-lg transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                  title="Deshacer el último trazo de la firma"
+                >
+                  <Undo2 className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Deshacer</span>
+                </button>
+
+                {/* Borrar Todo */}
+                <button
+                  type="button"
+                  onClick={clearCanvas}
+                  disabled={!hasSignature}
+                  className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 active:scale-95 rounded-lg transition-all flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+                  title="Borrar y empezar de nuevo"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Limpiar</span>
+                </button>
+              </div>
             </div>
 
-            <div className="relative border-2 border-dashed border-slate-300 rounded-xl overflow-hidden bg-slate-50 touch-none">
+            {/* Canvas Interactivo Táctil */}
+            <div className="relative border-2 border-slate-300 rounded-2xl overflow-hidden bg-white shadow-inner touch-none select-none">
               <canvas
                 ref={canvasRef}
-                width={700}
-                height={130}
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-                className="w-full h-28 cursor-crosshair block bg-transparent"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerCancel}
+                style={{ touchAction: 'none' }}
+                className="w-full h-44 sm:h-52 cursor-crosshair block bg-transparent relative z-10"
               />
-              {!hasSignature && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-400 text-xs font-medium">
-                  ✍️ Dibuja tu firma aquí con el dedo o mouse para estamparla en el cargo...
+
+              {/* Guía Visual y Línea Base de Firma */}
+              <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-0">
+                <div className="flex items-center justify-between text-[11px] text-slate-400">
+                  <span className="italic">Pad de Firma Digital Caligráfica</span>
+                  <span className="font-mono text-[10px]">Resolución Retina 2x/3x</span>
                 </div>
-              )}
+
+                {/* Línea horizontal clásica de firma de actas */}
+                <div className="w-full border-b border-dashed border-slate-300 pb-1 mb-2 flex items-center justify-between text-slate-400">
+                  <div className="flex items-center gap-1.5 font-serif text-xs italic">
+                    <span className="font-bold text-slate-500 text-sm">X</span>
+                    <span>Firma aquí sobre la línea</span>
+                  </div>
+                  {!hasSignature && (
+                    <span className="text-[11px] text-slate-400 font-sans hidden sm:inline">
+                      (Dedo, lápiz táctil o ratón)
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -705,3 +1003,4 @@ export function AssetHandoverCargoModal({
     </div>
   );
 }
+
