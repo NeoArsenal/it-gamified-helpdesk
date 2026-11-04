@@ -66,3 +66,28 @@ export const uploadFileToStorage = async (file: File): Promise<{ url: string }> 
   }
   return res.json();
 };
+
+export const subirCargoActivo = async (
+  activoId: string,
+  file: File | Blob,
+  fileName: string,
+  data?: { cargoNumero?: string; responsable?: string; dni?: string; tecnico?: string }
+): Promise<{ url: string; cargoNumero: string; message: string }> => {
+  const formData = new FormData();
+  formData.append('file', file, fileName);
+  if (data?.cargoNumero) formData.append('cargoNumero', data.cargoNumero);
+  if (data?.responsable) formData.append('responsable', data.responsable);
+  if (data?.dni) formData.append('dni', data.dni);
+  if (data?.tecnico) formData.append('tecnico', data.tecnico);
+
+  const res = await fetch(`${BASE_URL}/activos/${activoId}/cargo`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al subir el cargo a la nube');
+  }
+  return res.json();
+};

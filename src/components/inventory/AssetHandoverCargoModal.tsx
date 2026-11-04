@@ -28,9 +28,15 @@ import {
   Info,
   Shield,
   Cpu,
+  Cloud,
+  CloudUpload,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { subirCargoActivo } from '@/services/api';
 
 interface Point {
   x: number;
@@ -81,6 +87,8 @@ export function AssetHandoverCargoModal({
   const [responsable, setResponsable] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [cloudUrl, setCloudUrl] = useState<string | null>(null);
 
   // Modo de visualización: 'FIRMA' (Tarjeta interactiva móvil) o 'DOCUMENTO' (Vista Acta Oficial A4)
   const [viewTab, setViewTab] = useState<'FIRMA' | 'DOCUMENTO'>('FIRMA');
@@ -442,38 +450,81 @@ export function AssetHandoverCargoModal({
     }
   };
 
+  // Generar objeto PDF con jsPDF e imagen nítida
+  const generatePdfBlob = async () => {
+    if (!printRef.current) return null;
+    const { toPng } = await import('html-to-image');
+    const { jsPDF } = await import('jspdf');
+
+    const imgData = await toPng(printRef.current, {
+      quality: 0.98,
+      backgroundColor: '#ffffff',
+      pixelRatio: 2,
+      skipFonts: true,
+    });
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const img = new Image();
+    img.src = imgData;
+    await new Promise((resolve) => (img.onload = resolve));
+
+    const imgHeight = (img.height * pageWidth) / img.width;
+
+    pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(imgHeight, pageHeight));
+    const fileName = `${cargoNumero}.pdf`;
+    const blob = pdf.output('blob');
+    return { pdf, blob, fileName };
+  };
+
   // Descarga en PDF (A4)
   const handleDownloadPdf = async () => {
-    if (!printRef.current) return;
     setIsGeneratingPdf(true);
     try {
-      const { toPng } = await import('html-to-image');
-      const { jsPDF } = await import('jspdf');
-
-      const imgData = await toPng(printRef.current, {
-        quality: 0.98,
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-        skipFonts: true,
-      });
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      const img = new Image();
-      img.src = imgData;
-      await new Promise((resolve) => (img.onload = resolve));
-
-      const imgHeight = (img.height * pageWidth) / img.width;
-
-      pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, Math.min(imgHeight, pageHeight));
-      pdf.save(`${cargoNumero}.pdf`);
-    } catch (err) {
+      const res = await generatePdfBlob();
+      if (!res) return;
+      res.pdf.save(res.fileName);
+      toast.success('Documento PDF descargado correctamente.');
+    } catch (err: any) {
       console.error('Error al generar PDF del cargo:', err);
-      alert('Hubo un inconveniente al generar el PDF. Puedes usar la opción Imprimir.');
+      toast.error('Error al generar el PDF. Puedes usar la opción Imprimir.');
     } finally {
       setIsGeneratingPdf(false);
+    }
+  };
+
+  // Guardar en la Nube (Carpeta 'cargos' en Supabase Storage) y Descargar
+  const handleSaveToCloudAndDownload = async () => {
+    setIsSavingCloud(true);
+    try {
+      const res = await generatePdfBlob();
+      if (!res) return;
+
+      // 1. Descarga local automática
+      res.pdf.save(res.fileName);
+
+      // 2. Subida a Supabase Storage en la carpeta 'cargos'
+      if (activo?.id) {
+        const uploadRes = await subirCargoActivo(activo.id, res.blob, res.fileName, {
+          cargoNumero,
+          responsable,
+          dni: responsableDni,
+          tecnico,
+        });
+        setCloudUrl(uploadRes.url);
+        toast.success("¡Cargo guardado en la nube en la carpeta 'cargos' y registrado en el historial del activo!", {
+          duration: 5000,
+        });
+      } else {
+        toast.success('PDF descargado localmente.');
+      }
+    } catch (err: any) {
+      console.error('Error al guardar cargo en la nube:', err);
+      toast.error(err?.message || 'Error al guardar en la nube. El archivo fue descargado localmente.');
+    } finally {
+      setIsSavingCloud(false);
     }
   };
 
@@ -585,13 +636,18 @@ export function AssetHandoverCargoModal({
 
             <button
               type="button"
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
+              onClick={handleSaveToCloudAndDownload}
+              disabled={isSavingCloud || isGeneratingPdf}
               className="px-3 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 shrink-0"
+              title="Guardar en la carpeta 'cargos' de la nube y descargar"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{isGeneratingPdf ? 'Generando...' : 'Descargar PDF (A4)'}</span>
-              <span className="sm:hidden">{isGeneratingPdf ? '...' : 'PDF'}</span>
+              {isSavingCloud ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <CloudUpload className="w-3.5 h-3.5" />
+              )}
+              <span className="hidden sm:inline">{isSavingCloud ? 'Guardando en Nube...' : 'Guardar y Descargar'}</span>
+              <span className="sm:hidden">{isSavingCloud ? '...' : 'Guardar'}</span>
             </button>
 
             <button
@@ -1170,6 +1226,20 @@ export function AssetHandoverCargoModal({
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
+            {cloudUrl && (
+              <a
+                href={cloudUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-xl transition-all flex items-center gap-1.5"
+                title="Abrir cargo almacenado en la nube"
+              >
+                <Cloud className="w-4 h-4 text-emerald-600" />
+                <span className="hidden sm:inline">Ver en Nube</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+
             <button
               type="button"
               onClick={onClose}
@@ -1187,12 +1257,21 @@ export function AssetHandoverCargoModal({
             </button>
             <button
               type="button"
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
+              onClick={handleSaveToCloudAndDownload}
+              disabled={isSavingCloud || isGeneratingPdf}
               className="px-4 sm:px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
             >
-              <Download className="w-4 h-4" />
-              <span>{isGeneratingPdf ? 'Generando...' : 'Descargar PDF (A4)'}</span>
+              {isSavingCloud ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Guardando en Nube...</span>
+                </>
+              ) : (
+                <>
+                  <CloudUpload className="w-4 h-4" />
+                  <span>Guardar en Nube y Descargar</span>
+                </>
+              )}
             </button>
           </div>
         </div>

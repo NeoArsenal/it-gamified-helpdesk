@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, X, QrCode, Clock, MapPin, User, Calendar, CheckCircle2, AlertTriangle, ShieldCheck, Wrench } from 'lucide-react';
+import { Package, X, QrCode, Clock, MapPin, User, Calendar, CheckCircle2, AlertTriangle, ShieldCheck, Wrench, FileText, ExternalLink } from 'lucide-react';
 import { getEstadoBadge, getDeviceIcon } from './inventory.utils';
 
 interface AssetTimelineModalProps {
@@ -117,6 +117,13 @@ export function AssetTimelineModal({
                 minute: '2-digit',
               });
 
+              const isCargo = item.descripcion?.includes('[CARGO]');
+              const urlMatch = item.descripcion?.match(/https?:\/\/[^\s]+/);
+              const cargoUrl = urlMatch ? urlMatch[0] : null;
+              const displayDesc = isCargo
+                ? item.descripcion.replace(/\[CARGO\]\s*/, '').replace(/Archivo:\s*https?:\/\/[^\s]+/, '').trim()
+                : item.descripcion;
+
               return (
                 <div key={item.id || index} className="relative group">
                   {/* Nodo / Punto de la línea de tiempo */}
@@ -124,11 +131,15 @@ export function AssetTimelineModal({
                     className={`absolute -left-6 sm:-left-8 top-1 w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 transition-all ${
                       isFirst
                         ? 'bg-blue-600 border-white text-white shadow-md shadow-blue-500/30 ring-4 ring-blue-100 scale-110'
+                        : isCargo
+                        ? 'bg-indigo-600 border-white text-white shadow-xs'
                         : 'bg-white border-slate-300 text-slate-400 group-hover:border-slate-400'
                     }`}
                   >
                     {isFirst ? (
                       <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    ) : isCargo ? (
+                      <FileText className="w-3 h-3 text-white" />
                     ) : (
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                     )}
@@ -136,27 +147,52 @@ export function AssetTimelineModal({
 
                   {/* Contenido del Hito */}
                   <div className={`p-3.5 rounded-2xl border transition-all ${
-                    isFirst
+                    isCargo
+                      ? 'bg-indigo-50/70 border-indigo-200/90 shadow-2xs'
+                      : isFirst
                       ? 'bg-blue-50/70 border-blue-200/80 shadow-2xs'
                       : 'bg-slate-50/80 border-slate-200/70'
                   }`}>
                     <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                       <span className={`text-[11px] font-mono font-bold ${
-                        isFirst ? 'text-blue-700' : 'text-slate-500'
+                        isCargo ? 'text-indigo-700' : isFirst ? 'text-blue-700' : 'text-slate-500'
                       }`}>
                         {formattedDate} · {formattedTime}
                       </span>
-                      {isFirst && (
+                      {isCargo ? (
+                        <span className="bg-indigo-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <FileText className="w-2.5 h-2.5" />
+                          <span>Acta Oficial</span>
+                        </span>
+                      ) : isFirst ? (
                         <span className="bg-blue-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
                           Último Estado
                         </span>
-                      )}
+                      ) : null}
                     </div>
+
                     <p className={`text-xs sm:text-sm font-semibold leading-relaxed whitespace-pre-wrap ${
-                      isFirst ? 'text-slate-900' : 'text-slate-700'
+                      isCargo ? 'text-slate-900' : isFirst ? 'text-slate-900' : 'text-slate-700'
                     }`}>
-                      {item.descripcion}
+                      {displayDesc}
                     </p>
+
+                    {/* Botón para abrir el PDF del Cargo almacenado en la nube */}
+                    {isCargo && cargoUrl && (
+                      <div className="mt-2.5 pt-2 border-t border-indigo-200/60">
+                        <a
+                          href={cargoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all w-fit cursor-pointer active:scale-95"
+                          title="Descargar o abrir el cargo firmado en PDF"
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Descargar Cargo Firmado (Nube)</span>
+                          <ExternalLink className="w-3 h-3 ml-0.5 text-indigo-200" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
