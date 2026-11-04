@@ -15,6 +15,7 @@ import {
   AssetAssignModal,
   AssetStatusModal,
   AssetTimelineModal,
+  AssetHandoverCargoModal,
 } from '@/components/inventory';
 import { InventorySkeleton } from '@/components/ui/Skeleton';
 
@@ -99,6 +100,24 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     handleDeclararChatarra,
     handleRescatar,
   } = useInventory({ userId, onActivoRescatado });
+
+  // Control del Modal de Cargo de Asignación y Entrega
+  const [cargoActivo, setCargoActivo] = useState<any | null>(null);
+  const [cargoAsignacionData, setCargoAsignacionData] = useState<{
+    sede: string;
+    departamento: string;
+    ubicacion: string;
+    responsable: string;
+  } | null>(null);
+
+  const handleAbrirCargo = (activo: any, datosAsignacion?: any) => {
+    setCargoActivo(activo);
+    if (datosAsignacion) {
+      setCargoAsignacionData(datosAsignacion);
+    } else {
+      setCargoAsignacionData(null);
+    }
+  };
 
   // Control de Dropdown de Sedes Móvil
   const [openMobileSedeDropdown, setOpenMobileSedeDropdown] = useState(false);
@@ -437,6 +456,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
           onEditar={handleAbrirEditar}
           onEliminar={handleEliminar}
           onAsignar={handleAbrirAsignar}
+          onGenerarCargo={handleAbrirCargo}
           onCambiarEstado={handleAbrirCambiarEstado}
           onVerTimeline={handleAbrirTimeline}
         />
@@ -483,6 +503,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         activo={assignActivo}
         sedesList={sedesList}
         onGuardarAsignacion={handleGuardarAsignacion}
+        onGenerarCargo={(act, data) => handleAbrirCargo(act, data)}
       />
 
       {/* 6. Modal de Cambio de Estado y Reporte de Fallas Técnicas */}
@@ -508,6 +529,20 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
       <AssetQrModal
         activo={qrModalActivo}
         onClose={() => setQrModalActivo(null)}
+      />
+
+      {/* 9. Modal de Cargo y Acta de Entrega con Firma Digital */}
+      <AssetHandoverCargoModal
+        isOpen={!!cargoActivo}
+        onClose={() => {
+          setCargoActivo(null);
+          setCargoAsignacionData(null);
+        }}
+        activo={cargoActivo}
+        defaultSede={cargoAsignacionData?.sede}
+        defaultDepto={cargoAsignacionData?.departamento}
+        defaultUbicacion={cargoAsignacionData?.ubicacion}
+        defaultResponsable={cargoAsignacionData?.responsable}
       />
     </div>
   );

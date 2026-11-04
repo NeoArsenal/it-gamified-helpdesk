@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MapPin, Building2, User, X, Check, ArrowRight } from 'lucide-react';
+import { MapPin, Building2, User, X, Check, ArrowRight, FileText } from 'lucide-react';
 import { getUbicacionesDepartamentos } from '@/services/api';
 
 interface AssetAssignModalProps {
@@ -13,6 +13,12 @@ interface AssetAssignModalProps {
     ubicacion: string;
     responsable: string;
   }) => Promise<void>;
+  onGenerarCargo?: (activo: any, data: {
+    sede: string;
+    departamento: string;
+    ubicacion: string;
+    responsable: string;
+  }) => void;
 }
 
 export function AssetAssignModal({
@@ -21,6 +27,7 @@ export function AssetAssignModal({
   activo,
   sedesList,
   onGuardarAsignacion,
+  onGenerarCargo,
 }: AssetAssignModalProps) {
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
@@ -177,22 +184,52 @@ export function AssetAssignModal({
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-bold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
             >
-              <Check className="w-4 h-4" />
-              <span>{isSaving ? 'Guardando...' : 'Confirmar Asignación'}</span>
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span>{isSaving ? 'Guardando...' : 'Solo Guardar'}</span>
             </button>
+            {onGenerarCargo && (
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={async () => {
+                  if (!sede) {
+                    alert('Por favor selecciona una sede');
+                    return;
+                  }
+                  setIsSaving(true);
+                  try {
+                    const payload = {
+                      sede,
+                      departamento: departamento.trim(),
+                      ubicacion: ubicacion.trim(),
+                      responsable: responsable.trim(),
+                    };
+                    await onGuardarAsignacion(payload);
+                    onClose();
+                    onGenerarCargo(activo, payload);
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-blue-600/20 transition-all cursor-pointer active:scale-95 flex items-center gap-1.5"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Guardar y Emitir Cargo</span>
+              </button>
+            )}
           </div>
         </form>
       </div>

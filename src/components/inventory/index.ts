@@ -6,3 +6,4 @@ export * from './AssetQrModal';
 export * from './AssetAssignModal';
 export * from './AssetStatusModal';
 export * from './AssetTimelineModal';
+export * from './AssetHandoverCargoModal';
