@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { parseTimelineItem, TIMELINE_TAG_META } from '@/components/inventory/timeline.utils';
 
 export default function ActivoMobileView() {
   const params = useParams();
@@ -70,16 +71,12 @@ export default function ActivoMobileView() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // El backend registra automáticamente el hito de trazabilidad (antes → después)
       await updateActivo(activo.id, {
         estado: selectedEstado,
         observaciones: motivoEstado.trim() || undefined,
       });
 
-      const detalleHito = motivoEstado.trim() 
-        ? `Estado cambiado a [${selectedEstado}] · Motivo: ${motivoEstado.trim()}`
-        : `Estado cambiado a [${selectedEstado}]`;
-
-      await addIntervencion(activo.id, detalleHito);
       toast.success(`Estado actualizado a ${selectedEstado}`);
       setShowStatusModal(false);
       setMotivoEstado('');
@@ -325,7 +322,8 @@ export default function ActivoMobileView() {
               {/* Eventos Dinámicos de Intervención (De más reciente a más antiguo) */}
               {timelineItems.map((item, idx) => {
                 const isLatest = idx === 0;
-
+                const parsed = parseTimelineItem(item.descripcion);
+                const meta = TIMELINE_TAG_META[parsed.tag];
                 return (
                   <div key={item.id || idx} className="relative group">
                     {/* Nodo Circular Conector */}
@@ -358,7 +356,7 @@ export default function ActivoMobileView() {
                             ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" 
                             : "bg-slate-800 text-slate-400"
                         )}>
-                          {isLatest ? 'Último Estado Registrado' : `Hito #${timelineItems.length - idx}`}
+                          {isLatest ? 'Último · ' : ''}{meta.label}
                         </span>
 
                         <time className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
@@ -367,14 +365,42 @@ export default function ActivoMobileView() {
                         </time>
                       </div>
 
-                      <p className="text-xs font-semibold text-slate-200 leading-relaxed">
-                        {item.descripcion}
+                      <p className="text-xs font-bold text-slate-100 leading-relaxed">
+                        {parsed.titulo}
                       </p>
+                      {parsed.detalles.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5">
+                          {parsed.detalles.map((d, i) => (
+                            <li key={i} className="text-[11px] text-slate-300">
+                              {d.campo && <span className="font-bold text-slate-400">{d.campo}: </span>}
+                              {d.antes !== undefined ? (
+                                <>
+                                  <span className="line-through text-slate-500">{d.antes}</span>
+                                  {' → '}
+                                  <span className="font-semibold text-white">{d.despues}</span>
+                                </>
+                              ) : (
+                                d.despues
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {parsed.tag === 'CARGO' && parsed.url && (
+                        <a
+                          href={parsed.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-block mt-2 text-[11px] font-bold text-indigo-300 underline"
+                        >
+                          Ver cargo firmado (PDF)
+                        </a>
+                      )}
 
                       <div className="mt-2 pt-2 border-t border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400">
                         <span>Registrado por:</span>
                         <span className="font-bold text-slate-300">
-                          {item.tecnicoId ? 'Técnico de Soporte' : 'Sistema Automatizado'}
+                          {item.tecnicoNombre || (item.tecnicoId ? 'Técnico de Soporte' : 'Sistema Automatizado')}
                         </span>
                       </div>
                     </div>

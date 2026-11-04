@@ -6,6 +6,8 @@ export interface IntervencionActivo {
   tipo: string;
   descripcion: string;
   tecnico?: string;
+  tecnicoId?: string | null;
+  tecnicoNombre?: string | null;
   costo?: number;
 }
 

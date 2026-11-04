@@ -1,6 +1,8 @@
-import React from 'react';
-import { Package, X, QrCode, Clock, MapPin, User, Calendar, CheckCircle2, AlertTriangle, ShieldCheck, Wrench, FileText, ExternalLink } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, QrCode, Clock, FileText, ExternalLink, User, Loader2, ArrowRight } from 'lucide-react';
 import { getEstadoBadge, getDeviceIcon } from './inventory.utils';
+import { parseTimelineItem, TIMELINE_TAG_META } from './timeline.utils';
+import { getActivo } from '@/services/api';
 
 interface AssetTimelineModalProps {
   isOpen: boolean;
@@ -12,9 +14,33 @@ interface AssetTimelineModalProps {
 export function AssetTimelineModal({
   isOpen,
   onClose,
-  activo,
+  activo: activoProp,
   onVerQr,
 }: AssetTimelineModalProps) {
+  // Datos frescos del activo (con nombre del técnico en cada hito)
+  const [activo, setActivo] = useState<any | null>(activoProp);
+  const [loadingFresh, setLoadingFresh] = useState(false);
+
+  useEffect(() => {
+    setActivo(activoProp);
+    if (!isOpen || !activoProp?.id) return;
+
+    let cancelled = false;
+    setLoadingFresh(true);
+    getActivo(activoProp.id)
+      .then((fresh) => {
+        if (!cancelled && fresh) setActivo(fresh);
+      })
+      .catch(() => null)
+      .finally(() => {
+        if (!cancelled) setLoadingFresh(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, activoProp]);
+
   if (!isOpen || !activo) return null;
 
   // Ordenar intervenciones de más reciente a más antigua
@@ -92,18 +118,25 @@ export function AssetTimelineModal({
           </div>
         </div>
 
-        {/* Línea de Tiempo Estilo AliExpress / Logistics Tracking */}
-        <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+        {/* Línea de Tiempo de Trazabilidad */}
+        <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-indigo-600" /> Trazabilidad de Movimientos y Eventos
+              <Clock className="w-3.5 h-3.5 text-indigo-600" /> Trazabilidad de Movimientos
+              {loadingFresh && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
             </h4>
             <span className="text-[11px] font-bold text-slate-500">
               {timelineItems.length} hitos registrados
             </span>
           </div>
 
-          <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+          {timelineItems.length === 0 && !loadingFresh && (
+            <p className="text-xs text-slate-400 text-center py-6">
+              Este equipo aún no tiene movimientos registrados.
+            </p>
+          )}
+
+          <div className="relative pl-6 sm:pl-8 space-y-5 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
             {timelineItems.map((item: any, index: number) => {
               const isFirst = index === 0;
               const dateObj = new Date(item.fecha);
@@ -117,78 +150,85 @@ export function AssetTimelineModal({
                 minute: '2-digit',
               });
 
-              const isCargo = item.descripcion?.includes('[CARGO]');
-              const urlMatch = item.descripcion?.match(/https?:\/\/[^\s]+/);
-              const cargoUrl = urlMatch ? urlMatch[0] : null;
-              const displayDesc = isCargo
-                ? item.descripcion.replace(/\[CARGO\]\s*/, '').replace(/Archivo:\s*https?:\/\/[^\s]+/, '').trim()
-                : item.descripcion;
+              const parsed = parseTimelineItem(item.descripcion);
+              const meta = TIMELINE_TAG_META[parsed.tag];
+              const tecnico = item.tecnicoNombre || (item.tecnicoId ? 'Técnico TI' : 'Sistema');
 
               return (
                 <div key={item.id || index} className="relative group">
-                  {/* Nodo / Punto de la línea de tiempo */}
+                  {/* Nodo de la línea de tiempo */}
                   <div
-                    className={`absolute -left-6 sm:-left-8 top-1 w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                      isFirst
-                        ? 'bg-blue-600 border-white text-white shadow-md shadow-blue-500/30 ring-4 ring-blue-100 scale-110'
-                        : isCargo
-                        ? 'bg-indigo-600 border-white text-white shadow-xs'
-                        : 'bg-white border-slate-300 text-slate-400 group-hover:border-slate-400'
+                    className={`absolute -left-6 sm:-left-8 top-1 w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center border-2 border-white shadow-xs ${meta.dot} ${
+                      isFirst ? 'ring-4 ring-blue-100 scale-110' : ''
                     }`}
                   >
-                    {isFirst ? (
-                      <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                    ) : isCargo ? (
+                    {parsed.tag === 'CARGO' ? (
                       <FileText className="w-3 h-3 text-white" />
                     ) : (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                      <span className={`w-1.5 h-1.5 rounded-full bg-white ${isFirst ? 'animate-pulse' : ''}`} />
                     )}
                   </div>
 
                   {/* Contenido del Hito */}
-                  <div className={`p-3.5 rounded-2xl border transition-all ${
-                    isCargo
-                      ? 'bg-indigo-50/70 border-indigo-200/90 shadow-2xs'
-                      : isFirst
-                      ? 'bg-blue-50/70 border-blue-200/80 shadow-2xs'
-                      : 'bg-slate-50/80 border-slate-200/70'
-                  }`}>
-                    <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
-                      <span className={`text-[11px] font-mono font-bold ${
-                        isCargo ? 'text-indigo-700' : isFirst ? 'text-blue-700' : 'text-slate-500'
-                      }`}>
+                  <div className={`p-3 sm:p-3.5 rounded-2xl border shadow-2xs ${meta.card}`}>
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${meta.badge}`}>
+                          {meta.label}
+                        </span>
+                        {isFirst && (
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-white border border-blue-300 text-blue-700">
+                            Último
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-mono font-bold text-slate-500">
                         {formattedDate} · {formattedTime}
                       </span>
-                      {isCargo ? (
-                        <span className="bg-indigo-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <FileText className="w-2.5 h-2.5" />
-                          <span>Acta Oficial</span>
-                        </span>
-                      ) : isFirst ? (
-                        <span className="bg-blue-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-                          Último Estado
-                        </span>
-                      ) : null}
                     </div>
 
-                    <p className={`text-xs sm:text-sm font-semibold leading-relaxed whitespace-pre-wrap ${
-                      isCargo ? 'text-slate-900' : isFirst ? 'text-slate-900' : 'text-slate-700'
-                    }`}>
-                      {displayDesc}
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 leading-snug">
+                      {parsed.titulo}
                     </p>
 
+                    {parsed.detalles.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {parsed.detalles.map((d, i) => (
+                          <li key={i} className="text-[11px] sm:text-xs text-slate-700 flex flex-wrap items-center gap-1">
+                            {d.campo && <span className="font-bold text-slate-500">{d.campo}:</span>}
+                            {d.antes !== undefined ? (
+                              <>
+                                <span className="line-through text-slate-400">{d.antes}</span>
+                                <ArrowRight className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span className="font-semibold text-slate-900">{d.despues}</span>
+                              </>
+                            ) : (
+                              <span className="font-medium">{d.despues}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="mt-2 pt-1.5 border-t border-black/5 flex items-center gap-1 text-[10px] text-slate-500">
+                      <User className="w-3 h-3" />
+                      <span>
+                        Registrado por <span className="font-bold text-slate-700">{tecnico}</span>
+                      </span>
+                    </div>
+
                     {/* Botón para abrir el PDF del Cargo almacenado en la nube */}
-                    {isCargo && cargoUrl && (
-                      <div className="mt-2.5 pt-2 border-t border-indigo-200/60">
+                    {parsed.tag === 'CARGO' && parsed.url && (
+                      <div className="mt-2.5">
                         <a
-                          href={cargoUrl}
+                          href={parsed.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition-all w-fit cursor-pointer active:scale-95"
                           title="Descargar o abrir el cargo firmado en PDF"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          <span>Descargar Cargo Firmado (Nube)</span>
+                          <span>Ver Cargo Firmado</span>
                           <ExternalLink className="w-3 h-3 ml-0.5 text-indigo-200" />
                         </a>
                       </div>
@@ -203,7 +243,7 @@ export function AssetTimelineModal({
         {/* Footer */}
         <div className="p-3.5 border-t border-slate-100 bg-slate-50/80 flex items-center justify-between">
           <p className="text-[11px] text-slate-400 font-medium">
-            Registro auditable con fecha y firma de técnico
+            Registro auditable con fecha y técnico responsable
           </p>
           <button
             type="button"
