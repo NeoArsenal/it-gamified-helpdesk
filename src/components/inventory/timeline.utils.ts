@@ -78,3 +78,4 @@ export function parseTimelineItem(descripcion: string = ''): ParsedTimelineItem 
 
   return { tag, titulo: (primera || '').trim(), detalles, url };
 }
+
