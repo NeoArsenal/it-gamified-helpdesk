@@ -514,15 +514,15 @@ export function AssetHandoverCargoModal({
           tecnico,
         });
         setCloudUrl(uploadRes.url);
-        toast.success("¡Cargo guardado en la nube en la carpeta 'cargos' y registrado en el historial del activo!", {
-          duration: 5000,
+        toast.success("¡Cargo guardado y registrado exitosamente en el historial!", {
+          duration: 4000,
         });
       } else {
-        toast.success('PDF descargado localmente.');
+        toast.success('Cargo generado y descargado correctamente.');
       }
     } catch (err: any) {
-      console.error('Error al guardar cargo en la nube:', err);
-      toast.error(err?.message || 'Error al guardar en la nube. El archivo fue descargado localmente.');
+      console.error('Error al guardar cargo:', err);
+      toast.error(err?.message || 'Error al guardar el cargo. El archivo fue descargado localmente.');
     } finally {
       setIsSavingCloud(false);
     }
@@ -632,22 +632,6 @@ export function AssetHandoverCargoModal({
             >
               <Printer className="w-3.5 h-3.5 text-slate-600" />
               <span>Imprimir</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleSaveToCloudAndDownload}
-              disabled={isSavingCloud || isGeneratingPdf}
-              className="px-3 sm:px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50 shrink-0"
-              title="Guardar en la carpeta 'cargos' de la nube y descargar"
-            >
-              {isSavingCloud ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <CloudUpload className="w-3.5 h-3.5" />
-              )}
-              <span className="hidden sm:inline">{isSavingCloud ? 'Guardando en Nube...' : 'Guardar y Descargar'}</span>
-              <span className="sm:hidden">{isSavingCloud ? '...' : 'Guardar'}</span>
             </button>
 
             <button
@@ -1259,17 +1243,17 @@ export function AssetHandoverCargoModal({
               type="button"
               onClick={handleSaveToCloudAndDownload}
               disabled={isSavingCloud || isGeneratingPdf}
-              className="px-4 sm:px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
+              className="px-4 sm:px-6 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
             >
               {isSavingCloud ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Guardando en Nube...</span>
+                  <span>Guardando...</span>
                 </>
               ) : (
                 <>
-                  <CloudUpload className="w-4 h-4" />
-                  <span>Guardar en Nube y Descargar</span>
+                  <Check className="w-4 h-4" />
+                  <span>Guardar</span>
                 </>
               )}
             </button>
