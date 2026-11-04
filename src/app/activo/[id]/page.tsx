@@ -12,8 +12,10 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { parseTimelineItem, TIMELINE_TAG_META } from '@/components/inventory/timeline.utils';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function ActivoMobileView() {
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
   const [activo, setActivo] = useState<any>(null);
@@ -54,6 +56,10 @@ export default function ActivoMobileView() {
   const handleAddIntervencion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nuevaIntervencion.trim()) return;
+    if (!user) {
+      toast.error('Debes iniciar sesión con tu cuenta técnica para registrar anotaciones.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       await addIntervencion(activo.id, nuevaIntervencion.trim());
@@ -61,7 +67,7 @@ export default function ActivoMobileView() {
       setNuevaIntervencion('');
       fetchActivo(true);
     } catch (err: any) {
-      toast.error('Error al registrar intervención');
+      toast.error(err?.message || 'Error al registrar intervención');
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +75,10 @@ export default function ActivoMobileView() {
 
   const handleCambiarEstadoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error('Debes iniciar sesión con tu cuenta técnica para cambiar el estado.');
+      return;
+    }
     setIsSubmitting(true);
     try {
       // El backend registra automáticamente el hito de trazabilidad (antes → después)
@@ -82,7 +92,7 @@ export default function ActivoMobileView() {
       setMotivoEstado('');
       fetchActivo(true);
     } catch (err: any) {
-      toast.error('Error al actualizar estado');
+      toast.error(err?.message || 'Error al actualizar estado');
     } finally {
       setIsSubmitting(false);
     }
@@ -451,13 +461,13 @@ export default function ActivoMobileView() {
             type="text"
             value={nuevaIntervencion}
             onChange={(e) => setNuevaIntervencion(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="Anotar diagnóstico o mantenimiento..."
-            className="flex-1 px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            disabled={isSubmitting || !user}
+            placeholder={user ? "Anotar diagnóstico o mantenimiento..." : "Inicia sesión con tu cuenta técnica para anotar..."}
+            className="flex-1 px-4 py-2.5 bg-slate-800/80 border border-slate-700 rounded-xl text-xs sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={isSubmitting || !nuevaIntervencion.trim()}
+            disabled={isSubmitting || !nuevaIntervencion.trim() || !user}
             className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition-all active:scale-95 shrink-0 cursor-pointer"
           >
             <Send className="w-3.5 h-3.5" />
