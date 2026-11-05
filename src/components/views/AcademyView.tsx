@@ -81,20 +81,6 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
     loadData();
   };
 
-  if (loading) {
-    return (
-      <div className="p-8 flex justify-center items-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin"></div>
-            <Sparkles className="w-6 h-6 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
-          </div>
-          <p className="text-slate-500 font-medium animate-pulse">Cargando tu camino...</p>
-        </div>
-      </div>
-    );
-  }
-
   const curso = cursos[0];
   const niveles = useMemo(() => {
     return (curso?.niveles || []).map((nivel: any, index: number) => {
@@ -113,6 +99,21 @@ export function AcademyView({ userId = 'JD', onXPGained }: { userId?: string, on
       };
     });
   }, [curso]);
+
+  if (loading) {
+    return (
+      <div className="p-8 flex justify-center items-center min-h-[60vh]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin"></div>
+            <Sparkles className="w-6 h-6 text-amber-400 absolute -top-1 -right-1 animate-pulse" />
+          </div>
+          <p className="text-slate-500 font-medium animate-pulse">Cargando tu camino...</p>
+        </div>
+      </div>
+    );
+  }
+
   const completados = niveles.filter((n: any) => n.isCompleted).length;
   const totalNiveles = niveles.length;
   const progresoPct = totalNiveles > 0 ? Math.round((completados / totalNiveles) * 100) : 0;
