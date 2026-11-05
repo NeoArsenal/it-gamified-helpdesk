@@ -11,6 +11,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
+import { getCategoriaConfig } from '@/lib/ticket-categories';
 
 interface TicketKanbanCardProps {
   ticket: any;
@@ -78,6 +79,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
 }) => {
   const prio = getPriorityStubConfig(ticket.prioridad);
   const ticketCode = formatTicketCode(ticket);
+  const cat = getCategoriaConfig(ticket.categoria);
 
   return (
     <div
@@ -248,10 +250,17 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
 
         {/* Fila Inferior: Urgencia y Botón de Acción Directo Adaptado al Tema Claro */}
         <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100">
-          {/* Indicador de Urgencia y Asignado */}
-          <div className="flex items-center gap-2 min-w-0">
+          {/* Indicador de Urgencia, Categoría y Asignado */}
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
             <span className={`text-xs ${prio.textColor} shrink-0`}>
               {prio.label}
+            </span>
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border inline-flex items-center gap-1 shrink-0 ${cat.badgeClass}`}
+              title={`Categoría ITIL: ${cat.label}`}
+            >
+              <span>{cat.icon}</span>
+              <span>{cat.shortLabel}</span>
             </span>
             {ticket.asignadoA && (
               <div className="hidden sm:flex items-center gap-1.5 truncate">

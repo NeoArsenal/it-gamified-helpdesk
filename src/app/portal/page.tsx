@@ -50,6 +50,7 @@ export default function PortalPage() {
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [area, setArea] = useState('');
+  const [categoria, setCategoria] = useState<string>('GENERAL');
   const [honeypot, setHoneypot] = useState('');
 
   const [sedesList, setSedesList] = useState<string[]>([]);
@@ -396,6 +397,7 @@ export default function PortalPage() {
         sede,
         departamento,
         ubicacionEspecifica: area,
+        categoria: categoria as any,
         solicitanteNombre: solicitanteNombre.trim(),
         solicitanteContacto: solicitanteContacto.trim(),
         fotoUrl: uploadedFotoUrl,
@@ -412,6 +414,7 @@ export default function PortalPage() {
       setSede('');
       setDepartamento('');
       setArea('');
+      setCategoria('GENERAL');
       handleRemoveFoto();
     } catch (error: any) {
       console.error(error);
@@ -660,6 +663,8 @@ export default function PortalPage() {
             setDepartamento={setDepartamento}
             area={area}
             setArea={setArea}
+            categoria={categoria}
+            setCategoria={setCategoria}
             solicitanteNombre={solicitanteNombre}
             setSolicitanteNombre={setSolicitanteNombre}
             solicitanteContacto={solicitanteContacto}

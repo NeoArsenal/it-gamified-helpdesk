@@ -16,11 +16,13 @@ import {
   Wrench,
   FileSpreadsheet,
   ArrowDownToLine,
+  Layers,
 } from 'lucide-react';
 import { useTickets } from '@/hooks/useTickets';
 import { exportTicketsToCsv } from '@/lib/export-utils';
 import { toast } from 'sonner';
 import { HelpdeskSkeleton } from '@/components/ui/Skeleton';
+import { TICKET_CATEGORIAS, getCategoriaConfig } from '@/lib/ticket-categories';
 import {
   TicketKanbanBoard,
   TicketHistoryTable,
@@ -48,6 +50,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     handleCerrarTicket,
     handleMoverTicket,
     handleCambiarPrioridad,
+    handleCambiarCategoria,
     selectedTicket,
     setSelectedTicket,
     solucionInput,
@@ -69,6 +72,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     setNuevoDepartamento,
     nuevaArea,
     setNuevaArea,
+    nuevaCategoria,
+    setNuevaCategoria,
     sedesList,
     departamentosList,
     areasList,
@@ -83,6 +88,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
   const [isBoardEmergencyOpen, setIsBoardEmergencyOpen] = useState(false);
   const [filterBoardSede, setFilterBoardSede] = useState<string>('TODAS');
   const [isBoardSedeOpen, setIsBoardSedeOpen] = useState(false);
+  const [filterBoardCategoria, setFilterBoardCategoria] = useState<string>('TODAS');
+  const [isBoardCategoriaOpen, setIsBoardCategoriaOpen] = useState(false);
 
   // Filtro de Sedes para Historial (independiente del tablero)
   const [filterHistorySede, setFilterHistorySede] = useState<string>('TODAS');
@@ -159,6 +166,13 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
       }
     }
 
+    if (filterBoardCategoria !== 'TODAS') {
+      const ticketCat = (t.categoria || 'GENERAL').toUpperCase();
+      if (ticketCat !== filterBoardCategoria) {
+        return false;
+      }
+    }
+
     return true;
   };
 
@@ -229,12 +243,15 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
     },
   ];
 
-  const hasActiveFilters = Boolean(query || filterBoardEmergency !== 'TODAS' || filterBoardSede !== 'TODAS');
+  const hasActiveFilters = Boolean(
+    query || filterBoardEmergency !== 'TODAS' || filterBoardSede !== 'TODAS' || filterBoardCategoria !== 'TODAS'
+  );
 
   const handleResetFilters = () => {
     setSearchQuery('');
     setFilterBoardEmergency('TODAS');
     setFilterBoardSede('TODAS');
+    setFilterBoardCategoria('TODAS');
   };
 
   const handleExportarReporte = () => {
@@ -478,6 +495,107 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                       >
                         <span className="truncate">{s}</span>
                         {filterBoardSede === s && <span className="text-indigo-600 font-bold">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Dropdown Categoría Técnica (ITIL 4) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsBoardCategoriaOpen(!isBoardCategoriaOpen);
+                setIsBoardEmergencyOpen(false);
+                setIsBoardSedeOpen(false);
+              }}
+              className={`h-10 px-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 shadow-2xs transition-all active:scale-95 cursor-pointer ${
+                filterBoardCategoria !== 'TODAS'
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Filtrar por categoría técnica ITIL 4"
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <Layers
+                  className={`w-4 h-4 shrink-0 ${
+                    filterBoardCategoria !== 'TODAS' ? 'text-blue-600' : 'text-slate-400'
+                  }`}
+                />
+                <span className="truncate">
+                  {filterBoardCategoria === 'TODAS'
+                    ? 'Categoría'
+                    : getCategoriaConfig(filterBoardCategoria).shortLabel}
+                </span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
+                  isBoardCategoriaOpen ? 'rotate-180 text-blue-600' : ''
+                }`}
+              />
+            </button>
+
+            {isBoardCategoriaOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardCategoriaOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Categoría Técnica</span>
+                    {filterBoardCategoria !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardCategoria('TODAS');
+                          setIsBoardCategoriaOpen(false);
+                        }}
+                        className="text-blue-600 hover:underline font-bold text-[10px] normal-case cursor-pointer"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterBoardCategoria('TODAS');
+                        setIsBoardCategoriaOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                        filterBoardCategoria === 'TODAS'
+                          ? 'bg-blue-50 text-blue-700 font-bold'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Filter className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Todas las categorías</span>
+                      </span>
+                      {filterBoardCategoria === 'TODAS' && <span className="text-blue-600 font-bold">✓</span>}
+                    </button>
+                    <div className="h-px bg-slate-100 my-1" />
+                    {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardCategoria(cat.id);
+                          setIsBoardCategoriaOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                          filterBoardCategoria === cat.id
+                            ? 'bg-blue-50 text-blue-700 font-bold'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </span>
+                        {filterBoardCategoria === cat.id && <span className="text-blue-600 font-bold">✓</span>}
                       </button>
                     ))}
                   </div>
@@ -770,6 +888,107 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
               </>
             )}
           </div>
+
+          {/* Dropdown Categoría Técnica (ITIL 4) */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setIsBoardCategoriaOpen(!isBoardCategoriaOpen);
+                setIsBoardEmergencyOpen(false);
+                setIsBoardSedeOpen(false);
+              }}
+              className={`h-10 px-3.5 rounded-2xl border text-xs font-bold flex items-center gap-2 shadow-2xs transition-all active:scale-95 cursor-pointer ${
+                filterBoardCategoria !== 'TODAS'
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
+                  : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
+              }`}
+              title="Filtrar por categoría técnica ITIL 4"
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <Layers
+                  className={`w-4 h-4 shrink-0 ${
+                    filterBoardCategoria !== 'TODAS' ? 'text-blue-600' : 'text-slate-400'
+                  }`}
+                />
+                <span className="truncate">
+                  {filterBoardCategoria === 'TODAS'
+                    ? 'Categoría'
+                    : getCategoriaConfig(filterBoardCategoria).shortLabel}
+                </span>
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 shrink-0 ${
+                  isBoardCategoriaOpen ? 'rotate-180 text-blue-600' : ''
+                }`}
+              />
+            </button>
+
+            {isBoardCategoriaOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBoardCategoriaOpen(false)} />
+                <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
+                  <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
+                    <span>Categoría Técnica</span>
+                    {filterBoardCategoria !== 'TODAS' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardCategoria('TODAS');
+                          setIsBoardCategoriaOpen(false);
+                        }}
+                        className="text-blue-600 hover:underline font-bold text-[10px] normal-case cursor-pointer"
+                      >
+                        Restablecer
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterBoardCategoria('TODAS');
+                        setIsBoardCategoriaOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                        filterBoardCategoria === 'TODAS'
+                          ? 'bg-blue-50 text-blue-700 font-bold'
+                          : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <Filter className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Todas las categorías</span>
+                      </span>
+                      {filterBoardCategoria === 'TODAS' && <span className="text-blue-600 font-bold">✓</span>}
+                    </button>
+                    <div className="h-px bg-slate-100 my-1" />
+                    {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          setFilterBoardCategoria(cat.id);
+                          setIsBoardCategoriaOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-xs rounded-xl font-semibold transition-colors cursor-pointer ${
+                          filterBoardCategoria === cat.id
+                            ? 'bg-blue-50 text-blue-700 font-bold'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </span>
+                        {filterBoardCategoria === cat.id && <span className="text-blue-600 font-bold">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Botón Reset de Filtros si hay alguno activo */}
@@ -808,6 +1027,20 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 onClick={() => setFilterBoardEmergency('TODAS')}
                 className="hover:text-red-500 ml-1 p-0.5 text-slate-400 cursor-pointer"
                 title="Quitar filtro de urgencia"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          )}
+
+          {filterBoardCategoria !== 'TODAS' && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-blue-200 text-blue-800 font-bold shadow-2xs">
+              Categoría: {getCategoriaConfig(filterBoardCategoria).icon} {getCategoriaConfig(filterBoardCategoria).shortLabel}
+              <button
+                type="button"
+                onClick={() => setFilterBoardCategoria('TODAS')}
+                className="hover:text-red-500 ml-1 p-0.5 text-slate-400 cursor-pointer"
+                title="Quitar filtro de categoría"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -912,6 +1145,8 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         setNuevoDepartamento={setNuevoDepartamento}
         nuevaArea={nuevaArea}
         setNuevaArea={setNuevaArea}
+        nuevaCategoria={nuevaCategoria}
+        setNuevaCategoria={setNuevaCategoria}
         sedesList={sedesList}
         departamentosList={departamentosList}
         areasList={areasList}
@@ -942,6 +1177,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
         isSavingSolucion={isSavingSolucion}
         handleGuardarSolucion={handleGuardarSolucion}
         handleCambiarPrioridad={handleCambiarPrioridad}
+        handleCambiarCategoria={handleCambiarCategoria}
         handleMoverTicket={handleMoverTicket}
         handleCerrarTicket={handleCerrarTicket}
         getPriorityStyle={getPriorityStyle}

@@ -18,9 +18,11 @@ import {
   ExternalLink,
   History,
   Activity,
+  Layers,
 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { getHistorialTicket } from '@/services/api';
+import { getCategoriaConfig, TICKET_CATEGORIAS } from '@/lib/ticket-categories';
 
 interface TicketDetailModalProps {
   selectedTicket: any | null;
@@ -32,6 +34,7 @@ interface TicketDetailModalProps {
   isSavingSolucion: boolean;
   handleGuardarSolucion: () => Promise<void>;
   handleCambiarPrioridad: (id: string, nuevaPrioridad: string) => Promise<void>;
+  handleCambiarCategoria?: (id: string, nuevaCategoria: string) => Promise<void>;
   handleMoverTicket: (id: string, nuevoEstado: string, estadoActual: string) => Promise<void>;
   handleCerrarTicket: (id: string, solucion?: string) => Promise<void>;
   getPriorityStyle: (priority: string) => any;
@@ -47,6 +50,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
   isSavingSolucion,
   handleGuardarSolucion,
   handleCambiarPrioridad,
+  handleCambiarCategoria,
   handleMoverTicket,
   handleCerrarTicket,
   getPriorityStyle,
@@ -93,6 +97,15 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
               >
                 {getPriorityStyle(selectedTicket.prioridad).icon}
                 {selectedTicket.prioridad}
+              </span>
+              <span
+                className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border flex items-center gap-1 ${
+                  getCategoriaConfig(selectedTicket.categoria).badgeClass
+                }`}
+                title={`Categoría ITIL: ${getCategoriaConfig(selectedTicket.categoria).label}`}
+              >
+                <span>{getCategoriaConfig(selectedTicket.categoria).icon}</span>
+                <span>{getCategoriaConfig(selectedTicket.categoria).shortLabel}</span>
               </span>
               <span
                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border ${
@@ -186,6 +199,43 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                       {isCurrent && <Check className="w-3.5 h-3.5" />}
                     </span>
                     <span className={`text-[10px] ${isCurrent ? 'text-white/90' : 'text-slate-400'}`}>{prio.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Clasificación de Categoría Técnica ITIL 4 */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-600" />
+                Categoría Técnica (ITIL 4)
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">
+                Toca para reclasificar
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-0.5">
+              {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => {
+                const isCurrent = (selectedTicket.categoria || 'GENERAL').toUpperCase() === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => handleCambiarCategoria?.(selectedTicket.id, cat.id)}
+                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                      isCurrent ? cat.pillActiveClass : cat.pillIdleClass
+                    }`}
+                  >
+                    <span className="text-xs font-bold flex items-center gap-1">
+                      <span>{cat.icon}</span>
+                      <span>{cat.shortLabel}</span>
+                      {isCurrent && <Check className="w-3.5 h-3.5" />}
+                    </span>
+                    <span className={`text-[9.5px] truncate max-w-full ${isCurrent ? 'text-white/90 font-medium' : 'text-slate-400'}`}>
+                      {cat.id === 'GENERAL' ? 'Sin clasificar' : cat.shortLabel}
+                    </span>
                   </button>
                 );
               })}

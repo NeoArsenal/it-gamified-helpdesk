@@ -30,6 +30,7 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
   const [nuevaSede, setNuevaSede] = useState('');
   const [nuevoDepartamento, setNuevoDepartamento] = useState('');
   const [nuevaArea, setNuevaArea] = useState('');
+  const [nuevaCategoria, setNuevaCategoria] = useState<string>('GENERAL');
 
   const [sedesList, setSedesList] = useState<string[]>([]);
   const [departamentosList, setDepartamentosList] = useState<string[]>([]);
@@ -206,12 +207,14 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
         sede: nuevaSede,
         departamento: nuevoDepartamento,
         ubicacionEspecifica: nuevaArea,
+        categoria: nuevaCategoria as any,
       });
       setIsModalOpen(false);
       setNuevoTitulo('');
       setNuevaSede('');
       setNuevoDepartamento('');
       setNuevaArea('');
+      setNuevaCategoria('GENERAL');
 
       if (nuevo && nuevo.id) {
         setTickets((prev) => {
@@ -361,6 +364,24 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
     }
   };
 
+  const handleCambiarCategoria = async (id: string, nuevaCat: string) => {
+    setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, categoria: nuevaCat as any } : t)));
+    setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, categoria: nuevaCat as any } : prev));
+
+    try {
+      const res = await actualizarTicket(id, { categoria: nuevaCat as any });
+      if (res && res.id) {
+        setTickets((prev) => prev.map((t) => (t.id === id ? { ...t, ...res } : t)));
+        setSelectedTicket((prev: any) => (prev && prev.id === id ? { ...prev, ...res } : prev));
+      }
+      toast.success(`Categoría actualizada a ${nuevaCat}`);
+    } catch (error) {
+      console.error('Error al cambiar categoría:', error);
+      fetchTicketsData();
+      toast.error('No se pudo actualizar la categoría técnica');
+    }
+  };
+
   return {
     tickets,
     setTickets,
@@ -375,6 +396,7 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
     handleCerrarTicket,
     handleMoverTicket,
     handleCambiarPrioridad,
+    handleCambiarCategoria,
     selectedTicket,
     setSelectedTicket,
     solucionInput,
@@ -396,6 +418,8 @@ export function useTickets({ userId, onTicketResolved }: UseTicketsOptions = {})
     setNuevoDepartamento,
     nuevaArea,
     setNuevaArea,
+    nuevaCategoria,
+    setNuevaCategoria,
     sedesList,
     departamentosList,
     areasList,

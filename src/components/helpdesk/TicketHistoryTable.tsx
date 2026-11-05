@@ -2,6 +2,7 @@ import React from 'react';
 import { Clock, Filter, ChevronDown, Building2, MapPin, User, Check, FileSpreadsheet } from 'lucide-react';
 import { exportTicketsToCsv } from '@/lib/export-utils';
 import { UserAvatar } from '@/components/common/UserAvatar';
+import { getCategoriaConfig } from '@/lib/ticket-categories';
 import { toast } from 'sonner';
 
 interface TicketHistoryTableProps {
@@ -271,17 +272,27 @@ export const TicketHistoryTable: React.FC<TicketHistoryTableProps> = ({
                       )}
                     </td>
                     <td className="px-5 py-3">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                        ticket.prioridad === 'CRITICA'
-                          ? 'bg-rose-50 text-rose-700 border-rose-200'
-                          : ticket.prioridad === 'ALTA'
-                          ? 'bg-orange-50 text-orange-700 border-orange-200'
-                          : ticket.prioridad === 'MEDIA'
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}>
-                        {ticket.prioridad || 'NORMAL'}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                          ticket.prioridad === 'CRITICA'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : ticket.prioridad === 'ALTA'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : ticket.prioridad === 'MEDIA'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        }`}>
+                          {ticket.prioridad || 'NORMAL'}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border inline-flex items-center gap-1 ${
+                            getCategoriaConfig(ticket.categoria).badgeClass
+                          }`}
+                        >
+                          <span>{getCategoriaConfig(ticket.categoria).icon}</span>
+                          <span>{getCategoriaConfig(ticket.categoria).shortLabel}</span>
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 ))}

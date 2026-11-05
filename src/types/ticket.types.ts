@@ -1,5 +1,6 @@
 export type EstadoTicket = 'ABIERTO' | 'EN_PROGRESO' | 'RESUELTO' | 'CERRADO';
 export type PrioridadTicket = 'BAJA' | 'MEDIA' | 'ALTA' | 'CRITICA';
+export type CategoriaTicket = 'HARDWARE' | 'SOFTWARE' | 'REDES' | 'ACCESOS' | 'GENERAL';
 
 export interface TicketTecnicoAsignado {
   id?: string;
@@ -15,6 +16,7 @@ export interface Ticket {
   descripcion?: string;
   estado: EstadoTicket;
   prioridad: PrioridadTicket;
+  categoria?: CategoriaTicket;
   asignadoAId?: string | null;
   asignadoA?: TicketTecnicoAsignado | null;
   tecnicoAsignado?: TicketTecnicoAsignado | null;
@@ -35,6 +37,7 @@ export interface CreateTicketDTO {
   titulo: string;
   descripcion?: string;
   prioridad?: PrioridadTicket;
+  categoria?: CategoriaTicket;
   sede: string;
   departamento: string;
   ubicacionEspecifica?: string;
@@ -49,6 +52,7 @@ export interface UpdateTicketDTO {
   descripcion?: string;
   estado?: EstadoTicket;
   prioridad?: PrioridadTicket;
+  categoria?: CategoriaTicket;
   asignadoAId?: string | null;
   solucion?: string;
   fotoUrl?: string | null;

@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Ticket as TicketIcon } from 'lucide-react';
+import { X, Ticket as TicketIcon, Layers } from 'lucide-react';
 import { CustomSelect } from './CustomSelect';
+import { TICKET_CATEGORIAS } from '@/lib/ticket-categories';
 
 interface TicketCreateModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface TicketCreateModalProps {
   setNuevoDepartamento: (val: string) => void;
   nuevaArea: string;
   setNuevaArea: (val: string) => void;
+  nuevaCategoria?: string;
+  setNuevaCategoria?: (val: string) => void;
   sedesList: string[];
   departamentosList: string[];
   areasList: string[];
@@ -30,6 +33,8 @@ export const TicketCreateModal: React.FC<TicketCreateModalProps> = ({
   setNuevoDepartamento,
   nuevaArea,
   setNuevaArea,
+  nuevaCategoria = 'GENERAL',
+  setNuevaCategoria,
   sedesList,
   departamentosList,
   areasList,
@@ -111,6 +116,33 @@ export const TicketCreateModal: React.FC<TicketCreateModalProps> = ({
               </div>
             </div>
           )}
+
+          {/* Selector de Categoría Técnica ITIL 4 */}
+          <div>
+            <label className="block text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-blue-600" /> Categoría Técnica
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => {
+                const isSelected = nuevaCategoria === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setNuevaCategoria?.(cat.id)}
+                    className={`p-2 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50 text-blue-800 font-bold ring-1 ring-blue-500 shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-base">{cat.icon}</span>
+                    <span className="text-xs truncate">{cat.shortLabel}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row justify-end gap-3">
             <button

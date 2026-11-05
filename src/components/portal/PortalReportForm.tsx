@@ -11,6 +11,8 @@ interface PortalReportFormProps {
   setDepartamento: (val: string) => void;
   area: string;
   setArea: (val: string) => void;
+  categoria?: string;
+  setCategoria?: (val: string) => void;
   solicitanteNombre: string;
   setSolicitanteNombre: (val: string) => void;
   solicitanteContacto: string;
@@ -41,6 +43,8 @@ export const PortalReportForm: React.FC<PortalReportFormProps> = ({
   setDepartamento,
   area,
   setArea,
+  categoria = 'GENERAL',
+  setCategoria,
   solicitanteNombre,
   honeypot,
   setHoneypot,
@@ -142,6 +146,36 @@ export const PortalReportForm: React.FC<PortalReportFormProps> = ({
           </h2>
         </div>
         <div>
+          <label className="block text-sm font-bold text-slate-700 mb-1.5">
+            ¿Con qué necesitas ayuda? <span className="text-slate-400 font-normal text-xs">(Opcional)</span>
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+            {[
+              { id: 'HARDWARE', label: 'Equipo / Impresora', icon: '🖥️' },
+              { id: 'SOFTWARE', label: 'Sistema / Programa', icon: '💻' },
+              { id: 'REDES', label: 'Internet / Red', icon: '🌐' },
+              { id: 'ACCESOS', label: 'Clave / Acceso', icon: '🔐' },
+              { id: 'GENERAL', label: 'Otro Problema', icon: '📦' },
+            ].map((cat) => {
+              const isSelected = categoria === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategoria?.(cat.id)}
+                  className={`py-2 px-2.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs scale-[1.02]'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span className="truncate">{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           <label className="block text-sm font-bold text-slate-700 mb-1.5">
             Descripción breve del problema <span className="text-red-500 font-bold">*</span>
           </label>
