@@ -49,3 +49,19 @@ export const actualizarPreferenciasUsuario = async (userId: string, data: any): 
   if (!res.ok) throw new Error('Error al actualizar preferencias');
   return res.json();
 };
+
+export const subirFotoPerfil = async (file: File): Promise<{ url: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${BASE_URL}/usuarios/upload-avatar`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'Error al subir la foto de perfil a Supabase Storage');
+  }
+  return res.json();
+};

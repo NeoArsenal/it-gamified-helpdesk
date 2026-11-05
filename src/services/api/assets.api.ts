@@ -51,11 +51,12 @@ export const eliminarActivo = async (id: string): Promise<any> => {
   return safeJsonResponse(res);
 };
 
-export const uploadFileToStorage = async (file: File): Promise<{ url: string }> => {
+export const uploadFileToStorage = async (file: File, folder: string = 'perfiles'): Promise<{ url: string }> => {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await fetch(`${BASE_URL}/storage/upload`, {
+  const query = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+  const res = await fetch(`${BASE_URL}/storage/upload${query}`, {
     method: 'POST',
     body: formData,
   });

@@ -1,13 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, ChevronDown, User, Settings, LogOut, Shield, Camera, Loader2, Users, Bell } from 'lucide-react';
+import { Menu, ChevronDown, Settings, LogOut, Shield, Users } from 'lucide-react';
 import { useAuth } from './providers/AuthProvider';
-import { getPerfilUsuario, uploadFileToStorage, actualizarPreferenciasUsuario } from '@/services/api';
+import { getPerfilUsuario } from '@/services/api';
 import { UserAvatar } from '@/components/common/UserAvatar';
 import { PushNotificationBellButton } from '@/components/notifications/PushNotificationModal';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -18,12 +17,10 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings, onNavigateUsers }: HeaderProps) {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout } = useAuth();
   const [perfil, setPerfil] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const targetUserId = userId || user?.id;
 
@@ -56,46 +53,6 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
   const rolUsuario = perfil?.rol || user?.rol || 'USER';
   const emailUsuario = perfil?.email || user?.email || '';
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !targetUserId) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Por favor selecciona una imagen válida.');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('La imagen no debe superar los 5MB.');
-      return;
-    }
-
-    try {
-      setIsUploadingPhoto(true);
-      const res = await uploadFileToStorage(file);
-      if (res && res.url) {
-        await actualizarPreferenciasUsuario(targetUserId, { avatar: res.url });
-        setPerfil((prev: any) => ({ ...prev, avatar: res.url }));
-        updateUser({ avatar: res.url });
-        toast.success('¡Foto de perfil actualizada correctamente!');
-      }
-    } catch (err: any) {
-      console.error('Error al subir foto desde header:', err);
-      toast.error(err.message || 'No se pudo actualizar la foto de perfil.');
-    } finally {
-      setIsUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const hasCustomPhoto = Boolean(
-    avatarSeed &&
-    (avatarSeed.startsWith('http://') ||
-     avatarSeed.startsWith('https://') ||
-     avatarSeed.startsWith('data:image/') ||
-     avatarSeed.startsWith('/'))
-  );
-
   return (
     <header className="h-16 bg-white border-b border-slate-200 px-4 md:px-6 flex items-center justify-between shrink-0 relative z-30">
       <div className="flex items-center gap-3">
@@ -109,15 +66,6 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
           <Menu className="w-5 h-5" />
         </button>
       </div>
-
-      {/* Input oculto para subida rápida de foto */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/jpg,image/webp"
-        className="hidden"
-        onChange={handlePhotoUpload}
-      />
 
       {/* Acciones de Cabecera: Notificaciones Push Celular + Perfil */}
       <div className="flex items-center gap-2 sm:gap-3">
@@ -173,21 +121,12 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
           <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200/90 p-2 z-[60] animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5">
             {/* Cabecera Info Usuario con Avatar */}
             <div className="px-3 py-3 border-b border-slate-100 flex items-center gap-3">
-              <div className="relative group shrink-0">
+              <div className="shrink-0">
                 <UserAvatar
                   avatar={avatarSeed}
                   name={nombreUsuario}
                   size="md"
                 />
-                <button
-                  type="button"
-                  disabled={isUploadingPhoto}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 bg-black/40 text-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                  title="Cambiar foto de perfil"
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                </button>
               </div>
 
               <div className="min-w-0 flex-1">
@@ -210,25 +149,6 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
 
             {/* Acciones */}
             <div className="pt-1.5 space-y-1">
-              <button
-                type="button"
-                disabled={isUploadingPhoto}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer disabled:opacity-50"
-              >
-                {isUploadingPhoto ? (
-                  <>
-                    <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
-                    <span>Subiendo foto...</span>
-                  </>
-                ) : (
-                  <>
-                    <Camera className="w-4 h-4 text-slate-400" />
-                    <span>{hasCustomPhoto ? 'Cambiar Foto de Perfil' : 'Subir Foto de Perfil'}</span>
-                  </>
-                )}
-              </button>
-
               {onNavigateSettings && (
                 <button
                   type="button"

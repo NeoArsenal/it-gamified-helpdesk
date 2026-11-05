@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { User, Volume2, ShieldAlert, Upload, Loader2, Camera, Trash2 } from 'lucide-react';
 import { UserAvatar } from '@/components/common/UserAvatar';
-import { uploadFileToStorage } from '@/services/api';
+import { subirFotoPerfil } from '@/services/api';
 import { toast } from 'sonner';
 
 interface ProfileTabProps {
@@ -48,7 +48,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({
 
     try {
       setIsUploading(true);
-      const res = await uploadFileToStorage(file);
+      const res = await subirFotoPerfil(file);
       if (res && res.url) {
         setAvatarSeed(res.url);
         toast.success('¡Foto cargada! Presiona "Guardar Cambios" para confirmar.');
