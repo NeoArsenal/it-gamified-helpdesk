@@ -315,6 +315,31 @@ export const invalidateCacheForMutation = (url: string) => {
   apiCache.clear();
 };
 
+const notifyApiError = (error: any) => {
+  if (typeof window === 'undefined') return;
+  if (window.location.pathname === '/portal') return;
+
+  const raw = String(error?.message || '');
+  const isNetwork =
+    raw.toLowerCase().includes('failed to fetch') ||
+    raw.toLowerCase().includes('networkerror') ||
+    raw.toLowerCase().includes('load failed') ||
+    error?.name === 'TypeError';
+
+  if (isNetwork) {
+    // Evita apilar 5 toasts idénticos: id único fijo en Sonner para agrupar
+    toast.error('Reconectando con el servidor...', {
+      id: 'global-network-error',
+      duration: 3500,
+    });
+  } else {
+    toast.error(raw || 'Error de conexión con el servidor', {
+      id: `err-${raw.slice(0, 30)}`,
+      duration: 4000,
+    });
+  }
+};
+
 const originalFetch = globalThis.fetch;
 export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestInit): Promise<Response> => {
   const token = safeStorage.getItem('auth_token');
@@ -361,9 +386,21 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
       }
     }
 
-    // 3. Iniciar la petición en red y registrarla como en vuelo
+    // 3. Iniciar la petición en red con reintento automático (para evitar "Failed to fetch" al despertar el servidor o en cambio de red móvil)
     const fetchPromise = (async (): Promise<InFlightPayload> => {
-      const res = await originalFetch(url, { ...options, headers });
+      let res: Response;
+      try {
+        res = await originalFetch(url, { ...options, headers });
+      } catch (firstErr: any) {
+        const isNetFail = firstErr?.message?.includes('Failed to fetch') || firstErr?.name === 'TypeError';
+        if (isNetFail) {
+          // Reintentar una vez tras 1.2 segundos (frecuente en móviles al reactivar pantalla o despertar Render)
+          await new Promise((r) => setTimeout(r, 1200));
+          res = await originalFetch(url, { ...options, headers });
+        } else {
+          throw firstErr;
+        }
+      }
 
       if (!res.ok) {
         if (res.status === 429) {
@@ -416,9 +453,17 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
         headers: payload.headers,
       });
     } catch (error: any) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/portal') {
-        toast.error(error.message || 'Error de conexión con el servidor');
+      // Si la red falla pero tenemos datos previos en caché, responder con ellos en lugar de fallar
+      const staleCached = apiCache.get(urlKey);
+      if (staleCached) {
+        return new Response(staleCached.body, {
+          status: staleCached.status,
+          statusText: staleCached.statusText,
+          headers: staleCached.headers,
+        });
       }
+
+      notifyApiError(error);
       throw error;
     }
   }
@@ -451,9 +496,7 @@ export const apiClientFetch = async (url: RequestInfo | URL, options?: RequestIn
 
     return res;
   } catch (error: any) {
-    if (typeof window !== 'undefined' && window.location.pathname !== '/portal') {
-      toast.error(error.message || 'Error de conexión con el servidor');
-    }
+    notifyApiError(error);
     throw error;
   }
 };
