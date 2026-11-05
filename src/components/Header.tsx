@@ -156,7 +156,7 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                     setDropdownOpen(false);
                     onNavigateSettings();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 rounded-xl transition-all cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                 >
                   <Settings className="w-4 h-4 text-slate-400" />
                   <span>Configuración y Preferencias</span>
@@ -170,9 +170,9 @@ export function Header({ onMenuClick, userId, refreshTrigger, onNavigateSettings
                     setDropdownOpen(false);
                     onNavigateUsers();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50/60 hover:bg-indigo-100/80 rounded-xl transition-all cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                 >
-                  <Users className="w-4 h-4 text-indigo-600" />
+                  <Users className="w-4 h-4 text-slate-400" />
                   <span>Gestión de Usuarios</span>
                 </button>
               )}
