@@ -528,54 +528,161 @@ export function AssetHandoverCargoModal({
     }
   };
 
-  // Impresión Directa en A4
+  // Impresión en Nueva Pestaña del Navegador (100% Estilizada en formato A4)
   const handlePrint = () => {
     const printContent = printRef.current;
-    if (!printContent) return;
-
-    let iframe = document.getElementById('cargo-print-isolated-frame') as HTMLIFrameElement;
-    if (iframe) iframe.remove();
-
-    iframe = document.createElement('iframe');
-    iframe.id = 'cargo-print-isolated-frame';
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = '0';
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (!doc) {
-      alert('No se pudo inicializar la vista de impresión.');
+    if (!printContent) {
+      toast.error('No se pudo encontrar el documento para imprimir.');
       return;
     }
 
-    doc.open();
-    doc.write(`
+    // Abrir nueva pestaña del navegador
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('El navegador bloqueó la apertura de la nueva pestaña. Permite las ventanas emergentes.');
+      return;
+    }
+
+    // Extraer todos los estilos y hojas CSS del documento actual
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((tag) => tag.outerHTML)
+      .join('\n');
+
+    const html = `
       <!DOCTYPE html>
-      <html>
+      <html lang="es">
         <head>
           <meta charset="utf-8">
-          <title>${cargoNumero}</title>
+          <base href="${origin}/">
+          <title>${cargoNumero} - Acta de Entrega</title>
+          ${styleTags}
           <style>
-            @page { size: A4 portrait; margin: 12mm; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; margin: 0; padding: 0; color: #0f172a; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            * { box-sizing: border-box; }
+            @page {
+              size: A4 portrait;
+              margin: 10mm 12mm 10mm 12mm;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              margin: 0;
+              padding: 0;
+              background-color: #f8fafc;
+              color: #0f172a;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+            @media screen {
+              body {
+                padding: 24px 16px 40px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+              }
+              .no-print-bar {
+                position: sticky;
+                top: 12px;
+                z-index: 999;
+                background: #0f172a;
+                color: #ffffff;
+                padding: 10px 20px;
+                border-radius: 9999px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+                margin-bottom: 20px;
+                font-size: 13px;
+                font-weight: 600;
+              }
+              .btn-print {
+                background: #2563eb;
+                color: #ffffff;
+                border: none;
+                padding: 7px 18px;
+                border-radius: 9999px;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                transition: background 0.2s;
+              }
+              .btn-print:hover { background: #1d4ed8; }
+              .btn-close {
+                background: transparent;
+                color: #94a3b8;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+              }
+              .btn-close:hover { color: #ffffff; }
+              .cargo-page-container {
+                background: #ffffff;
+                box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+                border-radius: 16px;
+                max-width: 800px;
+                width: 100%;
+              }
+            }
+            @media print {
+              .no-print-bar {
+                display: none !important;
+              }
+              body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+              .cargo-page-container {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+              }
+            }
           </style>
         </head>
         <body>
-          ${printContent.innerHTML}
+          <div class="no-print-bar">
+            <span>📄 ${cargoNumero} · Vista de Impresión Oficial</span>
+            <button class="btn-print" onclick="window.print()">
+              🖨️ Imprimir
+            </button>
+            <button class="btn-close" onclick="window.close()">
+              Cerrar Pestaña
+            </button>
+          </div>
+          <div class="cargo-page-container bg-white p-6 sm:p-10 rounded-2xl border border-slate-300 text-slate-800 font-sans text-xs sm:text-[13px] leading-relaxed space-y-5">
+            ${printContent.innerHTML}
+          </div>
+          <script>
+            // Abrir automáticamente el diálogo de impresión al cargar la pestaña
+            window.addEventListener('load', function() {
+              setTimeout(function() {
+                window.focus();
+                window.print();
+              }, 400);
+            });
+          </script>
         </body>
       </html>
-    `);
-    doc.close();
+    `;
 
-    setTimeout(() => {
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
-    }, 400);
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   if (!isOpen || !activo) return null;
@@ -622,16 +729,6 @@ export function AssetHandoverCargoModal({
             >
               <Upload className="w-3.5 h-3.5 text-blue-600" />
               <span>Logo</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="hidden sm:flex px-3 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded-xl transition-all items-center gap-1.5 shadow-2xs cursor-pointer"
-              title="Imprimir directamente a papel"
-            >
-              <Printer className="w-3.5 h-3.5 text-slate-600" />
-              <span>Imprimir</span>
             </button>
 
             <button
@@ -942,28 +1039,6 @@ export function AssetHandoverCargoModal({
                 : "block animate-in fade-in duration-150"
             )}
           >
-            {/* Barra de Herramientas del Documento A4 */}
-            {viewTab === 'DOCUMENTO' && (
-              <div className="max-w-[800px] mx-auto mb-3 flex items-center justify-end gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Upload className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Cambiar Logo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePrint}
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                >
-                  <Printer className="w-3.5 h-3.5 text-slate-600" />
-                  <span>Imprimir</span>
-                </button>
-              </div>
-            )}
-
             {/* Envoltorio con scroll horizontal suave para dispositivos móviles */}
             <div className="overflow-x-auto pb-6">
               <div
@@ -1234,7 +1309,7 @@ export function AssetHandoverCargoModal({
             <button
               type="button"
               onClick={handlePrint}
-              className="hidden sm:flex px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all items-center gap-1.5 cursor-pointer"
+              className="flex px-3 sm:px-4 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all items-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Imprimir</span>
