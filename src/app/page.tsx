@@ -17,12 +17,106 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { LoginView } from '@/components/views/LoginView';
 import { useAuth } from '@/components/providers/AuthProvider';
 
+const VALID_VIEWS = [
+  'dashboard',
+  'tickets',
+  'network',
+  'knowledge',
+  'inventory',
+  'analytics',
+  'academy',
+  'settings',
+  'users',
+];
+
+const STORAGE_KEY = 'it_helpdesk_active_view';
+
+function getStoredView(): string {
+  if (typeof window === 'undefined') return 'dashboard';
+
+  // 1. Prioridad: Parámetro en URL (?tab= o ?view=)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const urlView = params.get('tab') || params.get('view');
+    if (urlView && VALID_VIEWS.includes(urlView)) {
+      return urlView;
+    }
+  } catch {}
+
+  // 2. Hash en URL (#tickets, #inventory, etc.)
+  try {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (hash && VALID_VIEWS.includes(hash)) {
+      return hash;
+    }
+  } catch {}
+
+  // 3. Fallback: LocalStorage
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && VALID_VIEWS.includes(saved)) {
+      return saved;
+    }
+  } catch {}
+
+  return 'dashboard';
+}
+
 export default function Home() {
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveViewState] = useState<string>('dashboard');
   const [visitedViews, setVisitedViews] = useState<string[]>(['dashboard']);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   const { user, isLoading } = useAuth();
+
+  // Función envoltorio para cambiar vista y sincronizar con URL + localStorage
+  const setActiveView = (viewOrUpdater: string | ((prev: string) => string)) => {
+    setActiveViewState(prev => {
+      const nextView = typeof viewOrUpdater === 'function' ? viewOrUpdater(prev) : viewOrUpdater;
+      if (VALID_VIEWS.includes(nextView)) {
+        try {
+          localStorage.setItem(STORAGE_KEY, nextView);
+          const url = new URL(window.location.href);
+          if (url.searchParams.get('tab') !== nextView) {
+            url.searchParams.set('tab', nextView);
+            window.history.pushState({ tab: nextView }, '', url.toString());
+          }
+        } catch {}
+      }
+      return nextView;
+    });
+  };
+
+  // Restaurar módulo guardado al cargar/refrescar la página completa
+  useEffect(() => {
+    const initialView = getStoredView();
+    if (initialView && initialView !== 'dashboard') {
+      setActiveViewState(initialView);
+      setVisitedViews(prev => (prev.includes(initialView) ? prev : [...prev, initialView]));
+
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('tab') !== initialView) {
+          url.searchParams.set('tab', initialView);
+          window.history.replaceState({ tab: initialView }, '', url.toString());
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Sincronizar si el usuario usa las flechas Atrás / Adelante del navegador
+  useEffect(() => {
+    const handlePopState = () => {
+      const current = getStoredView();
+      if (current) {
+        setActiveViewState(current);
+        setVisitedViews(prev => (prev.includes(current) ? prev : [...prev, current]));
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Trigger para recargar perfil cuando se actualizan datos
   const [refreshProfile, setRefreshProfile] = useState(0);

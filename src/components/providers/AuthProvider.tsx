@@ -93,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     safeStorage.removeItem('auth_token');
     safeStorage.removeItem('auth_user');
+    safeStorage.removeItem('it_helpdesk_active_view');
     socket.disconnect();
     window.location.reload();
   };
