@@ -102,7 +102,7 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                 className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border flex items-center gap-1 ${
                   getCategoriaConfig(selectedTicket.categoria).badgeClass
                 }`}
-                title={`Categoría ITIL: ${getCategoriaConfig(selectedTicket.categoria).label}`}
+                title={`Categoría: ${getCategoriaConfig(selectedTicket.categoria).label}`}
               >
                 <span>{getCategoriaConfig(selectedTicket.categoria).icon}</span>
                 <span>{getCategoriaConfig(selectedTicket.categoria).shortLabel}</span>
@@ -205,17 +205,12 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Clasificación de Categoría Técnica ITIL 4 */}
+          {/* Clasificación de Categoría */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-600" />
-                Categoría Técnica (ITIL 4)
-              </label>
-              <span className="text-[10px] text-slate-400 font-medium">
-                Toca para reclasificar
-              </span>
-            </div>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-3.5 h-3.5 text-slate-500" />
+              Categoría
+            </label>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-0.5">
               {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => {
                 const isCurrent = (selectedTicket.categoria || 'GENERAL').toUpperCase() === cat.id;
@@ -224,18 +219,15 @@ export const TicketDetailModal: React.FC<TicketDetailModalProps> = ({
                     key={cat.id}
                     type="button"
                     onClick={() => handleCambiarCategoria?.(selectedTicket.id, cat.id)}
-                    className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                      isCurrent ? cat.pillActiveClass : cat.pillIdleClass
+                    className={`h-9 px-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      isCurrent
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs ring-2 ring-slate-900/10'
+                        : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="text-xs font-bold flex items-center gap-1">
-                      <span>{cat.icon}</span>
-                      <span>{cat.shortLabel}</span>
-                      {isCurrent && <Check className="w-3.5 h-3.5" />}
-                    </span>
-                    <span className={`text-[9.5px] truncate max-w-full ${isCurrent ? 'text-white/90 font-medium' : 'text-slate-400'}`}>
-                      {cat.id === 'GENERAL' ? 'Sin clasificar' : cat.shortLabel}
-                    </span>
+                    <span>{cat.icon}</span>
+                    <span className="truncate">{cat.shortLabel}</span>
+                    {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
                   </button>
                 );
               })}

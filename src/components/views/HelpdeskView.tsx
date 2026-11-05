@@ -503,7 +503,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             )}
           </div>
 
-          {/* Dropdown Categoría Técnica (ITIL 4) */}
+          {/* Dropdown Categoría */}
           <div className="relative">
             <button
               type="button"
@@ -517,7 +517,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   ? 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
                   : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
-              title="Filtrar por categoría técnica ITIL 4"
+              title="Filtrar por categoría"
             >
               <div className="flex items-center gap-1.5 truncate">
                 <Layers
@@ -543,7 +543,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 <div className="fixed inset-0 z-40" onClick={() => setIsBoardCategoriaOpen(false)} />
                 <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
                   <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
-                    <span>Categoría Técnica</span>
+                    <span>Categoría</span>
                     {filterBoardCategoria !== 'TODAS' && (
                       <button
                         type="button"
@@ -889,7 +889,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
             )}
           </div>
 
-          {/* Dropdown Categoría Técnica (ITIL 4) */}
+          {/* Dropdown Categoría */}
           <div className="relative">
             <button
               type="button"
@@ -903,7 +903,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                   ? 'bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-500/20'
                   : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50'
               }`}
-              title="Filtrar por categoría técnica ITIL 4"
+              title="Filtrar por categoría"
             >
               <div className="flex items-center gap-1.5 truncate">
                 <Layers
@@ -929,7 +929,7 @@ export function HelpdeskView({ userId, onTicketResolved }: HelpdeskViewProps) {
                 <div className="fixed inset-0 z-40" onClick={() => setIsBoardCategoriaOpen(false)} />
                 <div className="absolute right-0 mt-1.5 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 ring-1 ring-black/5">
                   <div className="px-3 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 flex items-center justify-between">
-                    <span>Categoría Técnica</span>
+                    <span>Categoría</span>
                     {filterBoardCategoria !== 'TODAS' && (
                       <button
                         type="button"

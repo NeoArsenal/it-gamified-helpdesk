@@ -257,7 +257,7 @@ export const TicketKanbanCard: React.FC<TicketKanbanCardProps> = ({
             </span>
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border inline-flex items-center gap-1 shrink-0 ${cat.badgeClass}`}
-              title={`Categoría ITIL: ${cat.label}`}
+              title={`Categoría: ${cat.label}`}
             >
               <span>{cat.icon}</span>
               <span>{cat.shortLabel}</span>

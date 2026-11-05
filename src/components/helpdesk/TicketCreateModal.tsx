@@ -117,12 +117,12 @@ export const TicketCreateModal: React.FC<TicketCreateModalProps> = ({
             </div>
           )}
 
-          {/* Selector de Categoría Técnica ITIL 4 */}
+          {/* Selector de Categoría */}
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-blue-600" /> Categoría Técnica
+              <Layers className="w-3.5 h-3.5 text-slate-500" /> Categoría
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
               {(Object.values(TICKET_CATEGORIAS) as any[]).map((cat) => {
                 const isSelected = nuevaCategoria === cat.id;
                 return (
@@ -130,14 +130,14 @@ export const TicketCreateModal: React.FC<TicketCreateModalProps> = ({
                     key={cat.id}
                     type="button"
                     onClick={() => setNuevaCategoria?.(cat.id)}
-                    className={`p-2 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2 ${
+                    className={`h-9 px-2 rounded-xl border text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 text-blue-800 font-bold ring-1 ring-blue-500 shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-slate-900 bg-slate-900 text-white font-bold shadow-xs'
+                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <span className="text-base">{cat.icon}</span>
-                    <span className="text-xs truncate">{cat.shortLabel}</span>
+                    <span>{cat.icon}</span>
+                    <span className="truncate">{cat.shortLabel}</span>
                   </button>
                 );
               })}
