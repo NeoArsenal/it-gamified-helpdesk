@@ -41,6 +41,21 @@ export const TIMELINE_TAG_META: Record<
   NOTA: { label: 'Nota', badge: 'bg-slate-400 text-white', card: 'bg-slate-50/80 border-slate-200', dot: 'bg-slate-400' },
 };
 
+/**
+ * Convierte un valor de fecha a un objeto Date local garantizando que las fechas
+ * en formato ISO UTC (incluso sin sufijo 'Z') se ajusten a la zona horaria del usuario (ej: UTC-5 Perú).
+ */
+export function parseUtcDate(fecha: string | Date | undefined | null): Date {
+  if (!fecha) return new Date();
+  if (fecha instanceof Date) return fecha;
+  const str = String(fecha).trim();
+  if (!str) return new Date();
+  if (str.includes('T') && !str.endsWith('Z') && !str.includes('+') && !str.match(/-\d{2}:\d{2}$/)) {
+    return new Date(`${str}Z`);
+  }
+  return new Date(str);
+}
+
 const KNOWN_TAGS = Object.keys(TIMELINE_TAG_META) as TimelineTag[];
 
 export function parseTimelineItem(descripcion: string = ''): ParsedTimelineItem {

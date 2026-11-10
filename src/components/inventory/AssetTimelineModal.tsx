@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, QrCode, Clock, FileText, ExternalLink, User, Loader2, ArrowRight } from 'lucide-react';
 import { getEstadoBadge, getDeviceIcon } from './inventory.utils';
-import { parseTimelineItem, TIMELINE_TAG_META } from './timeline.utils';
+import { parseTimelineItem, TIMELINE_TAG_META, parseUtcDate } from './timeline.utils';
 import { getActivo } from '@/services/api';
 
 interface AssetTimelineModalProps {
@@ -69,7 +69,7 @@ export function AssetTimelineModal({
                 {activo.tipo} · {activo.marca} {activo.modelo}
                 {(activo.fechaIngreso || activo.fechaRegistro) && (
                   <span className="text-slate-400 ml-1.5 font-normal">
-                    · Ingreso: {new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                    · Ingreso: {parseUtcDate(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </span>
                 )}
               </p>
@@ -144,7 +144,7 @@ export function AssetTimelineModal({
           <div className="relative pl-6 sm:pl-8 space-y-5 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
             {timelineItems.map((item: any, index: number) => {
               const isFirst = index === 0;
-              const dateObj = new Date(item.fecha);
+              const dateObj = parseUtcDate(item.fecha);
               const formattedDate = dateObj.toLocaleDateString([], {
                 year: 'numeric',
                 month: 'short',

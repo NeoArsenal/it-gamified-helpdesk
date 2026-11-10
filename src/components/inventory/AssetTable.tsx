@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeviceIcon, getEstadoBadge } from './inventory.utils';
+import { parseUtcDate } from './timeline.utils';
 import { exportActivosToCsv } from '@/lib/export-utils';
 import { toast } from 'sonner';
 
@@ -300,7 +301,7 @@ export function AssetTable({
                     {(activo.fechaIngreso || activo.fechaRegistro) && (
                       <div className="text-[10px] text-slate-500 font-sans mt-0.5 flex items-center gap-1 font-medium" title="Fecha de entrada/ingreso">
                         <Calendar className="w-2.5 h-2.5 text-slate-400 shrink-0" />
-                        <span>{new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                        <span>{parseUtcDate(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                       </div>
                     )}
                   </td>
@@ -592,7 +593,7 @@ export function AssetTable({
                         <span>Fecha de Entrada:</span>
                       </span>
                       <span className="font-semibold text-slate-800">
-                        {new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        {parseUtcDate(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                       </span>
                     </div>
                   )}
