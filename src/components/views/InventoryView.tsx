@@ -15,6 +15,7 @@ import {
   AssetAssignModal,
   AssetStatusModal,
   AssetTimelineModal,
+  AssetRepairModal,
   AssetHandoverCargoModal,
 } from '@/components/inventory';
 import { InventorySkeleton } from '@/components/ui/Skeleton';
@@ -79,6 +80,9 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     isTimelineModalOpen,
     setIsTimelineModalOpen,
     timelineActivo,
+    isRepairModalOpen,
+    setIsRepairModalOpen,
+    repairActivo,
     tiposDisponibles,
     sedesList,
     departamentosList,
@@ -101,6 +105,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     handleEliminar,
     handleEnviarATaller,
     handleMarcarReparado,
+    handleConfirmarReparado,
     handleDeclararChatarra,
     handleRescatar,
   } = useInventory({ userId, onActivoRescatado });
@@ -551,6 +556,14 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         defaultDepto={cargoAsignacionData?.departamento}
         defaultUbicacion={cargoAsignacionData?.ubicacion}
         defaultResponsable={cargoAsignacionData?.responsable}
+      />
+
+      {/* 10. Modal de Salida de Taller y Registro de Reparación */}
+      <AssetRepairModal
+        isOpen={isRepairModalOpen}
+        onClose={() => setIsRepairModalOpen(false)}
+        activo={repairActivo}
+        onConfirmarReparado={handleConfirmarReparado}
       />
     </div>
   );

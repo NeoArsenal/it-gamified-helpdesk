@@ -60,6 +60,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [timelineActivo, setTimelineActivo] = useState<any | null>(null);
 
+  const [isRepairModalOpen, setIsRepairModalOpen] = useState(false);
+  const [repairActivo, setRepairActivo] = useState<any | null>(null);
+
   // Catálogos dinámicos
   const [tiposDisponibles, setTiposDisponibles] = useState<string[]>([
     'PC', 'Laptop', 'Impresora', 'Monitor', 'Servidor', 'Switch / Router', 'POS', 'Otro',
@@ -301,17 +304,26 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     }
   };
 
-  const handleMarcarReparado = async (activo: any) => {
+  const handleMarcarReparado = (activo: any) => {
+    setRepairActivo(activo);
+    setIsRepairModalOpen(true);
+  };
+
+  const handleConfirmarReparado = async ({ solucion, fechaSalida }: { solucion: string; fechaSalida: string }) => {
+    if (!repairActivo) return;
     try {
-      await updateActivo(activo.id, {
+      await updateActivo(repairActivo.id, {
         estado: 'OPERATIVO',
         tecnicoId: userId,
-        observaciones: `Reparado con éxito: ${new Date().toLocaleDateString()}`,
+        observaciones: solucion,
+        fechaIntervencion: fechaSalida,
       });
-      toast.success(`¡Equipo ${activo.codigo} reparado y operativo!`);
+      toast.success(`¡Equipo ${repairActivo.codigo} reparado y devuelto a operativo!`);
+      setIsRepairModalOpen(false);
+      setRepairActivo(null);
       fetchActivos();
-    } catch {
-      toast.error('Error al marcar reparado');
+    } catch (err: any) {
+      toast.error(err?.message || 'Error al guardar la reparación');
     }
   };
 
@@ -433,6 +445,10 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setIsTimelineModalOpen,
     timelineActivo,
     setTimelineActivo,
+    isRepairModalOpen,
+    setIsRepairModalOpen,
+    repairActivo,
+    setRepairActivo,
     tiposDisponibles,
     sedesList,
     departamentosList,
@@ -456,6 +472,7 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     handleEliminar,
     handleEnviarATaller,
     handleMarcarReparado,
+    handleConfirmarReparado,
     handleDeclararChatarra,
     handleRescatar,
   };
