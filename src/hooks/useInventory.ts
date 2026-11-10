@@ -41,6 +41,8 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const [modelo, setModelo] = useState('');
   const [numeroSerie, setNumeroSerie] = useState('');
   const [codigoFactura, setCodigoFactura] = useState('');
+  const [fechaIngreso, setFechaIngreso] = useState('');
+  const [isFechaActual, setIsFechaActual] = useState(true);
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [ubicacion, setUbicacion] = useState('');
@@ -141,6 +143,8 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setModelo('');
     setNumeroSerie('');
     setCodigoFactura('');
+    setFechaIngreso('');
+    setIsFechaActual(true);
     setSede('');
     setDepartamento('');
     setUbicacion('');
@@ -158,6 +162,16 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setModelo(activo.modelo || '');
     setNumeroSerie(activo.numeroSerie || '');
     setCodigoFactura(activo.codigoFactura || '');
+    if (activo.fechaIngreso) {
+      const d = new Date(activo.fechaIngreso);
+      const isoDate = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : '';
+      setFechaIngreso(isoDate);
+      const todayIso = new Date().toISOString().split('T')[0];
+      setIsFechaActual(isoDate === todayIso);
+    } else {
+      setFechaIngreso('');
+      setIsFechaActual(true);
+    }
     setSede(activo.sede || '');
     setDepartamento(activo.departamento || '');
     setUbicacion(activo.ubicacion || '');
@@ -177,6 +191,9 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
         modelo: modelo.trim(),
         numeroSerie: numeroSerie.trim(),
         codigoFactura: codigoFactura.trim().toUpperCase(),
+        fechaIngreso: isFechaActual
+          ? new Date().toISOString()
+          : (fechaIngreso ? new Date(`${fechaIngreso}T12:00:00Z`).toISOString() : new Date().toISOString()),
       };
 
       if (editingActivo) {
@@ -388,6 +405,10 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setNumeroSerie,
     codigoFactura,
     setCodigoFactura,
+    fechaIngreso,
+    setFechaIngreso,
+    isFechaActual,
+    setIsFechaActual,
     sede,
     setSede,
     departamento,

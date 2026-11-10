@@ -432,7 +432,7 @@ export default function ActivoMobileView() {
                     </span>
                     <time className="text-[11px] font-mono text-emerald-400/80 flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
-                      {activo.fechaRegistro ? new Date(activo.fechaRegistro).toLocaleDateString() : 'Fecha inicial'}
+                      {activo.fechaIngreso || activo.fechaRegistro ? new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString() : 'Fecha inicial'}
                     </time>
                   </div>
 

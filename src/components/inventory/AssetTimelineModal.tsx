@@ -67,6 +67,11 @@ export function AssetTimelineModal({
               </div>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
                 {activo.tipo} · {activo.marca} {activo.modelo}
+                {(activo.fechaIngreso || activo.fechaRegistro) && (
+                  <span className="text-slate-400 ml-1.5 font-normal">
+                    · Ingreso: {new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </span>
+                )}
               </p>
             </div>
           </div>

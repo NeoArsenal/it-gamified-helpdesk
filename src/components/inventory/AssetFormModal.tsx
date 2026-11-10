@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, X, Sparkles, Tag, Layers, Hash, ReceiptText } from 'lucide-react';
+import { Package, X, Sparkles, Tag, Layers, Hash, ReceiptText, Calendar, Clock, History } from 'lucide-react';
 
 interface AssetFormModalProps {
   isOpen: boolean;
@@ -17,6 +17,10 @@ interface AssetFormModalProps {
   setNumeroSerie: (val: string) => void;
   codigoFactura: string;
   setCodigoFactura: (val: string) => void;
+  fechaIngreso: string;
+  setFechaIngreso: (val: string) => void;
+  isFechaActual: boolean;
+  setIsFechaActual: (val: boolean) => void;
   tiposDisponibles: string[];
   onGuardar: (e: React.FormEvent) => void;
 }
@@ -37,10 +41,24 @@ export function AssetFormModal({
   setNumeroSerie,
   codigoFactura,
   setCodigoFactura,
+  fechaIngreso,
+  setFechaIngreso,
+  isFechaActual,
+  setIsFechaActual,
   tiposDisponibles,
   onGuardar,
 }: AssetFormModalProps) {
   if (!isOpen) return null;
+
+  const todayIso = new Date().toISOString().split('T')[0];
+
+  const getTodayFormatted = () => {
+    try {
+      return new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+    } catch {
+      return 'Hoy';
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-3 sm:p-4 animate-in fade-in duration-200">
@@ -183,6 +201,91 @@ export function AssetFormModal({
               placeholder="Ej: F001-002345 o GR-2026-089"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-mono font-bold text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all uppercase"
             />
+          </div>
+
+          {/* Bloque 5: Fecha de Entrada / Ingreso del Equipo */}
+          <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-3.5 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Fecha de Entrada al Área / Clínica</span>
+              </label>
+              <span className="text-[11px] font-semibold text-slate-400">
+                {isFechaActual ? 'Ingreso actual' : 'Equipo preexistente'}
+              </span>
+            </div>
+
+            {/* Selector de 2 opciones: Ingresó Hoy (Default) vs Fecha Anterior */}
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFechaActual(true);
+                }}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  isFechaActual
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Ingresó Hoy</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsFechaActual(false);
+                  if (!fechaIngreso) {
+                    setFechaIngreso(todayIso);
+                  }
+                }}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  !isFechaActual
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <History className="w-3.5 h-3.5 text-amber-400" />
+                <span>Ya Estaba / Anterior</span>
+              </button>
+            </div>
+
+            {/* Contenido según selección */}
+            {isFechaActual ? (
+              <div className="flex items-center gap-2 text-xs text-slate-600 bg-emerald-50/60 border border-emerald-200/60 px-3 py-2 rounded-xl">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="font-medium text-slate-700">
+                  Fecha asignada: <strong className="font-bold text-slate-900">{getTodayFormatted()}</strong> (Automática, no requiere llenar nada)
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-600">
+                    Selecciona cuándo llegó o desde cuándo opera el equipo:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFechaIngreso(todayIso)}
+                    className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  >
+                    Hoy
+                  </button>
+                </div>
+                <input
+                  type="date"
+                  max={todayIso}
+                  value={fechaIngreso || todayIso}
+                  onChange={e => setFechaIngreso(e.target.value)}
+                  required={!isFechaActual}
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
+                />
+                <p className="text-[10px] text-slate-500 font-medium">
+                  Útil para mapear PCs o equipos antiguos que ya se encontraban en el área.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Banner Informativo de Alta */}

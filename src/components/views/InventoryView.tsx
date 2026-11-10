@@ -54,6 +54,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     setNumeroSerie,
     codigoFactura,
     setCodigoFactura,
+    fechaIngreso,
+    setFechaIngreso,
+    isFechaActual,
+    setIsFechaActual,
     sede,
     setSede,
     departamento,
@@ -492,6 +496,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         setNumeroSerie={setNumeroSerie}
         codigoFactura={codigoFactura}
         setCodigoFactura={setCodigoFactura}
+        fechaIngreso={fechaIngreso}
+        setFechaIngreso={setFechaIngreso}
+        isFechaActual={isFechaActual}
+        setIsFechaActual={setIsFechaActual}
         tiposDisponibles={tiposDisponibles}
         onGuardar={handleGuardarActivo}
       />

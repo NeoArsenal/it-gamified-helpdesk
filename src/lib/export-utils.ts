@@ -133,7 +133,8 @@ export function exportActivosToExcel(activos: any[], filenamePrefix = 'inventari
     { header: 'Responsable', accessor: a => a.responsable || a.usuarioAsignado || 'Sin asignar' },
     { header: 'Estado', accessor: a => a.estado || 'OPERATIVO' },
     { header: 'Observaciones / Diagnóstico', accessor: a => a.observaciones || a.diagnostico || a.especificaciones?.observaciones || '' },
-    { header: 'Fecha de Registro', accessor: a => formatFecha(a.creadoEn || a.createdAt) },
+    { header: 'Fecha de Entrada / Ingreso', accessor: a => formatFecha(a.fechaIngreso || a.fechaRegistro || a.creadoEn || a.createdAt) },
+    { header: 'Fecha de Registro', accessor: a => formatFecha(a.creadoEn || a.fechaRegistro || a.createdAt) },
   ];
 
   exportToExcel(filenamePrefix, columns, activos, 'Equipos TI');

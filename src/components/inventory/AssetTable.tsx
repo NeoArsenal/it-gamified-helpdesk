@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Search, X, ChevronDown, Check, QrCode, MapPin, User, 
   Wrench, Edit3, Trash2, Package, FileSpreadsheet, Clock, UserPlus,
-  AlertTriangle, FileText, ChevronRight
+  AlertTriangle, FileText, ChevronRight, Calendar
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getDeviceIcon, getEstadoBadge } from './inventory.utils';
@@ -297,6 +297,12 @@ export function AssetTable({
                         <span className="truncate max-w-[120px]">{activo.codigoFactura}</span>
                       </div>
                     )}
+                    {(activo.fechaIngreso || activo.fechaRegistro) && (
+                      <div className="text-[10px] text-slate-500 font-sans mt-0.5 flex items-center gap-1 font-medium" title="Fecha de entrada/ingreso">
+                        <Calendar className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                        <span>{new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+                      </div>
+                    )}
                   </td>
 
                   {/* Tipo, Marca & Modelo */}
@@ -578,6 +584,19 @@ export function AssetTable({
               {isExpanded && (
                 <div className="px-3.5 pb-3.5 pt-1 border-t border-slate-100 bg-slate-50/50 space-y-3 animate-in fade-in duration-200">
                   
+                  {/* Fecha de Entrada / Ingreso */}
+                  {(activo.fechaIngreso || activo.fechaRegistro) && (
+                    <div className="flex items-center justify-between text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                      <span className="font-semibold text-slate-500 flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Fecha de Entrada:</span>
+                      </span>
+                      <span className="font-semibold text-slate-800">
+                        {new Date(activo.fechaIngreso || activo.fechaRegistro).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Factura / Guía si existe */}
                   {activo.codigoFactura && (
                     <div className="flex items-center gap-2 text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-200/80 shadow-2xs">
