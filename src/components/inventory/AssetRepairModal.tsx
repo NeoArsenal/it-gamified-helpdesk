@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Wrench, X, Check, Calendar, Clock, AlertTriangle, 
   Sparkles, History, CalendarDays, Loader2 
 } from 'lucide-react';
+import { getDeviceIcon } from './inventory.utils';
 
 interface AssetRepairModalProps {
   isOpen: boolean;
@@ -13,6 +14,78 @@ interface AssetRepairModalProps {
     fechaSalida: string;
   }) => Promise<void>;
 }
+
+const SUGERENCIAS_POR_TIPO: Record<string, string[]> = {
+  PC: [
+    'Mantenimiento preventivo, sopleteado y cambio de pasta térmica',
+    'Reemplazo de disco mecánico por SSD y migración de datos',
+    'Cambio de fuente de poder averiada por nueva unidad certificada',
+    'Ampliación / sustitución de memoria RAM defectuosa',
+    'Reinstalación limpia de sistema operativo, controladores y software clínico',
+    'Sustitución de pila CMOS (CR2032) y reconfiguración de BIOS',
+  ],
+  LAPTOP: [
+    'Mantenimiento interno, limpieza de disipador y cambio de pasta térmica',
+    'Reemplazo de batería degradada por repuesto original',
+    'Reemplazo de cargador / adaptador de corriente dañado',
+    'Cambio de teclado / reparación de panel táctil (touchpad)',
+    'Sustitución de pantalla LCD / ajuste y lubricación de bisagras',
+    'Actualización a unidad de estado sólido (SSD) y optimización',
+  ],
+  IMPRESORA: [
+    'Limpieza profunda de cabezales y purga de conductos de tinta',
+    'Desatasco de papel y limpieza con alcohol isopropílico de rodillos de tracción (pick-up)',
+    'Reemplazo de cartucho de tóner / tambor (drum) agotado',
+    'Sustitución de filmina de teflón del fusor y engranajes',
+    'Reemplazo / reseteo de almohadillas de desecho (waste ink pad)',
+    'Configuración de red Wi-Fi / IP estática y reinstalación de cola de impresión',
+  ],
+  MONITOR: [
+    'Reemplazo de fuente externa / adaptador de poder 12V/19V averiado',
+    'Sustitución de cable de video (HDMI / DisplayPort / VGA) deteriorado',
+    'Reparación de placa fuente interna / condensadores hinchados',
+    'Ajuste y calibración de panel, resolución y frecuencia',
+    'Reparación de botonera frontal / panel táctil de encendido',
+  ],
+  SERVIDOR: [
+    'Mantenimiento preventivo de ventiladores hot-swap y fuentes redundantes',
+    'Reemplazo de disco rígido defectuoso en arreglo RAID y reconstrucción',
+    'Actualización de firmware de controladora iDRAC / ILO y BIOS',
+    'Limpieza de bahías y verificación de módulos de memoria ECC',
+    'Verificación de servicios críticos y copias de seguridad',
+  ],
+  RED: [
+    'Reinicio de fábrica y recarga de configuración de VLANs y puertos',
+    'Reemplazo de patch cord de red UTP Cat6 y crimpado de conectores RJ45',
+    'Sustitución de puerto PoE averiado / inyector de corriente',
+    'Actualización de firmware y verificación de estabilidad de enlace',
+    'Cambio de fuente de alimentación de switch/router',
+  ],
+  POS: [
+    'Limpieza de cabezal térmico y sensor de fin de papel',
+    'Reemplazo de batería interna recargable',
+    'Actualización de aplicación de punto de venta y conexión TLS',
+    'Sustitución de cable de comunicación USB / Serial',
+  ],
+};
+
+const getSugerenciasPorTipo = (tipo: string = ''): string[] => {
+  const t = (tipo || '').toUpperCase();
+  if (t.includes('LAPTOP') || t.includes('PORTÁTIL') || t.includes('NOTEBOOK')) return SUGERENCIAS_POR_TIPO.LAPTOP;
+  if (t.includes('IMPRESORA') || t.includes('TÉRMICA') || t.includes('MULTIFUNCIONAL') || t.includes('EPSON') || t.includes('HP') || t.includes('ZEBRA')) return SUGERENCIAS_POR_TIPO.IMPRESORA;
+  if (t.includes('MONITOR') || t.includes('PANTALLA')) return SUGERENCIAS_POR_TIPO.MONITOR;
+  if (t.includes('SERVIDOR') || t.includes('SERVER')) return SUGERENCIAS_POR_TIPO.SERVIDOR;
+  if (t.includes('SWITCH') || t.includes('ROUTER') || t.includes('RED') || t.includes('ACCESS POINT') || t.includes('AP')) return SUGERENCIAS_POR_TIPO.RED;
+  if (t.includes('POS') || t.includes('TABLET') || t.includes('CELULAR')) return SUGERENCIAS_POR_TIPO.POS;
+  if (t.includes('PC') || t.includes('DESKTOP') || t.includes('COMPUTADORA')) return SUGERENCIAS_POR_TIPO.PC;
+
+  return [
+    'Mantenimiento preventivo, limpieza interna y verificación de componentes',
+    'Reemplazo de piezas averiadas y aseguramiento de cableado',
+    'Reemplazo de adaptador / cable de alimentación',
+    'Actualización de software / firmware y pruebas operativas completadas',
+  ];
+};
 
 export function AssetRepairModal({
   isOpen,
@@ -64,14 +137,7 @@ export function AssetRepairModal({
     }
   };
 
-  const plantillasSolucion = [
-    'Mantenimiento preventivo, limpieza y cambio de pasta térmica',
-    'Reemplazo de disco mecánico por unidad de estado sólido (SSD)',
-    'Reemplazo de fuente de poder averiada',
-    'Reinstalación limpia del sistema operativo y configuración',
-    'Reparación de conector / cable de alimentación',
-    'Limpieza de cabezales y calibración de rodillos',
-  ];
+  const sugerencias = useMemo(() => getSugerenciasPorTipo(activo?.tipo), [activo?.tipo]);
 
   const handleAplicarPlantilla = (texto: string) => {
     if (!solucion.trim()) {
@@ -169,19 +235,23 @@ export function AssetRepairModal({
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all resize-none"
             />
 
-            {/* Sugerencias rápidas con 1 clic */}
-            <div className="mt-2">
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 mb-1.5">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                <span>Sugerencias rápidas (toca para insertar):</span>
+            {/* Sugerencias rápidas específicas según tipo de equipo */}
+            <div className="mt-2.5">
+              <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-700 mb-1.5">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Sugerencias para {activo.tipo || 'este equipo'} (toca para insertar):</span>
+                </span>
+                <span className="text-[10px] text-slate-400 font-normal">Opcional</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {plantillasSolucion.map((plantilla, i) => (
+                {sugerencias.map((plantilla, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => handleAplicarPlantilla(plantilla)}
-                    className="text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200/80 transition-colors cursor-pointer text-left"
+                    className="text-[11px] font-medium bg-slate-100 hover:bg-emerald-50 hover:text-emerald-900 hover:border-emerald-300 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200 transition-all cursor-pointer text-left active:scale-95 leading-snug"
+                    title="Insertar en la solución técnica"
                   >
                     + {plantilla}
                   </button>
@@ -315,3 +385,4 @@ export function AssetRepairModal({
     </div>
   );
 }
+
