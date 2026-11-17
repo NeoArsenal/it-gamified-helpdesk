@@ -7,4 +7,5 @@ export * from './AssetAssignModal';
 export * from './AssetStatusModal';
 export * from './AssetTimelineModal';
 export * from './AssetRepairModal';
+export * from './AssetReportModal';
 export * from './AssetHandoverCargoModal';

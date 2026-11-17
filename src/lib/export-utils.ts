@@ -127,14 +127,16 @@ export function exportActivosToExcel(activos: any[], filenamePrefix = 'inventari
     { header: 'Marca', accessor: a => a.marca || '' },
     { header: 'Modelo', accessor: a => a.modelo || '' },
     { header: 'N° de Serie (S/N)', accessor: a => a.numeroSerie || a.serial || '' },
+    { header: 'Factura / Guía', accessor: a => a.codigoFactura || 'S/N' },
     { header: 'Sede', accessor: a => a.sede || 'Sin sede' },
     { header: 'Departamento', accessor: a => a.departamento || 'General' },
     { header: 'Ubicación / Oficina', accessor: a => a.ubicacionDetallada || a.ubicacion || a.area || '' },
     { header: 'Responsable', accessor: a => a.responsable || a.usuarioAsignado || 'Sin asignar' },
     { header: 'Estado', accessor: a => a.estado || 'OPERATIVO' },
     { header: 'Observaciones / Diagnóstico', accessor: a => a.observaciones || a.diagnostico || a.especificaciones?.observaciones || '' },
-    { header: 'Fecha de Entrada / Ingreso', accessor: a => formatFecha(a.fechaIngreso || a.fechaRegistro || a.creadoEn || a.createdAt) },
-    { header: 'Fecha de Registro', accessor: a => formatFecha(a.creadoEn || a.fechaRegistro || a.createdAt) },
+    { header: 'Fecha de Entrada / Ingreso', accessor: a => a.fechaIngreso ? formatFecha(a.fechaIngreso) : 'No especificada' },
+    { header: 'Fecha de Baja', accessor: a => a.fechaBaja ? formatFecha(a.fechaBaja) : '-' },
+    { header: 'Fecha de Registro en Sistema', accessor: a => formatFecha(a.creadoEn || a.fechaRegistro || a.createdAt) },
   ];
 
   exportToExcel(filenamePrefix, columns, activos, 'Equipos TI');

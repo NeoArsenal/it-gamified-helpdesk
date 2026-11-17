@@ -28,6 +28,7 @@ export interface Activo {
   especificaciones?: Record<string, any>;
   intervenciones?: IntervencionActivo[];
   fechaIngreso?: string | Date;
+  fechaBaja?: string | Date;
   creadoEn?: string | Date;
   actualizadoEn?: string | Date;
 }
@@ -47,4 +48,5 @@ export interface CreateActivoDTO {
   macAddress?: string;
   especificaciones?: Record<string, any>;
   fechaIngreso?: string | Date;
+  fechaBaja?: string | Date;
 }

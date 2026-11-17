@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Package, Wrench, Trash2, Recycle, Plus, Cpu, CheckCircle2, Layers,
-  ArrowDownToLine, Search, X, SlidersHorizontal, ChevronDown, Check
+  ArrowDownToLine, Search, X, SlidersHorizontal, ChevronDown, Check, Printer, FileText
 } from 'lucide-react';
 import { useInventory } from '@/hooks/useInventory';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ import {
   AssetStatusModal,
   AssetTimelineModal,
   AssetRepairModal,
+  AssetReportModal,
   AssetHandoverCargoModal,
 } from '@/components/inventory';
 import { InventorySkeleton } from '@/components/ui/Skeleton';
@@ -57,8 +58,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     setCodigoFactura,
     fechaIngreso,
     setFechaIngreso,
-    isFechaActual,
-    setIsFechaActual,
+    fechaBaja,
+    setFechaBaja,
+    modoFechaIngreso,
+    setModoFechaIngreso,
     sede,
     setSede,
     departamento,
@@ -109,6 +112,9 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
     handleDeclararChatarra,
     handleRescatar,
   } = useInventory({ userId, onActivoRescatado });
+
+  // Control del Modal de Reportes Oficiales
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // Control del Modal de Cargo de Asignación y Entrega
   const [cargoActivo, setCargoActivo] = useState<any | null>(null);
@@ -438,6 +444,16 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
             </button>
           </div>
 
+          <button
+            type="button"
+            onClick={() => setIsReportModalOpen(true)}
+            className="w-full sm:w-auto justify-center bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 hover:border-slate-400 px-3.5 py-2.5 rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 shadow-2xs hover:shadow active:scale-95 transition-all cursor-pointer shrink-0"
+            title="Generar reporte oficial con filtros, vista previa, PDF e impresión"
+          >
+            <Printer className="w-4 h-4 text-slate-600 shrink-0" />
+            <span>Reportes</span>
+          </button>
+
           <button 
             type="button"
             onClick={handleAbrirCrear}
@@ -468,6 +484,7 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
           onGenerarCargo={handleAbrirCargo}
           onCambiarEstado={handleAbrirCambiarEstado}
           onVerTimeline={handleAbrirTimeline}
+          onAbrirReporte={() => setIsReportModalOpen(true)}
         />
       )}
 
@@ -503,8 +520,10 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         setCodigoFactura={setCodigoFactura}
         fechaIngreso={fechaIngreso}
         setFechaIngreso={setFechaIngreso}
-        isFechaActual={isFechaActual}
-        setIsFechaActual={setIsFechaActual}
+        fechaBaja={fechaBaja}
+        setFechaBaja={setFechaBaja}
+        modoFechaIngreso={modoFechaIngreso}
+        setModoFechaIngreso={setModoFechaIngreso}
         tiposDisponibles={tiposDisponibles}
         onGuardar={handleGuardarActivo}
       />
@@ -564,6 +583,15 @@ export function InventoryView({ userId, onActivoRescatado }: InventoryViewProps)
         onClose={() => setIsRepairModalOpen(false)}
         activo={repairActivo}
         onConfirmarReparado={handleConfirmarReparado}
+      />
+
+      {/* 11. Modal de Reporte Oficial de Inventario y Trazabilidad */}
+      <AssetReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        activos={activos}
+        sedesList={sedesList}
+        tiposDisponibles={tiposDisponibles}
       />
     </div>
   );

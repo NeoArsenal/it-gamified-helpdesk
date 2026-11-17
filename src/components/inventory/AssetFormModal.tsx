@@ -17,10 +17,12 @@ interface AssetFormModalProps {
   setNumeroSerie: (val: string) => void;
   codigoFactura: string;
   setCodigoFactura: (val: string) => void;
+  modoFechaIngreso: 'HOY' | 'EXACTA' | 'DESCONOCIDA';
+  setModoFechaIngreso: (val: 'HOY' | 'EXACTA' | 'DESCONOCIDA') => void;
   fechaIngreso: string;
   setFechaIngreso: (val: string) => void;
-  isFechaActual: boolean;
-  setIsFechaActual: (val: boolean) => void;
+  fechaBaja?: string;
+  setFechaBaja?: (val: string) => void;
   tiposDisponibles: string[];
   onGuardar: (e: React.FormEvent) => void;
 }
@@ -41,10 +43,12 @@ export function AssetFormModal({
   setNumeroSerie,
   codigoFactura,
   setCodigoFactura,
+  modoFechaIngreso,
+  setModoFechaIngreso,
   fechaIngreso,
   setFechaIngreso,
-  isFechaActual,
-  setIsFechaActual,
+  fechaBaja,
+  setFechaBaja,
   tiposDisponibles,
   onGuardar,
 }: AssetFormModalProps) {
@@ -211,55 +215,67 @@ export function AssetFormModal({
                 <span>Fecha de Entrada al Área / Clínica</span>
               </label>
               <span className="text-[11px] font-semibold text-slate-400">
-                {isFechaActual ? 'Ingreso actual' : 'Equipo preexistente'}
+                {modoFechaIngreso === 'HOY' && 'Ingreso hoy'}
+                {modoFechaIngreso === 'EXACTA' && 'Fecha histórica'}
+                {modoFechaIngreso === 'DESCONOCIDA' && 'Sin fecha exacta'}
               </span>
             </div>
 
-            {/* Selector de 2 opciones: Ingresó Hoy (Default) vs Fecha Anterior */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl">
+            {/* Selector de 3 opciones: Ingresó Hoy, Fecha Exacta, No especificada */}
+            <div className="grid grid-cols-3 gap-1.5 p-1 bg-white border border-slate-200 rounded-xl">
               <button
                 type="button"
-                onClick={() => {
-                  setIsFechaActual(true);
-                }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  isFechaActual
+                onClick={() => setModoFechaIngreso('HOY')}
+                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  modoFechaIngreso === 'HOY'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Ingresó Hoy</span>
+                <span>Hoy</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  setIsFechaActual(false);
-                  if (!fechaIngreso) {
-                    setFechaIngreso(todayIso);
-                  }
+                  setModoFechaIngreso('EXACTA');
+                  if (!fechaIngreso) setFechaIngreso(todayIso);
                 }}
-                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                  !isFechaActual
+                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  modoFechaIngreso === 'EXACTA'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                 }`}
               >
                 <History className="w-3.5 h-3.5 text-amber-400" />
-                <span>Ya Estaba / Anterior</span>
+                <span>Exacta</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModoFechaIngreso('DESCONOCIDA')}
+                className={`py-2 px-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                  modoFechaIngreso === 'DESCONOCIDA'
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <span>❓ Sin fecha</span>
               </button>
             </div>
 
             {/* Contenido según selección */}
-            {isFechaActual ? (
+            {modoFechaIngreso === 'HOY' && (
               <div className="flex items-center gap-2 text-xs text-slate-600 bg-emerald-50/60 border border-emerald-200/60 px-3 py-2 rounded-xl">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 <span className="font-medium text-slate-700">
-                  Fecha asignada: <strong className="font-bold text-slate-900">{getTodayFormatted()}</strong> (Automática, no requiere llenar nada)
+                  Fecha asignada: <strong className="font-bold text-slate-900">{getTodayFormatted()}</strong> (Automática)
                 </span>
               </div>
-            ) : (
+            )}
+
+            {modoFechaIngreso === 'EXACTA' && (
               <div className="space-y-1.5 pt-1 animate-in fade-in slide-in-from-top-1 duration-150">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-600">
@@ -278,15 +294,49 @@ export function AssetFormModal({
                   max={todayIso}
                   value={fechaIngreso || todayIso}
                   onChange={e => setFechaIngreso(e.target.value)}
-                  required={!isFechaActual}
+                  required
                   className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none transition-all cursor-pointer"
                 />
-                <p className="text-[10px] text-slate-500 font-medium">
-                  Útil para mapear PCs o equipos antiguos que ya se encontraban en el área.
-                </p>
+              </div>
+            )}
+
+            {modoFechaIngreso === 'DESCONOCIDA' && (
+              <div className="flex items-start gap-2 text-xs text-amber-900 bg-amber-50/80 border border-amber-200/70 p-2.5 rounded-xl animate-in fade-in duration-150">
+                <span className="text-base shrink-0">📋</span>
+                <div>
+                  <p className="font-bold text-amber-950">Fecha no especificada / Pendiente</p>
+                  <p className="text-[11px] text-amber-800/90 mt-0.5 leading-relaxed">
+                    Aparecerá como <em>«No especificada»</em> en los reportes oficiales. Podrás regularizarla y editarla en cualquier momento cuando ubiques la factura o comprobante.
+                  </p>
+                </div>
               </div>
             )}
           </div>
+
+          {/* Bloque 6: Fecha de Baja (Solo visible si el equipo está en estado BAJA o tiene fecha de baja) */}
+          {(editingActivo?.estado === 'BAJA' || fechaBaja) && (
+            <div className="bg-rose-50/80 border border-rose-200/90 rounded-2xl p-3.5 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Fecha de Baja / Descarte Definitivo</span>
+                </label>
+                <span className="text-[10px] uppercase font-bold text-rose-600 bg-rose-100 px-2 py-0.5 rounded-md">
+                  Inoperativo / Chatarra
+                </span>
+              </div>
+              <input
+                type="date"
+                max={todayIso}
+                value={fechaBaja || ''}
+                onChange={e => setFechaBaja?.(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-white border border-rose-300 rounded-xl text-xs sm:text-sm font-semibold text-rose-900 focus:ring-2 focus:ring-rose-500 outline-none transition-all cursor-pointer"
+              />
+              <p className="text-[10px] text-rose-700">
+                Registra la fecha formal de retiro del activo para auditoría contable.
+              </p>
+            </div>
+          )}
 
           {/* Banner Informativo de Alta */}
           <div className="bg-indigo-50/80 border border-indigo-100 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-indigo-900">

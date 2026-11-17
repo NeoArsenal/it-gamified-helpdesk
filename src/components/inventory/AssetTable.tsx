@@ -28,6 +28,7 @@ interface AssetTableProps {
   onCambiarEstado?: (activo: any) => void;
   onVerTimeline?: (activo: any) => void;
   onGenerarCargo?: (activo: any) => void;
+  onAbrirReporte?: () => void;
 }
 
 export function AssetTable({
@@ -48,6 +49,7 @@ export function AssetTable({
   onCambiarEstado,
   onVerTimeline,
   onGenerarCargo,
+  onAbrirReporte,
 }: AssetTableProps) {
   // Control de Dropdowns Estéticos
   const [openSedeDropdown, setOpenSedeDropdown] = useState(false);
@@ -236,6 +238,19 @@ export function AssetTable({
               )}
             </div>
           </div>
+
+          {/* Botón Generar Reporte Oficial (Impresión / PDF / Filtros) */}
+          {onAbrirReporte && (
+            <button
+              type="button"
+              onClick={onAbrirReporte}
+              className="w-full sm:w-auto justify-center px-3.5 py-2 rounded-xl text-xs md:text-sm font-bold flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 hover:text-indigo-900 shadow-2xs hover:shadow transition-all cursor-pointer active:scale-95 shrink-0"
+              title="Generar reporte oficial con vista previa, PDF e impresión"
+            >
+              <FileText className="w-4 h-4 text-indigo-600 shrink-0" />
+              <span>Reportes</span>
+            </button>
+          )}
 
           {/* Botón Exportar CSV / Excel */}
           <button

@@ -42,7 +42,8 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const [numeroSerie, setNumeroSerie] = useState('');
   const [codigoFactura, setCodigoFactura] = useState('');
   const [fechaIngreso, setFechaIngreso] = useState('');
-  const [isFechaActual, setIsFechaActual] = useState(true);
+  const [fechaBaja, setFechaBaja] = useState('');
+  const [modoFechaIngreso, setModoFechaIngreso] = useState<'HOY' | 'EXACTA' | 'DESCONOCIDA'>('HOY');
   const [sede, setSede] = useState('');
   const [departamento, setDepartamento] = useState('');
   const [ubicacion, setUbicacion] = useState('');
@@ -147,7 +148,8 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setNumeroSerie('');
     setCodigoFactura('');
     setFechaIngreso('');
-    setIsFechaActual(true);
+    setFechaBaja('');
+    setModoFechaIngreso('HOY');
     setSede('');
     setDepartamento('');
     setUbicacion('');
@@ -170,10 +172,16 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
       const isoDate = !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : '';
       setFechaIngreso(isoDate);
       const todayIso = new Date().toISOString().split('T')[0];
-      setIsFechaActual(isoDate === todayIso);
+      setModoFechaIngreso(isoDate === todayIso ? 'HOY' : 'EXACTA');
     } else {
       setFechaIngreso('');
-      setIsFechaActual(true);
+      setModoFechaIngreso('DESCONOCIDA');
+    }
+    if (activo.fechaBaja) {
+      const dbaja = new Date(activo.fechaBaja);
+      setFechaBaja(!isNaN(dbaja.getTime()) ? dbaja.toISOString().split('T')[0] : '');
+    } else {
+      setFechaBaja('');
     }
     setSede(activo.sede || '');
     setDepartamento(activo.departamento || '');
@@ -194,10 +202,24 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
         modelo: modelo.trim(),
         numeroSerie: numeroSerie.trim(),
         codigoFactura: codigoFactura.trim().toUpperCase(),
-        fechaIngreso: isFechaActual
-          ? new Date().toISOString()
-          : (fechaIngreso ? new Date(`${fechaIngreso}T12:00:00Z`).toISOString() : new Date().toISOString()),
       };
+
+      if (modoFechaIngreso === 'HOY') {
+        payload.fechaIngreso = new Date().toISOString();
+        payload.clearFechaIngreso = false;
+      } else if (modoFechaIngreso === 'EXACTA') {
+        payload.fechaIngreso = fechaIngreso ? new Date(`${fechaIngreso}T12:00:00Z`).toISOString() : new Date().toISOString();
+        payload.clearFechaIngreso = false;
+      } else {
+        payload.fechaIngreso = null;
+        payload.clearFechaIngreso = true;
+      }
+
+      if (fechaBaja) {
+        payload.fechaBaja = new Date(`${fechaBaja}T12:00:00Z`).toISOString();
+      } else if (editingActivo?.fechaBaja && !fechaBaja) {
+        payload.clearFechaBaja = true;
+      }
 
       if (editingActivo) {
         payload.sede = sede;
@@ -419,8 +441,10 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
     setCodigoFactura,
     fechaIngreso,
     setFechaIngreso,
-    isFechaActual,
-    setIsFechaActual,
+    fechaBaja,
+    setFechaBaja,
+    modoFechaIngreso,
+    setModoFechaIngreso,
     sede,
     setSede,
     departamento,
