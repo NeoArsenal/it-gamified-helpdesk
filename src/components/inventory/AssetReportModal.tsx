@@ -31,7 +31,7 @@ export function AssetReportModal({
   const [filterEstado, setFilterEstado] = useState<string>('TODOS');
   const [filterFechaRegularizada, setFilterFechaRegularizada] = useState<'TODAS' | 'CON_FECHA' | 'SIN_FECHA'>('TODAS');
 
-  const reportPrintRef = useRef<HTMLDivElement>(null);
+  const reportSheetRef = useRef<HTMLDivElement>(null);
 
   // Fecha y hora del reporte actual
   const fechaReporteActual = useMemo(() => {
@@ -112,13 +112,177 @@ export function AssetReportModal({
 
   if (!isOpen) return null;
 
-  // Imprimir reporte oficial
+  // Imprimir reporte oficial en ventana aislada (A4 Landscape)
   const handleImprimir = () => {
+    const sheetElement = reportSheetRef.current;
+    if (!sheetElement) {
+      toast.error('No se pudo encontrar la hoja del reporte para imprimir.');
+      return;
+    }
+
     if (filteredReportActivos.length === 0) {
       toast.error('No hay registros para imprimir con los filtros seleccionados.');
       return;
     }
-    window.print();
+
+    // Abrir nueva ventana/pestaña limpia para aislar la hoja A4 sin elementos del dashboard
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error('El navegador bloqueó la ventana de impresión. Por favor habilita los popups para este sitio.');
+      return;
+    }
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map((tag) => tag.outerHTML)
+      .join('\n');
+
+    const tituloDoc = reportType === 'PADRON' 
+      ? `Reporte_Equipos_${filterTipo}_${filterSede}`.replace(/[\s/]+/g, '_')
+      : `Historial_Trazabilidad_${filterTipo}_${filterSede}`.replace(/[\s/]+/g, '_');
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+        <head>
+          <meta charset="utf-8">
+          <base href="${origin}/">
+          <title>${tituloDoc} - Clínicas Limatambo</title>
+          ${styleTags}
+          <style>
+            @page {
+              size: A4 landscape;
+              margin: 8mm 10mm 8mm 10mm;
+            }
+            * {
+              box-sizing: border-box;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            html, body {
+              margin: 0;
+              padding: 0;
+              background-color: #f8fafc;
+              color: #0f172a;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+            }
+            thead {
+              display: table-header-group;
+            }
+            tr {
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            @media screen {
+              body {
+                padding: 20px 24px 60px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                min-height: 100vh;
+              }
+              .no-print-bar {
+                position: sticky;
+                top: 12px;
+                z-index: 999;
+                background: #0f172a;
+                color: #ffffff;
+                padding: 10px 24px;
+                border-radius: 9999px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35);
+                margin-bottom: 24px;
+                font-size: 13px;
+                font-weight: 600;
+              }
+              .btn-print {
+                background: #2563eb;
+                color: #ffffff;
+                border: none;
+                padding: 7px 18px;
+                border-radius: 9999px;
+                font-weight: 700;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 13px;
+                transition: background 0.2s;
+              }
+              .btn-print:hover { background: #1d4ed8; }
+              .btn-close {
+                background: transparent;
+                color: #94a3b8;
+                border: none;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+              }
+              .btn-close:hover { color: #ffffff; }
+              .report-sheet-container {
+                background: #ffffff;
+                box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+                border-radius: 12px;
+                max-width: 1100px;
+                width: 100%;
+                padding: 24px 32px;
+                border: 1px solid #e2e8f0;
+              }
+            }
+            @media print {
+              .no-print-bar {
+                display: none !important;
+              }
+              body {
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+              }
+              .report-sheet-container {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 0 !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print-bar">
+            <span>📄 ${tituloDoc} · Vista de Impresión Oficial (A4 Horizontal)</span>
+            <button class="btn-print" onclick="window.print()">
+              🖨️ Imprimir / Guardar como PDF
+            </button>
+            <button class="btn-close" onclick="window.close()">
+              ✕ Cerrar Pestaña
+            </button>
+          </div>
+          <div class="report-sheet-container">
+            ${sheetElement.innerHTML}
+          </div>
+          <script>
+            window.addEventListener('load', function() {
+              setTimeout(function() {
+                window.focus();
+                window.print();
+              }, 400);
+            });
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
   };
 
   // Exportar a Excel con filtros exactos
@@ -327,26 +491,39 @@ export function AssetReportModal({
         {/* 4. ÁREA DEL REPORTE IMPRIMIBLE / VISTA PREVIA (Estilo Hoja A4) */}
         {/* ========================================================================= */}
         <div 
-          ref={reportPrintRef}
           className="p-4 sm:p-8 overflow-y-auto flex-1 custom-scrollbar bg-slate-100/60 print:bg-white print:p-0 print:overflow-visible"
         >
           {/* Contenedor Hoja Formal */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-6 sm:p-8 min-w-[760px] mx-auto print:border-none print:shadow-none print:p-0 print:min-w-0 print:rounded-none">
+          <div 
+            ref={reportSheetRef}
+            id="reporte-oficial-limatambo-sheet"
+            className="bg-white rounded-2xl shadow-sm border border-slate-200/90 p-6 sm:p-8 min-w-[760px] mx-auto print:border-none print:shadow-none print:p-0 print:min-w-0 print:rounded-none"
+          >
             
             {/* ENCABEZADO INSTITUCIONAL */}
             <div className="border-b-2 border-slate-900 pb-4 mb-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                    CLÍNICAS LIMATAMBO
-                  </h1>
-                  <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                    Departamento de Tecnologías de la Información y Comunicaciones
-                  </h2>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <img
+                    src="/logo-limatambo.png"
+                    alt="Logo Clínicas Limatambo"
+                    className="h-10 sm:h-12 w-auto object-contain shrink-0"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                      CLÍNICAS LIMATAMBO
+                    </h1>
+                    <h2 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                      Departamento de Tecnologías de la Información y Comunicaciones
+                    </h2>
+                  </div>
                 </div>
-                <div className="text-right text-xs">
-                  <span className="font-mono font-bold text-slate-800 block">
-                    Fecha: {fechaReporteActual}
+                <div className="text-right text-xs shrink-0">
+                  <span className="font-mono font-bold text-slate-800 block text-sm">
+                    {fechaReporteActual}
                   </span>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">
                     Documento Oficial de Auditoría
