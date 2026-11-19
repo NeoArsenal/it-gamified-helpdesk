@@ -611,7 +611,19 @@ export function AssetReportModal({
                             <span className="text-[10px] text-slate-400 block">{a.departamento || a.ubicacion || 'General'}</span>
                           </td>
                           <td className="py-2 px-2 text-slate-700">
-                            {a.responsable || <span className="text-slate-300 italic">Sin asignar</span>}
+                            {a.estado === 'REPARACION' ? (
+                              <div>
+                                <span className="font-bold text-amber-800 block text-[10px]">Taller TI</span>
+                                {a.responsable && <span className="text-[9px] text-slate-400 block">(Último: {a.responsable})</span>}
+                              </div>
+                            ) : a.estado === 'BAJA' ? (
+                              <div>
+                                <span className="font-bold text-rose-700 block text-[10px]">Retirado</span>
+                                {a.responsable && <span className="text-[9px] text-slate-400 block line-through">({a.responsable})</span>}
+                              </div>
+                            ) : (
+                              a.responsable || <span className="text-slate-300 italic">Sin asignar</span>
+                            )}
                           </td>
                           <td className="py-2 px-2 whitespace-nowrap">
                             <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold ${

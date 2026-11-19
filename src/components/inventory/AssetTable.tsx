@@ -360,11 +360,56 @@ export function AssetTable({
                     )}
                   </td>
 
-                  {/* Responsable */}
+                  {/* Responsable / Custodio Actual */}
                   <td className="py-3.5 px-4 text-slate-600">
-                    {activo.responsable ? (
+                    {activo.estado === 'REPARACION' ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="inline-flex items-center gap-1.5 font-bold text-amber-700 text-xs">
+                          <Wrench className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>Taller TI</span>
+                        </div>
+                        {activo.responsable && (
+                          <span 
+                            className="text-[10px] text-slate-400 font-medium truncate max-w-[130px]" 
+                            title={`Último custodio registrado en sede: ${activo.responsable}`}
+                          >
+                            Último: {activo.responsable}
+                          </span>
+                        )}
+                      </div>
+                    ) : activo.estado === 'BAJA' ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="inline-flex items-center gap-1.5 font-bold text-rose-600 text-xs">
+                          <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <span>Retirado</span>
+                        </div>
+                        {activo.responsable && (
+                          <span 
+                            className="text-[10px] text-slate-400 line-through truncate max-w-[130px]" 
+                            title={`Anterior custodio: ${activo.responsable}`}
+                          >
+                            Previo: {activo.responsable}
+                          </span>
+                        )}
+                      </div>
+                    ) : activo.estado === 'DISPONIBLE' ? (
+                      <div className="flex flex-col gap-0.5">
+                        <div className="inline-flex items-center gap-1.5 font-bold text-blue-700 text-xs">
+                          <Package className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                          <span>Almacén TI</span>
+                        </div>
+                        {activo.responsable && (
+                          <span 
+                            className="text-[10px] text-slate-400 font-medium truncate max-w-[130px]"
+                            title={`Último custodio: ${activo.responsable}`}
+                          >
+                            Último: {activo.responsable}
+                          </span>
+                        )}
+                      </div>
+                    ) : activo.responsable ? (
                       <div className="flex items-center gap-1.5 font-medium">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         <span className="truncate max-w-[130px]">{activo.responsable}</span>
                       </div>
                     ) : (
@@ -565,12 +610,33 @@ export function AssetTable({
                   </div>
 
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">
                       <span className="text-slate-500">Custodio:</span>{' '}
-                      <span className="font-semibold text-slate-800">
-                        {activo.responsable || <span className="text-slate-400 font-normal italic">Sin custodio asignado</span>}
-                      </span>
+                      {activo.estado === 'REPARACION' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-amber-700">
+                          <Wrench className="w-3 h-3 text-amber-600 shrink-0" />
+                          Taller TI
+                          {activo.responsable && (
+                            <span className="font-normal text-slate-400 text-[11px] ml-1">
+                              (Último: {activo.responsable})
+                            </span>
+                          )}
+                        </span>
+                      ) : activo.estado === 'BAJA' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-rose-600">
+                          <Trash2 className="w-3 h-3 text-rose-500 shrink-0" />
+                          Retirado
+                          {activo.responsable && (
+                            <span className="font-normal text-slate-400 text-[11px] ml-1 line-through">
+                              ({activo.responsable})
+                            </span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="font-semibold text-slate-800">
+                          {activo.responsable || <span className="text-slate-400 font-normal italic">Sin custodio asignado</span>}
+                        </span>
+                      )}
                     </span>
                   </div>
                 </div>

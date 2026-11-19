@@ -182,8 +182,13 @@ export function AssetRepairModal({
               <h3 className="font-black text-slate-800 text-base sm:text-lg tracking-tight">
                 Salida de Taller y Reparación
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Equipo: <strong className="text-slate-800 font-mono">{activo.codigo}</strong> ({activo.tipo} {activo.marca} {activo.modelo})
+              <p className="text-xs text-slate-500 font-medium mt-0.5 flex flex-wrap items-center gap-1.5">
+                <span>Equipo: <strong className="text-slate-800 font-mono">{activo.codigo}</strong> ({activo.tipo} {activo.marca} {activo.modelo})</span>
+                {activo.responsable && (
+                  <span className="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md font-semibold">
+                    👤 Custodio en sede: {activo.responsable}
+                  </span>
+                )}
               </p>
             </div>
           </div>

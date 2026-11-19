@@ -277,14 +277,21 @@ export function useInventory({ userId, onActivoRescatado }: UseInventoryProps = 
   const handleGuardarCambioEstado = async (data: {
     nuevoEstado: string;
     observaciones: string;
+    liberarCustodio?: boolean;
   }) => {
     if (!statusActivo) return;
     try {
-      await updateActivo(statusActivo.id, {
+      const payload: any = {
         estado: data.nuevoEstado,
         observaciones: data.observaciones,
         tecnicoId: userId,
-      });
+      };
+
+      if (data.liberarCustodio) {
+        payload.responsable = '';
+      }
+
+      await updateActivo(statusActivo.id, payload);
       toast.success(`Estado de ${statusActivo.codigo} actualizado a ${data.nuevoEstado}`);
       setIsStatusModalOpen(false);
       fetchActivos();

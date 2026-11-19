@@ -8,6 +8,7 @@ interface AssetStatusModalProps {
   onGuardarCambioEstado: (data: {
     nuevoEstado: string;
     observaciones: string;
+    liberarCustodio?: boolean;
   }) => Promise<void>;
 }
 
@@ -19,12 +20,14 @@ export function AssetStatusModal({
 }: AssetStatusModalProps) {
   const [nuevoEstado, setNuevoEstado] = useState('OPERATIVO');
   const [observaciones, setObservaciones] = useState('');
+  const [liberarCustodio, setLiberarCustodio] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (activo) {
       setNuevoEstado(activo.estado || 'OPERATIVO');
       setObservaciones('');
+      setLiberarCustodio(false);
     }
   }, [activo]);
 
@@ -37,6 +40,7 @@ export function AssetStatusModal({
       await onGuardarCambioEstado({
         nuevoEstado,
         observaciones: observaciones.trim(),
+        liberarCustodio,
       });
       onClose();
     } finally {
@@ -136,6 +140,27 @@ export function AssetStatusModal({
               })}
             </div>
           </div>
+
+          {/* Opción de Liberar Custodio si el equipo tenía responsable */}
+          {activo.responsable && (nuevoEstado === 'REPARACION' || nuevoEstado === 'BAJA' || nuevoEstado === 'DISPONIBLE') && (
+            <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-2xl flex items-center justify-between gap-3 text-xs">
+              <div className="min-w-0">
+                <span className="font-bold text-amber-950 block">Custodia en sede:</span>
+                <span className="text-amber-800 text-[11px] truncate block">
+                  Actualmente asignado a: <strong>{activo.responsable}</strong>
+                </span>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer text-slate-700 text-xs shrink-0 select-none bg-white px-2.5 py-1.5 rounded-xl border border-amber-200 shadow-2xs hover:bg-amber-50 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={liberarCustodio}
+                  onChange={(e) => setLiberarCustodio(e.target.checked)}
+                  className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                />
+                <span className="font-semibold text-slate-700">Desasignar formalmente</span>
+              </label>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
